@@ -49,7 +49,7 @@ subroutine create_auroral_oval(currentIn, thetaIn, psiIn, &
   call CON_set_do_test(NameSub, DoTest, DoTestMe)
 
   ! Initialize arrays to zero:
-  FacMax=0;  ColatMax=0; Width=0
+  FacMax=-1e99;  ColatMax=0; Width=0
   
   ! Reverse arrays if in Southern hemisphere.
   if (ThetaIn(1,1) < cHalfPi) then
