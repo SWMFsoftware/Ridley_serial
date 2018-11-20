@@ -232,7 +232,7 @@ contains
     end do
 
     ! Check if dimensions found.  If not, stop program.
-    if( (i_cond_nmlts==-1) .or. (i_cond_nlats==-1) ) call stop_mpi(&
+    if( (i_cond_nmlts==-1) .or. (i_cond_nlats==-1) ) call CON_stop(&
          NameSub//' Cannot find #DIMENSION in Hall conductance file.')
 
     if(DoTest)write(*,*) NameSub//': Size of conductance files (mlt, lat): ', &
@@ -274,7 +274,7 @@ contains
           ! Stop code if IO error:
           if(iError/=0) then
              write(*,*)NameSub//': FILE ERROR at i,j = ', i, j
-             call stop_mpi(NameSub//': FILE ERROR for Hall input')
+             call CON_stop(NameSub//': FILE ERROR for Hall input')
           end if
        end do
     end do
@@ -321,10 +321,10 @@ contains
        end if
     end do
     ! Check if dimensions found.  If not, stop program.
-    if( (nLatTemp==-1) .or. (nMltTemp==-1) ) call stop_mpi(&
+    if( (nLatTemp==-1) .or. (nMltTemp==-1) ) call CON_stop(&
          NameSub//' Cannot find #DIMENSION in Pedersen conductance file.')
     ! Check if match Hall file.  
-    if( (nLatTemp/=i_cond_nlats) .or. (nMltTemp/=i_cond_nmlts) ) call stop_mpi(&
+    if( (nLatTemp/=i_cond_nlats) .or. (nMltTemp/=i_cond_nmlts) ) call CON_stop(&
          NameSub//' Hall & Pedersen input file dimensions do not match.')
 
     ! Read lines until #START:
@@ -345,7 +345,7 @@ contains
           ! Stop code if IO error:
           if(iError/=0) then
              write(*,*)NameSub//'FILE ERROR at i,j = ', i, j
-             call stop_mpi(NameSub//' FILE ERROR for Hall input')
+             call CON_stop(NameSub//' FILE ERROR for Hall input')
           end if
        end do
     end do
