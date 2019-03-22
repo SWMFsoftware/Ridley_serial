@@ -380,7 +380,7 @@ contains
          nRootBlock_D=(/2,1/),                       &! north+south hemispheres
          nCell_D =(/IONO_nTheta - 1,IONO_nPsi - 1/), &! size of node based grid
          XyzMin_D=(/cOne, cOne/),                    &! minimum indexes
-         XyzMax_D=(/real(2*IONO_nTheta-1),           &! maximum indexes
+         XyzMax_D=(/real(2*IONO_nTheta-1.0),         &! maximum indexes
          real(IONO_nPsi)/),                          &
          TypeCoord='SMG',                            &! solar magnetic coord.
          Coord1_I=Colat_I,                           &! colatitudes
