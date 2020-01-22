@@ -19,7 +19,7 @@ help:
 	@echo ' '
 	@echo '    help         (Makefile option list)'
 	@echo '    clean        (rm -f *~ *.o *.kmo *.mod *.T *.lst core)'
-	@echo '    distclean    (make clean; rm -f Makefile.DEPEND)'
+	@echo '    distclean    (make clean; rm ModSize.f90)'
 	@echo '    backup       (tar -cf IONO.`date +%m_%d_%y_%H%M.tar` ...)'
 	@echo ' '
 
@@ -91,4 +91,3 @@ clean: cleanfiles
 distclean: clean
 	rm -f ModSize.f90
 
-# keep this line
