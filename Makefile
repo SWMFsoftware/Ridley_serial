@@ -1,7 +1,6 @@
 include Makefile.def
 
 install: src/ModSize.f90
-	touch src/Makefile.DEPEND
 
 src/ModSize.f90:
 	cp -f src/ModSize_orig.f90 src/ModSize.f90
@@ -20,14 +19,12 @@ rundir:
 	cd ${RUNDIR}/IE; ln -s ${BINDIR}/PostIONO.exe .
 
 clean:
-	@touch src/Makefile.DEPEND src/Makefile.RULES
 	cd src; make clean
 
 distclean: 
 	./Config.pl -uninstall
 
 allclean:
-	@touch src/Makefile.DEPEND src/Makefile.RULES
 	cd src; make distclean
 	rm -f *~
 
