@@ -405,8 +405,34 @@ points in both the latitude and magnetic local time directions, must be included
 Points in MLT should not overlap midnight (i.e., there should not be an
 entry for both 00 MLT and 24 MLT).
 
-An example of the required format can be found in Ridley_serial/input/.
+Examples of the required format can be found in Ridley_serial/input/.
 
+</command>
+
+<command name="USECMEE">
+  <parameter name="UseCMEEFitting" type="logical" default="F"/>
+  <if expr="$UseCMEEFitting">
+    <parameter name="LatNoConductanceSI"  type="real" default="45"/>
+    <parameter name="FactorHallCMEE"      type="real" default="7.5"/>
+    <parameter name="FactorPedCMEE"       type="real" default="5"/>
+  </if>
+  
+#USECMEE
+T             UseCMEEFitting (rest of parameters read if true)
+45            LatNoConductanceSI (default)
+7.5           FactorHallCMEE (default)
+5             FactorPedCMEE (default)
+
+  This command allows modifications in the auroral oval properties and addition
+  of a baseline conductance when using CMEE.  When the fitting option is true, a
+  boundary condition at the boundary latitude (LatNoConductanceSI) is added to limit
+  auroral conductance values equatorward of this boundary.  The baseline conductance,
+  added to the oval adjusted conductance to avoid spikes in CPCP, has two values for
+  Hall and Pedersen conductance. Default values are shown above.
+
+  NOTE: If and when changing FactorHallCMEE and FactorPedCMEE from their default values,
+  it is recommended that a higher value for both are chosen in order to avoid unrealistic
+  potential values.
 
 </command>
 
