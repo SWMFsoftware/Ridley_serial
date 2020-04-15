@@ -40,7 +40,11 @@ module ModIonosphere
   character(len=100) :: &
        NameHalFile = 'cond_hal_coeffs.dat', &
        NamePedFile = 'cond_ped_coeffs.dat'
-  
+
+  logical :: UseCMEEFitting  = .false.
+  real :: LatNoConductanceSI = 45.0
+  real :: FactorHallCMEE = 7.5, FactorPedCMEE = 5.0
+
   ! Coefficients for conductance based on FAC:
   real, allocatable, dimension(:,:) ::  &
        hal_a0_up,ped_a0_up,      &

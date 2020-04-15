@@ -143,6 +143,11 @@ subroutine ionosphere_fine_grid
      case default
         call CON_stop(NameSub//" IE_ERROR invalid conductance_model")
      end select
+     call write_prefix; write(iUnitOut,*)'   ------------------------------'
+     call write_prefix; write(iUnitOut,*)'   UseCMEEFitting =', UseCMEEFitting
+     call write_prefix; write(iUnitOut,*)'   NameHalFile    = ', NameHalFile
+     call write_prefix; write(iUnitOut,*)'   NamePedFile    = ', NamePedFile
+     call write_prefix; write(iUnitOut,*)'   ------------------------------'
      call write_prefix; write(iUnitOut,*)
   end if
 

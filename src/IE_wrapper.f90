@@ -191,6 +191,13 @@ contains
             call read_var('F10.7 Flux',f107_flux)
             call read_var('StarLightPedConductance',StarLightPedConductance)
             call read_var('PolarCapPedConductance',PolarCapPedConductance)
+         case('#USECMEE')
+            call read_var('UseCMEEFitting', UseCMEEFitting)
+            if (UseCMEEFitting) then
+               call read_var('LatNoConductanceSI', LatNoConductanceSI)
+               call read_var('FactorHallCMEE',     FactorHallCMEE)
+               call read_var('FactorPedCMEE',      FactorPedCMEE)
+            endif
          case("#CONDUCTANCEFILES")
             call read_var('NameFileHall',     NameHalFile)
             call read_var('NameFilePedersen', NamePedFile)

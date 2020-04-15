@@ -29,7 +29,7 @@ subroutine FACs_to_fluxes(iModel, iBlock)
   implicit none
 
   integer, intent(in) :: iModel  ! model number, 
-                                 ! same as conductance_model in IE_ModMain
+  ! same as conductance_model in IE_ModMain
 
   integer, intent(in) :: iBlock  ! 1 for northern, 2 for southern hemisphere
 
@@ -385,6 +385,15 @@ subroutine FACs_to_fluxes(iModel, iBlock)
                     ped_a0 = ped_a0 * exp(-1.0*(distance/(OvalWidthFactor*Width_of_Oval(j)))**2)
                  end if
 
+                 ! No Conductance Beyond 45 degrees for UseCMEEFitting
+                 if (UseCMEEFitting) then
+                    ! IONO_NORTH_Theta is in theta, need to switch to latitude 
+                    if (abs(90.0 - IONO_NORTH_Theta(i,j)*180./cPi) <= LatNoConductanceSI) then
+                       hal_a1 = hal_a0
+                       ped_a1 = ped_a0
+                    endif
+                 end if
+
                  !
                  ! A sort of correction on the fit
                  !
@@ -394,11 +403,23 @@ subroutine FACs_to_fluxes(iModel, iBlock)
                  ped_a1 = ped_a0 + (OvalStrengthFactor*ped_a1 - ped_a0)*  &
                       exp(-1.0*(distance/(OvalWidthFactor*Width_of_Oval(j)))**2)
 
+                 if (UseCMEEFitting) then
+                    hal_a1 = min(hal_a0, hal_a1)
+                    ped_a1 = min(ped_a0, ped_a1)
+                 end if
+
                  ! Multiply by sqrt(3) to compensate for the 3 times narrower oval
                  hall=CondFactor*( &
                       hal_a0-hal_a1*exp(-abs(iono_north_jr(i,j)*1.0e9)*hal_a2**2))
                  ped =CondFactor*( &
                       ped_a0-ped_a1*exp(-abs(iono_north_jr(i,j)*1.0e9)*ped_a2**2))
+
+                 if (UseCMEEFitting) then
+                    hall=hall + CondFactor*( &
+                         FactorHallCMEE * exp(-1.0*(distance/(OvalWidthFactor*Width_of_Oval(j)))**2) )
+                    ped =ped  + CondFactor*( &
+                         FactorPedCMEE *  exp(-1.0*(distance/(OvalWidthFactor*Width_of_Oval(j)))**2) )
+                 endif
               end if
 
               if ((hall.gt.1.0).and.(ped.gt.0.5)) then
@@ -430,7 +451,7 @@ subroutine FACs_to_fluxes(iModel, iBlock)
            call Determine_Oval_Characteristics(IONO_SOUTH_JR, IONO_SOUTH_Theta,&
                 IONO_SOUTH_Psi, Loc_of_Oval, Width_of_Oval,Strength_of_Oval)
         end if
-        
+
         Loc_of_Oval = cPI - Loc_of_Oval
 
         do j = 1, IONO_nPsi
@@ -524,7 +545,7 @@ subroutine FACs_to_fluxes(iModel, iBlock)
               else
                  distance = 1E9 ! Switch sign for southern hemisphere.
               end if
-              
+
               if (distance < 0.0) then
                  polarcap = .false.
               else
@@ -546,6 +567,16 @@ subroutine FACs_to_fluxes(iModel, iBlock)
                     ped_a0 = ped_a0 * exp(-1.0*(distance/(OvalWidthFactor*Width_of_Oval(j)))**2)
                  endif
 
+
+                 ! No Conductance Below 45 degrees
+                 if (UseCMEEFitting) then
+                    ! IONO_SOUTH_Theta is in theta, need to switch to latitude 
+                    if (abs(90.0 - IONO_SOUTH_Theta(i,j)*180./cPi) <= LatNoConductanceSI) then
+                       hal_a1 = hal_a0
+                       ped_a1 = ped_a0
+                    end if
+                 end if
+
                  !
                  ! A sort of correction on the fit
                  !
@@ -555,11 +586,24 @@ subroutine FACs_to_fluxes(iModel, iBlock)
                  ped_a1 = ped_a0 + (OvalStrengthFactor*ped_a1 - ped_a0)*  &
                       exp(-1.0*(distance/(OvalWidthFactor*Width_of_Oval(j)))**2)
 
+                 ! No Negatives
+                 if (UseCMEEFitting) then
+                    hal_a1 = min(hal_a0, hal_a1)
+                    ped_a1 = min(ped_a0, ped_a1)
+                 end if
+
                  ! Multiply by sqrt(3) to compensate for the 3 times narrower oval
                  hall=CondFactor*( &
                       hal_a0-hal_a1*exp(-abs(iono_south_jr(i,j)*1.0e9)*hal_a2**2))
                  ped =CondFactor*( &
                       ped_a0-ped_a1*exp(-abs(iono_south_jr(i,j)*1.0e9)*ped_a2**2))
+
+                 if (UseCMEEFitting) then
+                    hall=hall + CondFactor*( &
+                         FactorHallCMEE * exp(-1.0*(distance/(OvalWidthFactor*Width_of_Oval(j)))**2) )
+                    ped =ped  + CondFactor*( &
+                         FactorPedCMEE  * exp(-1.0*(distance/(OvalWidthFactor*Width_of_Oval(j)))**2) )
+                 end if
               end if
 
               if ((hall.gt.1.0).and.(ped.gt.0.5)) then
@@ -587,10 +631,10 @@ subroutine FACs_to_fluxes(iModel, iBlock)
 
      MinWidth = 5.0 * cPi / 180.0
      nHalfSmooth = 5
-!     MulFac_Dae = 1.0e22
-!     MulFac_Def = 5.0e19
-!     MulFac_ef = 0.2e7
-!     MulFac_ae = 1.0 / 1.0e11
+     !     MulFac_Dae = 1.0e22
+     !     MulFac_Def = 5.0e19
+     !     MulFac_ef = 0.2e7
+     !     MulFac_ae = 1.0 / 1.0e11
      MulFac_Dae = 1.0e22
      MulFac_Def = 1.0e19
      MulFac_ef = 0.3e6
@@ -645,7 +689,7 @@ subroutine FACs_to_fluxes(iModel, iBlock)
            enddo
         enddo
         OCFLB = smooth/(nHalfSmooth*2+1)
-           
+
         do j = 1, IONO_nPsi
            smooth(j) = 0.0
            do i = j-nHalfSmooth-1, j+nHalfSmooth-1
@@ -671,14 +715,14 @@ subroutine FACs_to_fluxes(iModel, iBlock)
                 iono_north_p(:,IONO_nPsi-j+1) / &
                 (iono_north_rho(:,IONO_nPsi-j+1)+1.0e-32) * MulFac_ae
 
-!           iono_north_ave_e(Poleward-2,j) = iono_north_ave_e(Poleward+1,j)
-!           iono_north_ave_e(Poleward-1,j) = iono_north_ave_e(Poleward+1,j)
+           !           iono_north_ave_e(Poleward-2,j) = iono_north_ave_e(Poleward+1,j)
+           !           iono_north_ave_e(Poleward-1,j) = iono_north_ave_e(Poleward+1,j)
 
-!           do i = Poleward-2, Equatorward+2
-!           do i = Poleward, Equatorward
-!              f = exp(-abs(float(i-Center))/float(width))
-!              iono_north_eflux(i,j) = iono_north_eflux(i,j) * f
-!           enddo
+           !           do i = Poleward-2, Equatorward+2
+           !           do i = Poleward, Equatorward
+           !              f = exp(-abs(float(i-Center))/float(width))
+           !              iono_north_eflux(i,j) = iono_north_eflux(i,j) * f
+           !           enddo
 
         enddo
 
@@ -729,23 +773,23 @@ subroutine FACs_to_fluxes(iModel, iBlock)
         where (iono_north_ave_e < IONO_Min_Ave_E) &
              iono_north_ave_e = IONO_Min_Ave_E
 
-!        ! Let's add a little conductance on ANY not in the polar cap,
-!        ! so the code doesn't blow up
-!        do j = 1, IONO_nPsi
-!           do i = 1, IONO_nTheta
-!              if (iono_north_p(i,j) <= 0.0) then
-!                 iono_north_ave_e(i,j) = max(iono_north_ave_e(i,j),polarcap_avee)
-!                 iono_north_eflux(i,j) = &
-!                      max(iono_north_eflux(i,j),polarcap_eflux)
-!              endif
-!           enddo
-!        enddo
+        !        ! Let's add a little conductance on ANY not in the polar cap,
+        !        ! so the code doesn't blow up
+        !        do j = 1, IONO_nPsi
+        !           do i = 1, IONO_nTheta
+        !              if (iono_north_p(i,j) <= 0.0) then
+        !                 iono_north_ave_e(i,j) = max(iono_north_ave_e(i,j),polarcap_avee)
+        !                 iono_north_eflux(i,j) = &
+        !                      max(iono_north_eflux(i,j),polarcap_eflux)
+        !              endif
+        !           enddo
+        !        enddo
 
      else
 
         iono_south_eflux = 1.0e-6
         iono_south_ave_e = 1.0
-        
+
         do j = 1, IONO_nPsi
            IsPeakFound = .false.
            MaxP = max(maxval(iono_south_p(:,IONO_nPsi-j+1)),1.0e-15)
@@ -793,7 +837,7 @@ subroutine FACs_to_fluxes(iModel, iBlock)
            enddo
         enddo
         OCFLB = smooth/(nHalfSmooth*2+1)
-           
+
         smooth = 0.0
         do j = 1, IONO_nPsi
            do i = j-nHalfSmooth-1, j+nHalfSmooth-1
@@ -802,7 +846,7 @@ subroutine FACs_to_fluxes(iModel, iBlock)
            enddo
         enddo
         EquatorWardEdge = smooth/(nHalfSmooth*2+1)
-          
+
         do j = 1, IONO_nPsi
            Center = (OCFLB(j)*2.0 + EquatorWardEdge(j))/3.0
            Width = abs(EquatorWardEdge(j) - OCFLB(j))/2
@@ -852,9 +896,9 @@ subroutine FACs_to_fluxes(iModel, iBlock)
         where (diffuse_ae < IONO_Min_Ave_E/2) diffuse_ae = IONO_Min_Ave_E/2
         where (discrete_ae < IONO_Min_Ave_E/2) discrete_ae = IONO_Min_Ave_E/2
 
-!        write(*,*) "Discrete (south) : ",&
-!             minval(discrete_ef), maxval(discrete_ef),&
-!             minval(discrete_ae), maxval(discrete_ae)
+        !        write(*,*) "Discrete (south) : ",&
+        !             minval(discrete_ef), maxval(discrete_ef),&
+        !             minval(discrete_ae), maxval(discrete_ae)
 
         ! Let's weight the average energy by the number flux, which is ef/av
         iono_south_ave_e = &
@@ -871,15 +915,15 @@ subroutine FACs_to_fluxes(iModel, iBlock)
 
         write(*,*) "Done with aurora"
 
-!        do j = 1, IONO_nPsi
-!           do i = 1, IONO_nTheta
-!              if (iono_south_p(i,j) <= 0.0) then
-!                 iono_south_ave_e(i,j) = max(iono_south_ave_e(i,j),polarcap_avee)
-!                 iono_south_eflux(i,j) = &
-!                      max(iono_south_eflux(i,j),polarcap_eflux)
-!              endif
-!           enddo
-!        enddo
+        !        do j = 1, IONO_nPsi
+        !           do i = 1, IONO_nTheta
+        !              if (iono_south_p(i,j) <= 0.0) then
+        !                 iono_south_ave_e(i,j) = max(iono_south_ave_e(i,j),polarcap_avee)
+        !                 iono_south_eflux(i,j) = &
+        !                      max(iono_south_eflux(i,j),polarcap_eflux)
+        !              endif
+        !           enddo
+        !        enddo
 
      endif
 
