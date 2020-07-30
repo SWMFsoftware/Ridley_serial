@@ -114,15 +114,15 @@ subroutine ionosphere_fine_grid
 
   if(iProc==0)then
      call write_prefix; write(iUnitOut,*)
-     call write_prefix; write(iUnitOut,*)'   Ionosphere Solution Parameters'
-     call write_prefix; write(iUnitOut,*)'   ------------------------------'
+     call write_prefix; write(iUnitOut,*)' Ionosphere Solution Parameters'
+     call write_prefix; write(iUnitOut,*)' ------------------------------'
      call write_prefix; write(iUnitOut,*)
-     call write_prefix; write(iUnitOut,'(10X,A,I5,A,I5)') &
-          'Ionospheric grids   : ',IONO_nTheta,' x ',IONO_nPsi
-     call write_prefix; write(iUnitOut,'(10X,A,f7.1,A)') &
-          'Height of ionosphere: ',IONO_Height/1000,' km'
-     call write_prefix; write(iUnitOut,'(10X,A)',ADVANCE='NO') &
-          'Conductance model   : '
+     call write_prefix; write(iUnitOut,'(A,I5,A,I5)') &
+          ' Ionospheric grids   : ',IONO_nTheta,' x ',IONO_nPsi
+     call write_prefix; write(iUnitOut,'(A,f7.1,A)') &
+          ' Height of ionosphere: ',IONO_Height/1000,' km'
+     call write_prefix; write(iUnitOut,'(A)',ADVANCE='NO') &
+          ' Conductance model   : '
      select case(conductance_model)
      case(0)
         write(iUnitOut,'(a)') "Constant Pedersen (no HALL)"
@@ -143,11 +143,13 @@ subroutine ionosphere_fine_grid
      case default
         call CON_stop(NameSub//" IE_ERROR invalid conductance_model")
      end select
-     call write_prefix; write(iUnitOut,*)'   ------------------------------'
-     call write_prefix; write(iUnitOut,*)'   UseCMEEFitting =', UseCMEEFitting
-     call write_prefix; write(iUnitOut,*)'   NameHalFile    = ', NameHalFile
-     call write_prefix; write(iUnitOut,*)'   NamePedFile    = ', NamePedFile
-     call write_prefix; write(iUnitOut,*)'   ------------------------------'
+     call write_prefix; write(iUnitOut,*)'UseCMEEFitting      : ', &
+          UseCMEEFitting
+     call write_prefix; write(iUnitOut,*)'NameHalFile         : ', &
+          trim(NameHalFile)
+     call write_prefix; write(iUnitOut,*)'NamePedFile         : ', &
+          trim(NamePedFile)
+     call write_prefix; write(iUnitOut,*)' ------------------------------'
      call write_prefix; write(iUnitOut,*)
   end if
 
