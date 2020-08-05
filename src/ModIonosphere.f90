@@ -165,6 +165,15 @@ module ModIonosphere
   real, allocatable :: iono_south_im_avee(:,:)
   real, allocatable :: iono_north_im_eflux(:,:)
   real, allocatable :: iono_south_im_eflux(:,:)
+  ! Sources of Conductances
+  real, allocatable :: IONO_NORTH_DIFF_Ave_E(:,:)
+  real, allocatable :: IONO_SOUTH_DIFF_Ave_E(:,:)
+  real, allocatable :: IONO_NORTH_MONO_Ave_E(:,:)
+  real, allocatable :: IONO_SOUTH_MONO_Ave_E(:,:)
+  real, allocatable :: IONO_NORTH_DIFF_EFlux(:,:)
+  real, allocatable :: IONO_SOUTH_DIFF_EFlux(:,:)
+  real, allocatable :: IONO_NORTH_MONO_EFlux(:,:)
+  real, allocatable :: IONO_SOUTH_MONO_EFlux(:,:)
 
   logical, allocatable :: IsFilledWithIm(:,:)
 
@@ -517,7 +526,21 @@ contains
     allocate(C_C(IONO_nTheta,IONO_nPsi))
     allocate(C_D(IONO_nTheta,IONO_nPsi))
     allocate(C_E(IONO_nTheta,IONO_nPsi))
+    ! Sources of Conductances
+    allocate(IONO_NORTH_DIFF_Ave_E(IONO_nTheta,IONO_nPsi))
+    allocate(IONO_SOUTH_DIFF_Ave_E(IONO_nTheta,IONO_nPsi))
+    allocate(IONO_NORTH_MONO_Ave_E(IONO_nTheta,IONO_nPsi))
+    allocate(IONO_SOUTH_MONO_Ave_E(IONO_nTheta,IONO_nPsi))
+    allocate(IONO_NORTH_DIFF_EFlux(IONO_nTheta,IONO_nPsi))
+    allocate(IONO_SOUTH_DIFF_EFlux(IONO_nTheta,IONO_nPsi))
+    allocate(IONO_NORTH_MONO_EFlux(IONO_nTheta,IONO_nPsi))
+    allocate(IONO_SOUTH_MONO_EFlux(IONO_nTheta,IONO_nPsi))
 
+    IONO_NORTH_DIFF_Ave_E = 0.; IONO_NORTH_DIFF_EFlux = 0.
+    IONO_SOUTH_DIFF_Ave_E = 0.; IONO_SOUTH_DIFF_EFlux = 0.
+    IONO_NORTH_MONO_Ave_E = 0.; IONO_NORTH_MONO_EFlux = 0.
+    IONO_SOUTH_MONO_Ave_E = 0.; IONO_SOUTH_MONO_EFlux = 0.
+    
     ! Read empirical conductance values from files:
     call load_conductances()
     
@@ -643,6 +666,15 @@ contains
     deallocate(C_C)
     deallocate(C_D)
     deallocate(C_E)
+    ! Sources of Conductances
+    deallocate(IONO_NORTH_DIFF_Ave_E)
+    deallocate(IONO_SOUTH_DIFF_Ave_E)
+    deallocate(IONO_NORTH_MONO_Ave_E)
+    deallocate(IONO_SOUTH_MONO_Ave_E)
+    deallocate(IONO_NORTH_DIFF_EFlux)
+    deallocate(IONO_SOUTH_DIFF_EFlux)
+    deallocate(IONO_NORTH_MONO_EFlux)
+    deallocate(IONO_SOUTH_MONO_EFlux)
 
     ! Clean up all conductance arrays:
     ! Hall coefficients:

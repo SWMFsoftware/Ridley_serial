@@ -140,6 +140,9 @@ subroutine ionosphere_fine_grid
         write(iUnitOut,'(a)') "More Realistic oval"
      case(7)
         write(iUnitOut,'(a)') "Get aurora from IM"
+     case(8)
+        write(iUnitOut,'(a)') "MAGNIT Physics-based Aurora"
+        write(iUnitOut,'(a)') "(Beta-testing Phase)"
      case default
         call CON_stop(NameSub//" IE_ERROR invalid conductance_model")
      end select
