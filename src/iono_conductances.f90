@@ -1285,7 +1285,7 @@ subroutine FACs_to_fluxes(iModel, iBlock)
               ! Grand Calculation for the Energy Flux (in W/m2)
               ! See Knight [1973] and Fridman and Lemaire [1980] for details.
 
-              write(*,*)'!!! North', i,j,ev(i,j),iono_T(i,j),rm
+              !write(*,*)'!!! North', i,j,ev(i,j),iono_T(i,j),rm
 
               ! Dummy vars do not exist. All variables have meaning. 
               ! This is now reverting the above formula, so var_rm = (rm - 1)/(rm - vari) or 1
@@ -2009,20 +2009,17 @@ subroutine FACs_to_fluxes(iModel, iBlock)
                     vari = rm - 5E-05 ! Try
                  end if
                  
-                 !\
                  ! Potential Energy eV
-                 !/
                  eV(i,j) = 1.38E-23 * iono_T(i,j) * (rm - 1) * &
                       LOG((rm - 1)/(rm - vari))
               else
                  eV(i,j) = 0.
               end if
 
-              !\
+
               ! Grand Calculation for the Energy Flux (in W/m2)
               ! See Knight [1973] and Fridman and Lemaire [1980] for details.
-              !/
-              write(*,*)'!!! South', i,j,ev(i,j),iono_T(i,j),rm
+              !write(*,*)'!!! South', i,j,ev(i,j),iono_T(i,j),rm
 
               var_rm = EXP(-eV(i,j)/(1.38e-23 * iono_T(i,j) * &  !
                    (rm - 1)))                                    !
@@ -2038,10 +2035,8 @@ subroutine FACs_to_fluxes(iModel, iBlock)
 
               !write(*,*) eV(i,j), vari
               
-              !\
               ! Average Energy can be estimated as,
               ! Ave_E = E_Flux/N_Flux (in eV)
-              !/        
               discrete_ae(i,j) = discrete_ef(i,j)/&!discrete_nf(i,j)
                    (1.6e-19 * discrete_nf(i,j) )
               
