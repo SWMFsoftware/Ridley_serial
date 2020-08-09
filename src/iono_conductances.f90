@@ -1223,28 +1223,39 @@ subroutine FACs_to_fluxes(iModel, iBlock)
         
         diffuse_nf = iono_Ne * 1e06 * 1553.5632 * iono_T**0.5 ! * 0.15
         rm = 1.1 !+ 3*SIN(cPi/2. - IONO_NORTH_Theta(i,j))!100
+
+        ! Let's have somw default values
+        ev = 0.0
+
         ! The Great Loop of our time...
         do j = 1, IONO_nPsi
-           do i = 1, IONO_nTheta
+           ! IONO_nTheta is the equator and the formulas below break down
+           do i = 1, IONO_nTheta - 1
               !iono_north_jr(i,j) = iono_north_jr(i,j) * 10.
+
+              ! Trigonometry tells us that sin(pi/2 - angle) = cos(angle)
+              ! For the equator this gives rm=1
               rm = SQRT(1 + 3*SIN(cPi/2. - IONO_NORTH_Theta(i,j))) ! Assume Dipolar
               !----------------- DISCRETE NUMBER FLUX -------------------
-              !\
+
               ! Discrete N_flux = J/e
               ! Consider only upward FACs
-              !/
               if (iono_north_jr(i,j) > 0.) then
+                 ! positive numbers don't change with absolute value
+                 ! constants like 1.6e-19 should be named constants
                  discrete_nf(i,j) = ABS(iono_north_jr(i,j)) / 1.6E-19
               else
                  discrete_nf(i,j) = 1E-3
               end if
 
               ! Set a minimum on diffuse number flux
+              ! maximum function can be used above to avoid this
               if (diffuse_nf(i,j) < 1E-5) then
                  diffuse_nf(i,j) = 1E-5
               end if
 
-              ! Set a minimum on electron temperature
+              ! Set a minimum on electron temperature.
+              ! What about max function. Also, that's pretty cold in Kelvins
               if (iono_T(i,j) < 1E-5) then
                  iono_T(i,j) = 1E-5
               end if              
@@ -1252,49 +1263,59 @@ subroutine FACs_to_fluxes(iModel, iBlock)
               ! Deal with the following portion carefully
               ! Lots of avenues to get non-physical answers
               if (iono_north_jr(i,j) > 0.) then
-                 ! Variable must not be greater than 
+                 ! Variable must not be greater than
+                 ! Why ABS. Why constants.
                  vari = ABS(iono_north_jr(i,j)) / &
                       (1.6E-19* diffuse_nf(i,j))
+                 ! Why 5e-5? Why 05? Why then ... endif. Why vari is changed? Why not rm?
                  if ((rm - vari) < 0.) then
                     vari = rm - 5E-05 ! Try
                  end if
                  
-                 !\
                  ! Potential Energy eV
-                 !/
-                 eV(i,j) = 1.38E-23 * iono_T(i,j) * (rm - 1) * &
+                 ! This formula is later inverted back to (rm-1)/(rm-vari). This one fails from rm=1.
+                 eV(i,j)  = 1.38E-23 * iono_T(i,j) * (rm - 1) * &
                       LOG((rm - 1)/(rm - vari))
               else
+                 ! This is unneeded if ev is initialized
                  eV(i,j) = 0.
               end if
 
-              !\
+
               ! Grand Calculation for the Energy Flux (in W/m2)
               ! See Knight [1973] and Fridman and Lemaire [1980] for details.
-              !/
+
+              write(*,*)'!!! North', i,j,ev(i,j),iono_T(i,j),rm
+
+              ! Dummy vars do not exist. All variables have meaning. 
+              ! This is now reverting the above formula, so var_rm = (rm - 1)/(rm - vari) or 1
               var_rm = EXP(-eV(i,j)/(1.38e-23 * iono_T(i,j) * &  !
                    (rm - 1)))                                    !
               numerator   = 1 - var_rm                           ! DUMMY VARS
+
               denominator = 1 + (1 - 1/rm) * var_rm              !
               if (denominator == 0.) then
                  denominator = 1E-15
               end if
               var_tot = eV(i,j) * numerator/denominator          ! 
               
+              ! Hard coded constants are evil. 
               discrete_ef(i,j) = (var_tot + 2*1.38e-23*iono_T(i,j)) * &
                    discrete_nf(i,j)
 
               !write(*,*) eV(i,j), vari
               
-              !\
               ! Average Energy can be estimated as,
               ! Ave_E = E_Flux/N_Flux (in eV)
-              !/        
+
               discrete_ae(i,j) = discrete_ef(i,j)/&!discrete_nf(i,j)
                    (1.6e-19 * discrete_nf(i,j) )
               
               ! Convert EFlux and Ave_E into units for Robinson relation
+
+              ! This line does nothing
               discrete_ef(i,j) = discrete_ef(i,j) !* 10.0! * 1E03 ! Convert to ergs/cm2
+              ! This does something
               discrete_ae(i,j) = discrete_ae(i,j) / 1E03 ! Convert to keV
 
               !iono_north_jr(i,j) = iono_north_jr(i,j) / 10.
@@ -1304,6 +1325,9 @@ subroutine FACs_to_fluxes(iModel, iBlock)
         do j = 1, IONO_nPsi
            do i = 1, IONO_nTheta
 
+              ! The condition is on theta only. So there is no need to loop in Psi.
+              ! An or statement can be used. Also, what was the point of the effort above
+              ! if now everything is overwritten below 60 degrees latitude?
               ! Equatorward Boundary Limit
               if ((IONO_NORTH_Theta(i,j)*180./cPi) >= 40.) then
                  !if (iono_north_jr(i,j) <= 1E-09) then 
@@ -1314,6 +1338,7 @@ subroutine FACs_to_fluxes(iModel, iBlock)
               end if
 
               ! Open-Closed Boundary Limit
+              ! Why convert to degrees. Radians can be compared just as well.
               if ((IONO_NORTH_Theta(i,j)*180./cPi) <= OCFLB(j)*180./cPi) then
                  !if (iono_north_jr(i,j) <= 1E-09) then 
                  discrete_ae(i,j) = IONO_Min_Ave_E
@@ -1325,6 +1350,7 @@ subroutine FACs_to_fluxes(iModel, iBlock)
            end do
         end do
 
+        ! What about the min function?
         where (iono_north_ave_e > 100.0) &
           iono_north_ave_e = 100.0
 
@@ -1946,7 +1972,8 @@ subroutine FACs_to_fluxes(iModel, iBlock)
         rm = 1.1
         ! The Great Loop of our time...
         do j = 1, IONO_nPsi
-           do i = 1, IONO_nTheta
+           ! IONO_nTheta is the equator and the formulas below break down
+           do i = 1, IONO_nTheta - 1
               !iono_north_jr(i,j) = iono_north_jr(i,j) * 10.
               !(180. - IONO_SOUTH_Theta(i,j)*180./cPi)*cPi/180.
               rm = SQRT(1 + 3*SIN(cPi/2. - (180. - IONO_SOUTH_Theta(i,j)*180./cPi)*cPi/180.)) !* 10.
@@ -1995,6 +2022,8 @@ subroutine FACs_to_fluxes(iModel, iBlock)
               ! Grand Calculation for the Energy Flux (in W/m2)
               ! See Knight [1973] and Fridman and Lemaire [1980] for details.
               !/
+              write(*,*)'!!! South', i,j,ev(i,j),iono_T(i,j),rm
+
               var_rm = EXP(-eV(i,j)/(1.38e-23 * iono_T(i,j) * &  !
                    (rm - 1)))                                    !
               numerator   = 1 - var_rm                           ! DUMMY VARS
