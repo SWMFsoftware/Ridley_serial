@@ -77,25 +77,25 @@ output files. Default value is "IE/ionosphere".
         	                <option name="Aurora"  value="aur" />
 			</part>
 		</parameter>
-		<parameter name="DnOutput" type="integer" min="-1" />
-	        <parameter name="DtOutput" type="real"    min="-1" />
+		<parameter name="DnSavePlot" type="integer" min="-1" />
+	        <parameter name="DtSavePlot" type="real"    min="-1" />
 	</for>
 
 #SAVEPLOT
-2			nFile
+2			nPlotFile
 min idl			StringPlot
--1			DnOuput
-10.0			DtOutput [sec]
+-1			DnSavePlot
+10.0			DtSavePlot [sec]
 max tec			StringPlot
--1			DnOuput
-20.0			DtOutput [sec]
+-1			DnSavePlot
+20.0			DtSavePlot [sec]
 
 The StringPlot variable consists of two string parts:
 the TypePlotVar string can be 'min', 'max', 'uam' or 'aur'
 corresponding to a minimum, maximum, upper atmosphere or auroral set of
 plot variables. The other part TypePlotForm can be 'idl'
 or 'tec' corresponding to plot files for IDL or TecPlot.
-The DnOuput and DtOutput variables determine the frequency
+The DnSavePlot and DtSavePlot variables determine the frequency
 of saves in terms of time step or physical time.
 
 The default is that no plotfiles are saved.
@@ -207,75 +207,6 @@ The UseFullCurrent and UseFakeRegion2 logicals were used in the past
 to test various algorithmic choices. They should have a false value now.
 The default values are shown by the example above.
 
-</command>
-
-<command name="GEOMAGINDICES">
-
-#GEOMAGINDICES
-
-THIS COMMAND IS DEPRECIATED.  Control of virtual magnetometers and related
-outputs is handled by the GM component only.
-
-This command activates the ionospheric contribution to GM's calculation of 
-geomagnetic indices, activated by the GM command of the same name.  While it is 
-possible to run the GM version without an IE contribution, it is not recommended.
-This command currently has no parameters associated with it.
-</command>
-
-<command name="MAGNETOMETER">
-	<parameter name="NameMagInputFile" type="string" length="100"/>
-	<parameter name="DnOutput" type="integer" min="-1" default="-1"/>
-	<parameter name="DtOutput" type="real"    min="-1" default="-1"/>
-	<rule expr="-f $NameMagInputFile">
-		Magnetogram position file $NameMagInputFile must exist
-	</rule>
-#MAGNETOMETER
-magin.dat		NameMagInputFile
--1			DnOutput
-60.0			DtOutput
-
-THIS COMMAND IS DEPRECIATED.  Control of virtual magnetometers and related
-outputs is handled by the GM component only.
-
-The #MAGNETOMETER command is used for the calculation of the ground perturbations
-caused by two current systems: Hall and Pedersen currents. 
-In addition, the effects of the the field aligned currents in the 'gap' region 
-and the magnetopsheric currents in the GM domain can be calculated with
-the equivalent command in the GM section. If the IE is coupled to GM, 
-it sends the IE contributions to GM, so GM can save them together.
-
-The NameMagInputFile parameter gives the file name that contains the
-locations on the Earth where the user is interested in calculating 
-the ground magnetic perturbations. The file has the following format:
-\begin{verbatim}
-#COORD
-MAG			The coordinate system for the latitude/longitude below
-
-#START
-YKC   68.93   299.36    The name of the station, latitude, longitude
-MEA   61.57   306.20
-NEW   54.85   304.68
-...
-\end{verbatim}
-The coordinate system can be set to GEO (geographic), MAG (geomagnetic) or SMG 
-(solar magnetic) coordinates. The station names can have maximum 3 characters.
-The name, latitude, and longitude columns should be separated with spaces.
-
-The DnOutput and DtOutput parameters determine the frequency of writing out the
-calculated perturbations in number of potential solves 
-and time intervals, respectively.
-
-The ground-based magnetic perturbations are written into the output file
-\begin{verbatim}
-IE/ionosphere/IE_mag_tYYMMDD_HHMMSS.mag 
-\end{verbatim}
-in which the number of solves, the station index, 
-the location of the station in SM coordinates, the 3 components
-(magnetic northward, eastward, and downward) 
-of the magnetic perturbations due to Hall and Pedersen currents are saved. 
-The unit of the perturbation output is nT.
-
-Default is no magnetic perturbation calculation.
 </command>
 
 <command name="IM">
