@@ -163,8 +163,8 @@ information is written to a logfile.
 							value="2" />
 		<option name="(3) Simple oval"		value="3" />
 		<option name="(4) Restricted oval"	value="4" />
-		<option name="(5) Realistic oval" 	value="5" 
-							default="T"/>
+		<option name="(5) Realistic oval" 	value="5" default="T"/>
+		<option name="(8) MAGNIT"               value="8" />
 	</parameter>
 	<parameter name="UseFullCurrent" type="logical" default="F"/>
 	<parameter name="UseFakeRegion2" type="logical" default="F"/>
@@ -198,6 +198,7 @@ The iConductanceModel variable determines which ionosphere model is used:\\
       since a polar cap is defined with the oval.\\
   4 - restricted oval, uses same variables as 3.\\
   5 - more realistic oval, uses same variables as 3.\\
+  8 - MAGNIT\\
 
 Model 4 and 5 differ in the way the conductances are limited to the
 fitted oval. Model 4 is more restrictive, while model 5 is somewhat
