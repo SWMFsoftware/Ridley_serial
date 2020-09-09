@@ -476,8 +476,4 @@ The default values are shown above.
 
 </commandgroup>
 
-<rule expr="-d 'IE/ionosphere' or not $_IsFirstSession">
-	Output directory IE/ionosphere should exist!
-</rule>
-
 </commandList>
