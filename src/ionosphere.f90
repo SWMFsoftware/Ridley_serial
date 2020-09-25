@@ -539,7 +539,7 @@ subroutine ionosphere_write_output(iFile, iBlock)
   integer, parameter :: min_vars = 2
   integer, parameter :: uam_vars = 3                     !^CFG  IF TIEGCM
   integer, parameter :: aur_vars = 4
-
+  integer, parameter :: xyz_vars = 5
   integer :: output_type, variables
 
   integer :: i, j
@@ -560,6 +560,9 @@ subroutine ionosphere_write_output(iFile, iBlock)
      variables = uam_vars                       !^CFG  IF TIEGCM
   case('aur')
      variables = aur_vars
+  case('xyz')
+     variables = xyz_vars
+     call calculate_xyz_geo_gse
   end select
 
   select case(plot_form(ifile))
@@ -629,6 +632,8 @@ subroutine ionosphere_write_output(iFile, iBlock)
            write(iUnit, '(I5,a)')  9, ' nvars'     !^CFG  IF TIEGCM
         case(aur_vars)
            write(iUnit, '(I5,a)') 15, ' nvars'
+        case(xyz_vars)
+           write(iUnit, '(I5,a)') 21, ' nvars'
         end select
         write(iUnit, '(I5,a)') IONO_nTheta, ' nTheta'
         write(iUnit, '(I5,a)')   IONO_nPsi, ' nPhi'
@@ -702,6 +707,29 @@ subroutine ionosphere_write_output(iFile, iBlock)
            write(iUnit, '(I5,a)') 13, ' IonNumFlux [/cm2/s]'
            write(iUnit, '(I5,a)') 14, ' conjugate dLat [deg]'
            write(iUnit, '(I5,a)') 15, ' conjugate dLon [deg]'
+
+        case(xyz_vars)
+           write(iUnit, '(I5,a)')  1, ' Theta [deg]'
+           write(iUnit, '(I5,a)')  2, ' Psi [deg]'
+           write(iUnit, '(I5,a)')  3, ' SigmaH [mhos]'
+           write(iUnit, '(I5,a)')  4, ' SigmaP [mhos]'
+           write(iUnit, '(I5,a)')  5, ' Jr [mA/m^2]'
+           write(iUnit, '(I5,a)')  6, ' Phi [kV]'
+           write(iUnit, '(I5,a)')  7, ' E-Flux [W/m2]'
+           write(iUnit, '(I5,a)')  8, ' Ave-E [eV]'
+           write(iUnit, '(I5,a)')  9, ' RT 1/B [1/T]'
+           write(iUnit, '(I5,a)') 10, ' RT Rho [amu/cm^3]'
+           write(iUnit, '(I5,a)') 11, ' RT P [Pa]'
+           write(iUnit, '(I5,a)') 12, ' JouleHeat [mW/m2]'
+           write(iUnit, '(I5,a)') 13, ' IonNumFlux [/cm2/s]'
+           write(iUnit, '(I5,a)') 14, ' conjugate dLat [deg]'
+           write(iUnit, '(I5,a)') 15, ' conjugate dLon [deg]'
+           write(iUnit, '(I5,a)') 16, ' X_GSE [R]'
+           write(iUnit, '(I5,a)') 17, ' Y_GSE [R]'
+           write(iUnit, '(I5,a)') 18, ' Z_GSE [R]'
+           write(iUnit, '(I5,a)') 19, ' X_GEO [R]'
+           write(iUnit, '(I5,a)') 20, ' Y_GEO [R]'
+           write(iUnit, '(I5,a)') 21, ' Z_GEO [R]'
         end select
 
         write(iUnit, *) ' '
@@ -774,6 +802,20 @@ subroutine ionosphere_write_output(iFile, iBlock)
            write(iUnit, *)  ' "IonNumFlux [/cm^2/s]"'
            write(iUnit, *)  ' "conjugate dLat [deg]"'
            write(iUnit, *)  ' "conjugate dLon [deg]"'
+
+        elseif (variables == xyz_vars) then
+           write(iUnit, *)  'VARIABLES= "Theta [deg]","Psi [deg]"'
+           write(iUnit, *)  ' "SigmaH [S]","SigmaP [S]"'
+           write(iUnit, *)  ' "JR [`mA/m^2]","PHI [kV]"'
+           write(iUnit, *)  ' "E-Flux [W/m^2]"'
+           write(iUnit, *)  ' "Ave-E [eV]"'
+           write(iUnit, *)  ' "RT 1/B [1/T]","RT Rho [amu/cm^3]","RT P [Pa]"'
+           write(iUnit, *)  ' "JouleHeat [mW/m^2]"'
+           write(iUnit, *)  ' "IonNumFlux [/cm^2/s]"'
+           write(iUnit, *)  ' "conjugate dLat [deg]"'
+           write(iUnit, *)  ' "conjugate dLon [deg]"'
+           write(iUnit, *)  ' "X_GSE [R]", "Y_GSE [R]", "Z_GSE [R]"'
+           write(iUnit, *)  ' "X_GEO [R]", "Y_GEO [R]", "Z_GEO [R]"'
 
         endif
 
@@ -850,6 +892,33 @@ subroutine ionosphere_write_output(iFile, iBlock)
                    1.0e-04*IONO_NORTH_IonNumFlux(i,j), &
                    IONO_NORTH_dLat(i,j), &
                    IONO_NORTH_dLon(i,j)
+           end do
+        end do
+
+     elseif (variables == xyz_vars) then
+        do j = 1, IONO_nPsi
+           do i = 1, IONO_nTheta
+              write(iUnit,fmt="(21(E13.5))")  &
+                   cRadToDeg*IONO_NORTH_Theta(i,j), &
+                   cRadToDeg*IONO_NORTH_Psi(i,j), &
+                   IONO_NORTH_SigmaH(i,j),IONO_NORTH_SigmaP(i,j), &
+                   1.0e06*IONO_NORTH_JR(i,j),   &
+                   1.0e-03*IONO_NORTH_PHI(i,j), &
+                   IONO_NORTH_EFlux(i,j), &
+                   IONO_NORTH_Ave_E(i,j), &
+                   IONO_NORTH_invB(i,j), &
+                   IONO_NORTH_rho(i,j), &
+                   IONO_NORTH_p(i,j), &
+                   1.0e03*IONO_NORTH_Joule(i,j), &
+                   1.0e-04*IONO_NORTH_IonNumFlux(i,j), &
+                   IONO_NORTH_dLat(i,j), &
+                   IONO_NORTH_dLon(i,j), &
+                   IONO_NORTH_GSE_XyzD(1, i, j), &
+                   IONO_NORTH_GSE_XyzD(2, i, j), &
+                   IONO_NORTH_GSE_XyzD(3, i, j), &
+                   IONO_NORTH_GEO_XyzD(1, i, j), &
+                   IONO_NORTH_GEO_XyzD(2, i, j), &
+                   IONO_NORTH_GEO_XyzD(3, i, j)
            end do
         end do
      endif
@@ -933,6 +1002,31 @@ subroutine ionosphere_write_output(iFile, iBlock)
                    1.0e-04*IONO_SOUTH_IonNumFlux(i,j), &
                    IONO_SOUTH_dLat(i,j), &
                    IONO_SOUTH_dLon(i,j)
+           end do
+        end do
+
+     elseif (variables == xyz_vars) then
+        do j = 1, IONO_nPsi
+           do i = 1, IONO_nTheta
+              write(iUnit,fmt="(21(E13.5))")  &
+                   cRadToDeg*IONO_SOUTH_Theta(i,j), &
+                   cRadToDeg*IONO_SOUTH_Psi(i,j), &
+                   IONO_SOUTH_SigmaH(i,j),IONO_SOUTH_SigmaP(i,j), &
+                   1.0e06*IONO_SOUTH_JR(i,j),   &
+                   1.0e-03*IONO_SOUTH_PHI(i,j), &
+                   IONO_SOUTH_EFlux(i,j), &
+                   IONO_SOUTH_Ave_E(i,j), &
+                   IONO_SOUTH_invB(i,j),IONO_SOUTH_rho(i,j),IONO_SOUTH_p(i,j),&
+                   1.0e03*IONO_SOUTH_Joule(i,j), &
+                   1.0e-04*IONO_SOUTH_IonNumFlux(i,j), &
+                   IONO_SOUTH_dLat(i,j), &
+                   IONO_SOUTH_dLon(i,j), &
+                   IONO_SOUTH_GSE_XyzD(1, i, j), &
+                   IONO_SOUTH_GSE_XyzD(2, i, j), &
+                   IONO_SOUTH_GSE_XyzD(3, i, j), &
+                   IONO_SOUTH_GEO_XyzD(1, i, j), &
+                   IONO_SOUTH_GEO_XyzD(2, i, j), &
+                   IONO_SOUTH_GEO_XyzD(3, i, j)
            end do
         end do
      endif
@@ -1195,3 +1289,39 @@ subroutine iono_getpot(isize,jsize,MHD_lat,MHD_lon,MHD_pot,MHD_Jr)
   end do
 
 end subroutine iono_getpot
+
+! =============================================================================
+subroutine calculate_xyz_geo_gse
+
+  use ModIonosphere
+  use CON_axes, ONLY: GeoSmg_DD, GseSmg_DD
+  implicit none
+
+  integer :: i, j
+  real, dimension(3) :: xyz_D, xyz_out_D
+  ! --------------------------------------                                    
+  do j = 1, IONO_nPsi
+     do i = 1, IONO_nTheta
+        xyz_D(1) = IONO_NORTH_X(i,j)
+        xyz_D(2) = IONO_NORTH_Y(i,j)
+        xyz_D(3) = IONO_NORTH_Z(i,j)
+        
+        xyz_out_D(:) = matmul(GeoSmg_DD, xyz_D)
+        IONO_NORTH_GEO_XyzD(:, i, j) = xyz_out_D(:)
+        
+        xyz_out_D(:) = matmul(GseSmg_DD, xyz_D)
+        IONO_NORTH_GSE_XyzD(:, i, j) = xyz_out_D(:)
+
+        xyz_D(1) = IONO_SOUTH_X(i,j)
+        xyz_D(2) = IONO_SOUTH_Y(i,j)
+        xyz_D(3) = IONO_SOUTH_Z(i,j)
+        
+        xyz_out_D(:) = matmul(GeoSmg_DD, xyz_D)
+        IONO_SOUTH_GEO_XyzD(:, i, j) = xyz_out_D(:)
+        
+        xyz_out_D(:) = matmul(GseSmg_DD, xyz_D)
+        IONO_SOUTH_GSE_XyzD(:, i, j) = xyz_out_D(:)
+     end do
+  end do
+end subroutine calculate_xyz_geo_gse
+

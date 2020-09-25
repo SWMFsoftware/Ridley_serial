@@ -189,7 +189,13 @@ module ModIonosphere
   real, allocatable :: IONO_SOUTH_dLat(:,:)
   real, allocatable :: IONO_NORTH_dLon(:,:)
   real, allocatable :: IONO_SOUTH_dLon(:,:)
-
+  
+  ! Save (X,Y,Z) in different coordinate systems.                               
+  real, allocatable :: IONO_NORTH_GEO_XyzD(:, :, :)
+  real, allocatable :: IONO_SOUTH_GEO_XyzD(:, :, :)
+  real, allocatable :: IONO_NORTH_GSE_XyzD(:, :, :)
+  real, allocatable :: IONO_SOUTH_GSE_XyzD(:, :, :)
+    
   ! Pentadiagonal matrix for the Poisson equation
   real, allocatable :: C_A(:,:)
   real, allocatable :: C_B(:,:)
@@ -541,6 +547,14 @@ contains
     IONO_NORTH_MONO_Ave_E = 0.; IONO_NORTH_MONO_EFlux = 0.
     IONO_SOUTH_MONO_Ave_E = 0.; IONO_SOUTH_MONO_EFlux = 0.
     
+    allocate(IONO_NORTH_GEO_XyzD(3, IONO_nTheta, IONO_nPsi))
+    allocate(IONO_NORTH_GSE_XyzD(3, IONO_nTheta, IONO_nPsi))
+    allocate(IONO_SOUTH_GEO_XyzD(3, IONO_nTheta, IONO_nPsi))
+    allocate(IONO_SOUTH_GSE_XyzD(3, IONO_nTheta, IONO_nPsi))
+    
+    IONO_NORTH_GEO_XyzD = 0.; IONO_NORTH_GSE_XyzD = 0
+    IONO_SOUTH_GEO_XyzD = 0.; IONO_SOUTH_GSE_XyzD = 0
+
     ! Read empirical conductance values from files:
     call load_conductances()
     
@@ -666,6 +680,13 @@ contains
     deallocate(C_C)
     deallocate(C_D)
     deallocate(C_E)
+    
+    deallocate(IONO_NORTH_GEO_XyzD)
+    deallocate(IONO_NORTH_GSE_XyzD)
+    deallocate(IONO_SOUTH_GEO_XyzD)
+    deallocate(IONO_SOUTH_GSE_XyzD)
+    
+
     ! Sources of Conductances
     deallocate(IONO_NORTH_DIFF_Ave_E)
     deallocate(IONO_SOUTH_DIFF_Ave_E)
