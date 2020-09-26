@@ -174,6 +174,8 @@ contains
                   plot_vars(iFile)='aur'
                elseif(index(plot_string,'uam')>0)then
                   plot_vars(iFile)='uam'
+               elseif(index(plot_string,'xyz')>0)then
+                  plot_vars(iFile)='xyz'
                else
                   call CON_stop(NameSub//&
                        ' variable definition missing in #IE_SAVEPLOT'//&
