@@ -299,9 +299,9 @@ This command cannot be used in the SWMF.
 
 
 <command name="CONDUCTANCEFILES">
-  <parameter name="NameHalFile" type="STRING" default="cond_hal_coeffs.dat"
+  <parameter name="NameHalFile" type="string" default="cond_hal_coeffs.dat"
 	     length="100"/>
-  <parameter name="NamePedFile" type="STRING" default="cond_ped_coeffs.dat"
+  <parameter name="NamePedFile" type="string" default="cond_ped_coeffs.dat"
 	     length="100"/>
 
 #CONDUCTANCEFILES
