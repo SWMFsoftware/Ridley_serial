@@ -1247,6 +1247,10 @@ subroutine FACs_to_fluxes(iModel, iBlock)
               else
                  discrete_nf(i,j) = 1E-3
               end if
+              !if(i==2 .and. j==1)then
+              !   write(*,*)'!!! iono_north_jr(i,j)=',iono_north_jr(i,j)
+              !   write(*,*)'!!! discrete_nf(i,j) = ',discrete_nf(i,j)
+              !end if
 
               ! Set a minimum on diffuse number flux
               ! maximum function can be used above to avoid this
@@ -1352,10 +1356,10 @@ subroutine FACs_to_fluxes(iModel, iBlock)
 
         ! What about the min function?
         where (iono_north_ave_e > 100.0) &
-          iono_north_ave_e = 100.0
+             iono_north_ave_e = 100.0
 
-        !write(*,*) 'N_Discr: MaxVal Downward FAC', minval(iono_north_jr)
-        write(*,*) 'N_Discr: MaxVal NFlux ', maxval(discrete_nf)
+        write(*,*) 'N_Discr: MaxVal Downward FAC', minval(iono_north_jr)
+        write(*,*) 'N_Discr: MaxVal NFlux ', maxval(discrete_nf(1:IONO_ntheta-1,:))
         write(*,*) 'N_Discr: MaxVal EFlux (in W/m2)', maxval(discrete_ef)
         write(*,*) 'N_Discr: MaxVal Ave_E (in keV)', maxval(discrete_ae)
         
@@ -1442,38 +1446,43 @@ subroutine FACs_to_fluxes(iModel, iBlock)
                  ! Longitudinal Boundary
                  if(j == 1) then
                     !write(*,*) "Lon Boundary", IONO_NORTH_Psi(IONO_nTheta-i+1,j)*180./cPi
-                    av_mono_value = (discrete_ef(IONO_nTheta-i+1+1,j)+ &
+                    av_mono_value = (&
+                         discrete_ef(IONO_nTheta-i+1+1,j  )+ &
                          discrete_ef(IONO_nTheta-i+1+1,j+1)+ &
-                         discrete_ef(IONO_nTheta-i+1-1,j)+ &
+                         discrete_ef(IONO_nTheta-i+1-1,j  )+ &
                          discrete_ef(IONO_nTheta-i+1-1,j+1)+ &
-                         discrete_ef(IONO_nTheta-i+1,j-1)) * 1./5.
+                         discrete_ef(IONO_nTheta-i+1  ,j+1)) * 1./5.
                  elseif(j == IONO_nPsi) then
                     !write(*,*) "Lon Boundary", IONO_NORTH_Psi(IONO_nTheta-i+1,j)*180./cPi
-                    av_mono_value = (discrete_ef(IONO_nTheta-i+1+1,j)+ &
+                    av_mono_value = (&
+                         discrete_ef(IONO_nTheta-i+1+1,j  )+ &
                          discrete_ef(IONO_nTheta-i+1+1,j-1)+ &
-                         discrete_ef(IONO_nTheta-i+1-1,j)+ &
+                         discrete_ef(IONO_nTheta-i+1-1,j  )+ &
                          discrete_ef(IONO_nTheta-i+1-1,j-1)+ &
-                         discrete_ef(IONO_nTheta-i+1,j-1)) * 1./5.
+                         discrete_ef(IONO_nTheta-i+1  ,j-1)) * 1./5.
                  else
                     !write(*,*) "Before Smooth", iono_north_ave_e(IONO_nTheta-i+1,j), &
                     !     iono_north_eflux(IONO_nTheta-i+1,j) 
-                    av_mono_value = (discrete_ef(IONO_nTheta-i+1+1,j)+ &
+                    av_mono_value = ( &
+                         discrete_ef(IONO_nTheta-i+1+1,j  )+ &
                          discrete_ef(IONO_nTheta-i+1+1,j+1)+ &
                          discrete_ef(IONO_nTheta-i+1+1,j-1)+ &
-                         discrete_ef(IONO_nTheta-i+1-1,j)+ &
+                         discrete_ef(IONO_nTheta-i+1-1,j  )+ &
                          discrete_ef(IONO_nTheta-i+1-1,j+1)+ &
                          discrete_ef(IONO_nTheta-i+1-1,j-1)+ &
-                         discrete_ef(IONO_nTheta-i+1,j+1)+ &
-                         discrete_ef(IONO_nTheta-i+1,j-1)) * 0.125
+                         discrete_ef(IONO_nTheta-i+1  ,j+1)+ &
+                         discrete_ef(IONO_nTheta-i+1  ,j-1)) * 0.125
+                 end if
+                 write(*,*)'i,j,av_mono_value,discrete_ef=',i,j,av_mono_value,discrete_ef(IONO_nTheta-i+1,j)
+                 if (ABS(av_mono_value - discrete_ef(IONO_nTheta-i+1,j)) <= 0.15*discrete_ef(IONO_nTheta-i+1+1,j)) then
+                    IONO_NORTH_MONO_EFLUX(IONO_nTheta-i+1,j) = discrete_ef(IONO_nTheta-i+1+1,j)
+                 else
+                    IONO_NORTH_MONO_EFLUX(IONO_nTheta-i+1,j) = av_mono_value
+                    !write(*,*) "After Smooth", iono_north_ave_e(IONO_nTheta-i+1,j), &
+                    !     iono_north_eflux(IONO_nTheta-i+1,j)
                  end if
               end if
-              if (ABS(av_mono_value - discrete_ef(IONO_nTheta-i+1,j)) <= 0.15*discrete_ef(IONO_nTheta-i+1+1,j)) then
-                 IONO_NORTH_MONO_EFLUX(IONO_nTheta-i+1,j) = discrete_ef(IONO_nTheta-i+1+1,j)
-              else
-                 IONO_NORTH_MONO_EFLUX(IONO_nTheta-i+1,j) = av_mono_value
-                 !write(*,*) "After Smooth", iono_north_ave_e(IONO_nTheta-i+1,j), &
-                 !     iono_north_eflux(IONO_nTheta-i+1,j)
-              end if
+
            end do
         end do
         ! Use the IONO_MONO array as a buffer
@@ -1493,7 +1502,7 @@ subroutine FACs_to_fluxes(iModel, iBlock)
               ! march in space = (IONO_nTheta + 1) - i
 
               ! Case 1
-              if (i == 1) then ! Latitudinal 
+              if (i <= 2) then ! Latitudinal 
                  !write(*,*) "Lat Boundary", IONO_NORTH_Theta(IONO_nTheta-i+1,j)*180./cPi
                  ! Longitudinal Boundary
                  if(j == 1) then
@@ -1515,37 +1524,43 @@ subroutine FACs_to_fluxes(iModel, iBlock)
                  ! Longitudinal Boundary
                  if(j == 1) then
                     !write(*,*) "Lon Boundary", IONO_NORTH_Psi(IONO_nTheta-i+1,j)*180./cPi
-                    av_mono_value = (discrete_nf(IONO_nTheta-i+1+1,j)+ &
+
+                    write(*,*)'!!!',i,j,discrete_nf(IONO_nTheta-i+1+1,j  ),discrete_nf(IONO_nTheta-i+1-1,j  ),discrete_nf(IONO_nTheta-i+1-1,j+1),discrete_nf(IONO_nTheta-i+1  ,j+1)
+                    
+                    av_mono_value = (&
+                         discrete_nf(IONO_nTheta-i+1+1,j  )+ &
                          discrete_nf(IONO_nTheta-i+1+1,j+1)+ &
-                         discrete_nf(IONO_nTheta-i+1-1,j)+ &
+                         discrete_nf(IONO_nTheta-i+1-1,j  )+ &
                          discrete_nf(IONO_nTheta-i+1-1,j+1)+ &
-                         discrete_nf(IONO_nTheta-i+1,j-1)) * 1./5.
+                         discrete_nf(IONO_nTheta-i+1  ,j+1)) * 1./5.
                  elseif(j == IONO_nPsi) then
                     !write(*,*) "Lon Boundary", IONO_NORTH_Psi(IONO_nTheta-i+1,j)*180./cPi
-                    av_mono_value = (discrete_nf(IONO_nTheta-i+1+1,j)+ &
+                    av_mono_value = (&
+                         discrete_nf(IONO_nTheta-i+1+1,j  )+ &
                          discrete_nf(IONO_nTheta-i+1+1,j-1)+ &
-                         discrete_nf(IONO_nTheta-i+1-1,j)+ &
+                         discrete_nf(IONO_nTheta-i+1-1,j  )+ &
                          discrete_nf(IONO_nTheta-i+1-1,j-1)+ &
-                         discrete_nf(IONO_nTheta-i+1,j-1)) * 1./5.
+                         discrete_nf(IONO_nTheta-i+1  ,j-1)) * 1./5.
                  else
                     !write(*,*) "Before Smooth", iono_north_ave_e(IONO_nTheta-i+1,j), &
                     !     iono_north_eflux(IONO_nTheta-i+1,j) 
-                    av_mono_value = (discrete_nf(IONO_nTheta-i+1+1,j)+ &
+                    av_mono_value = (&
+                         discrete_nf(IONO_nTheta-i+1+1,j  )+ &
                          discrete_nf(IONO_nTheta-i+1+1,j+1)+ &
                          discrete_nf(IONO_nTheta-i+1+1,j-1)+ &
-                         discrete_nf(IONO_nTheta-i+1-1,j)+ &
+                         discrete_nf(IONO_nTheta-i+1-1,j  )+ &
                          discrete_nf(IONO_nTheta-i+1-1,j+1)+ &
                          discrete_nf(IONO_nTheta-i+1-1,j-1)+ &
-                         discrete_nf(IONO_nTheta-i+1,j+1)+ &
-                         discrete_nf(IONO_nTheta-i+1,j-1)) * 0.125
+                         discrete_nf(IONO_nTheta-i+1  ,j+1)+ &
+                         discrete_nf(IONO_nTheta-i+1  ,j-1)) * 0.125
                  end if
-              end if
-              if (ABS(av_mono_value - discrete_nf(IONO_nTheta-i+1,j)) <= 0.15*discrete_nf(IONO_nTheta-i+1+1,j)) then
-                 IONO_NORTH_MONO_EFLUX(IONO_nTheta-i+1,j) = discrete_nf(IONO_nTheta-i+1+1,j)
-              else
-                 IONO_NORTH_MONO_EFLUX(IONO_nTheta-i+1,j) = av_mono_value
-                 !write(*,*) "After Smooth", iono_north_ave_e(IONO_nTheta-i+1,j), &
-                 !     iono_north_eflux(IONO_nTheta-i+1,j)
+                 if (ABS(av_mono_value - discrete_nf(IONO_nTheta-i+1,j)) <= 0.15*discrete_nf(IONO_nTheta-i+1+1,j)) then
+                    IONO_NORTH_MONO_EFLUX(IONO_nTheta-i+1,j) = discrete_nf(IONO_nTheta-i+1+1,j)
+                 else
+                    IONO_NORTH_MONO_EFLUX(IONO_nTheta-i+1,j) = av_mono_value
+                    !write(*,*) "After Smooth", iono_north_ave_e(IONO_nTheta-i+1,j), &
+                    !     iono_north_eflux(IONO_nTheta-i+1,j)
+                 end if
               end if
            end do
         end do
@@ -2171,12 +2186,14 @@ subroutine FACs_to_fluxes(iModel, iBlock)
                          discrete_ef(IONO_nTheta-i+1,j-1)) * 0.125
                  end if
               end if
-              if (ABS(av_mono_value - discrete_ef(IONO_nTheta-i+1,j)) <= 0.15*discrete_ef(IONO_nTheta-i+1+1,j)) then
-                 IONO_SOUTH_MONO_EFLUX(IONO_nTheta-i+1,j) = discrete_ef(IONO_nTheta-i+1+1,j)
-              else
-                 IONO_SOUTH_MONO_EFLUX(IONO_nTheta-i+1,j) = av_mono_value
-                 !write(*,*) "After Smooth", iono_north_ave_e(IONO_nTheta-i+1,j), &
-                 !     iono_north_eflux(IONO_nTheta-i+1,j)
+              if(i>1)then
+                 if (ABS(av_mono_value - discrete_ef(IONO_nTheta-i+1,j)) <= 0.15*discrete_ef(IONO_nTheta-i+1+1,j)) then
+                    IONO_SOUTH_MONO_EFLUX(IONO_nTheta-i+1,j) = discrete_ef(IONO_nTheta-i+1+1,j)
+                 else
+                    IONO_SOUTH_MONO_EFLUX(IONO_nTheta-i+1,j) = av_mono_value
+                    !write(*,*) "After Smooth", iono_north_ave_e(IONO_nTheta-i+1,j), &
+                    !     iono_north_eflux(IONO_nTheta-i+1,j)
+                 end if
               end if
            end do
         end do
