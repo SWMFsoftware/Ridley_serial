@@ -16,11 +16,9 @@
 
 subroutine FACs_to_fluxes(iModel, iBlock)
 
-  !\
   ! The goal here is to convert the ionospheric FAC pattern into a 
   ! particle precipitation pattern, which can then be turned into
   ! a conductance pattern.
-  !/
 
   use ModIonosphere
   use IE_ModMain
@@ -135,10 +133,8 @@ subroutine FACs_to_fluxes(iModel, iBlock)
 
      select case(iBlock)
      case(1)
-        !\
-        ! Do North first -----------------------------------------------------
-        !/
 
+        ! Do North first -----------------------------------------------------
         if(UseNewOval)then
            call Create_Auroral_Oval(IONO_NORTH_JR, IONO_NORTH_Theta, &
                 IONO_NORTH_Psi, Loc_of_Oval, Width_of_Oval,Strength_of_Oval)
@@ -198,10 +194,8 @@ subroutine FACs_to_fluxes(iModel, iBlock)
         enddo
 
      case(2)
-        !\
-        ! Do South next --------------------------------------------------------
-        !/
 
+        ! Do South next --------------------------------------------------------
         if(UseNewOval)then
            call Create_Auroral_Oval(IONO_SOUTH_JR, IONO_SOUTH_Theta, &
                 IONO_SOUTH_Psi, Loc_of_Oval, Width_of_Oval,Strength_of_Oval)
@@ -399,14 +393,14 @@ subroutine FACs_to_fluxes(iModel, iBlock)
 
                  if (.not.polarcap .and. .not.UseSubOvalCond) then
                     distance = distance/3.0
-                    hal_a0 = hal_a0 * exp(-1.0*(distance/(OvalWidthFactor*Width_of_Oval(j)))**2)
-                    ped_a0 = ped_a0 * exp(-1.0*(distance/(OvalWidthFactor*Width_of_Oval(j)))**2)
+                    hal_a0 = hal_a0 * exp(-(distance/(OvalWidthFactor*Width_of_Oval(j)))**2)
+                    ped_a0 = ped_a0 * exp(-(distance/(OvalWidthFactor*Width_of_Oval(j)))**2)
                  end if
 
                  ! No Conductance Beyond 45 degrees for UseCMEEFitting
                  if (UseCMEEFitting) then
                     ! IONO_NORTH_Theta is in theta, need to switch to latitude 
-                    if (abs(90.0 - IONO_NORTH_Theta(i,j)*180./cPi) <= LatNoConductanceSI) then
+                    if (abs(90 - IONO_NORTH_Theta(i,j)*cRadToDeg) <= LatNoConductanceSI) then
                        hal_a1 = hal_a0
                        ped_a1 = ped_a0
                     endif
@@ -434,9 +428,9 @@ subroutine FACs_to_fluxes(iModel, iBlock)
 
                  if (UseCMEEFitting) then
                     hall=hall + CondFactor*( &
-                         FactorHallCMEE * exp(-1.0*(distance/(OvalWidthFactor*Width_of_Oval(j)))**2) )
+                         FactorHallCMEE*exp(-(distance/(OvalWidthFactor*Width_of_Oval(j)))**2))
                     ped =ped  + CondFactor*( &
-                         FactorPedCMEE *  exp(-1.0*(distance/(OvalWidthFactor*Width_of_Oval(j)))**2) )
+                         FactorPedCMEE*exp(-(distance/(OvalWidthFactor*Width_of_Oval(j)))**2))
                  endif
               end if
 
@@ -581,15 +575,14 @@ subroutine FACs_to_fluxes(iModel, iBlock)
                  ! Restrict FAC-related conductance outside auroral oval.
                  if (.not.polarcap .and. .not.UseSubOvalCond) then
                     distance = distance/3.0
-                    hal_a0 = hal_a0 * exp(-1.0*(distance/(OvalWidthFactor*Width_of_Oval(j)))**2)
-                    ped_a0 = ped_a0 * exp(-1.0*(distance/(OvalWidthFactor*Width_of_Oval(j)))**2)
+                    hal_a0 = hal_a0 * exp(-(distance/(OvalWidthFactor*Width_of_Oval(j)))**2)
+                    ped_a0 = ped_a0 * exp(-(distance/(OvalWidthFactor*Width_of_Oval(j)))**2)
                  endif
-
 
                  ! No Conductance Below 45 degrees
                  if (UseCMEEFitting) then
                     ! IONO_SOUTH_Theta is in theta, need to switch to latitude 
-                    if (abs(90.0 - IONO_SOUTH_Theta(i,j)*180./cPi) <= LatNoConductanceSI) then
+                    if (abs(90 - IONO_SOUTH_Theta(i,j)*cRadToDeg) <= LatNoConductanceSI) then
                        hal_a1 = hal_a0
                        ped_a1 = ped_a0
                     end if
@@ -618,9 +611,9 @@ subroutine FACs_to_fluxes(iModel, iBlock)
 
                  if (UseCMEEFitting) then
                     hall=hall + CondFactor*( &
-                         FactorHallCMEE * exp(-1.0*(distance/(OvalWidthFactor*Width_of_Oval(j)))**2) )
+                         FactorHallCMEE*exp(-(distance/(OvalWidthFactor*Width_of_Oval(j)))**2))
                     ped =ped  + CondFactor*( &
-                         FactorPedCMEE  * exp(-1.0*(distance/(OvalWidthFactor*Width_of_Oval(j)))**2) )
+                         FactorPedCMEE *exp(-(distance/(OvalWidthFactor*Width_of_Oval(j)))**2))
                  end if
               end if
 
@@ -1057,9 +1050,9 @@ subroutine FACs_to_fluxes(iModel, iBlock)
 
            !write(*,*), "MaxP(j) - N", MaxP, j
 
-           !write(*,*) 'OCFLB, EquatorEdge North', iono_north_psi(1,j)*180./cPi, &
-           !     iono_north_theta(1,j)*180./cPi, &
-           !     90. - OCFLB(j)*180./cPi, 90. - EquatorWardEdge(j)*180./cPi
+           !write(*,*) 'OCFLB, EquatorEdge North', iono_north_psi(1,j)*cRadToDeg, &
+           !     iono_north_theta(1,j)*cRadToDeg, &
+           !     90. - OCFLB(j)*cRadToDeg, 90. - EquatorWardEdge(j)*cRadToDeg
 
            ! Energy Flux calculation in Conductance Model No. 6
            !iono_north_eflux(:,j) = &
@@ -1222,7 +1215,7 @@ subroutine FACs_to_fluxes(iModel, iBlock)
         !
         
         diffuse_nf = iono_Ne * 1e06 * 1553.5632 * iono_T**0.5 ! * 0.15
-        rm = 1.1 !+ 3*SIN(cPi/2. - IONO_NORTH_Theta(i,j))!100
+        rm = 1.1 !+ 3*SIN(cHalfPi - IONO_NORTH_Theta(i,j))!100
 
         ! Let's have somw default values
         ev = 0.0
@@ -1235,7 +1228,7 @@ subroutine FACs_to_fluxes(iModel, iBlock)
 
               ! Trigonometry tells us that sin(pi/2 - angle) = cos(angle)
               ! For the equator this gives rm=1
-              rm = SQRT(1 + 3*SIN(cPi/2. - IONO_NORTH_Theta(i,j))) ! Assume Dipolar
+              rm = sqrt(1 + 3*cos(IONO_NORTH_Theta(i,j))) ! Assume Dipolar
               !----------------- DISCRETE NUMBER FLUX -------------------
 
               ! Discrete N_flux = J/e
@@ -1333,7 +1326,7 @@ subroutine FACs_to_fluxes(iModel, iBlock)
               ! An or statement can be used. Also, what was the point of the effort above
               ! if now everything is overwritten below 60 degrees latitude?
               ! Equatorward Boundary Limit
-              if ((IONO_NORTH_Theta(i,j)*180./cPi) >= 40.) then
+              if ((IONO_NORTH_Theta(i,j)*cRadToDeg) >= 40.) then
                  !if (iono_north_jr(i,j) <= 1E-09) then 
                  discrete_ae(i,j) = IONO_Min_Ave_E
                  discrete_ef(i,j) = IONO_Min_EFlux
@@ -1343,7 +1336,7 @@ subroutine FACs_to_fluxes(iModel, iBlock)
 
               ! Open-Closed Boundary Limit
               ! Why convert to degrees. Radians can be compared just as well.
-              if ((IONO_NORTH_Theta(i,j)*180./cPi) <= OCFLB(j)*180./cPi) then
+              if ((IONO_NORTH_Theta(i,j)*cRadToDeg) <= OCFLB(j)*cRadToDeg) then
                  !if (iono_north_jr(i,j) <= 1E-09) then 
                  discrete_ae(i,j) = IONO_Min_Ave_E
                  discrete_ef(i,j) = IONO_Min_EFlux
@@ -1416,7 +1409,7 @@ subroutine FACs_to_fluxes(iModel, iBlock)
            do i = 1, IONO_nTheta
               ! At boundaries, the values sharply drop to the minimum Ave E value
               !if (iono_north_ave_e(i,j) <= IONO_Min_Ave_E) then
-              !   write(*,*)IONO_NORTH_Theta(i,j)*180./cPi
+              !   write(*,*)IONO_NORTH_Theta(i,j)*cRadToDeg
 
               ! Since the Theta value is actually colatitude, the values start from 0 to 90
               ! i.e. it starts from Latitude 90 (pole) to latitude 0 (equator)
@@ -1425,27 +1418,27 @@ subroutine FACs_to_fluxes(iModel, iBlock)
 
               ! Case 1
               if (i == 1) then ! Latitudinal 
-                 !write(*,*) "Lat Boundary", IONO_NORTH_Theta(IONO_nTheta-i+1,j)*180./cPi
+                 !write(*,*) "Lat Boundary", IONO_NORTH_Theta(IONO_nTheta-i+1,j)*cRadToDeg
                  ! Longitudinal Boundary
                  if(j == 1) then
-                    !write(*,*) "Lon Boundary", IONO_NORTH_Psi(IONO_nTheta-i+1,j)*180./cPi
+                    !write(*,*) "Lon Boundary", IONO_NORTH_Psi(IONO_nTheta-i+1,j)*cRadToDeg
                  elseif(j == IONO_nPsi) then
-                    !write(*,*) "Lon Boundary", IONO_NORTH_Psi(IONO_nTheta-i+1,j)*180./cPi
+                    !write(*,*) "Lon Boundary", IONO_NORTH_Psi(IONO_nTheta-i+1,j)*cRadToDeg
                  end if
                  ! Case 2   
               elseif (i == IONO_nTheta) then
-                 !write(*,*) "Lat Boundary", IONO_NORTH_Theta(IONO_nTheta-i+1,j)*180./cPi
+                 !write(*,*) "Lat Boundary", IONO_NORTH_Theta(IONO_nTheta-i+1,j)*cRadToDeg
                  ! Longitudinal Boundary
                  if(j == 1) then
-                    !write(*,*) "Lon Boundary", IONO_NORTH_Psi(IONO_nTheta-i+1,j)*180./cPi
+                    !write(*,*) "Lon Boundary", IONO_NORTH_Psi(IONO_nTheta-i+1,j)*cRadToDeg
                  elseif(j == IONO_nPsi) then
-                    !write(*,*) "Lon Boundary", IONO_NORTH_Psi(IONO_nTheta-i+1,j)*180./cPi
+                    !write(*,*) "Lon Boundary", IONO_NORTH_Psi(IONO_nTheta-i+1,j)*cRadToDeg
                  end if
                  ! Case 3 - Not on a Latitudinal Boundary
               else
                  ! Longitudinal Boundary
                  if(j == 1) then
-                    !write(*,*) "Lon Boundary", IONO_NORTH_Psi(IONO_nTheta-i+1,j)*180./cPi
+                    !write(*,*) "Lon Boundary", IONO_NORTH_Psi(IONO_nTheta-i+1,j)*cRadToDeg
                     av_mono_value = (&
                          discrete_ef(IONO_nTheta-i+1+1,j  )+ &
                          discrete_ef(IONO_nTheta-i+1+1,j+1)+ &
@@ -1453,7 +1446,7 @@ subroutine FACs_to_fluxes(iModel, iBlock)
                          discrete_ef(IONO_nTheta-i+1-1,j+1)+ &
                          discrete_ef(IONO_nTheta-i+1  ,j+1)) * 1./5.
                  elseif(j == IONO_nPsi) then
-                    !write(*,*) "Lon Boundary", IONO_NORTH_Psi(IONO_nTheta-i+1,j)*180./cPi
+                    !write(*,*) "Lon Boundary", IONO_NORTH_Psi(IONO_nTheta-i+1,j)*cRadToDeg
                     av_mono_value = (&
                          discrete_ef(IONO_nTheta-i+1+1,j  )+ &
                          discrete_ef(IONO_nTheta-i+1+1,j-1)+ &
@@ -1473,8 +1466,8 @@ subroutine FACs_to_fluxes(iModel, iBlock)
                          discrete_ef(IONO_nTheta-i+1  ,j+1)+ &
                          discrete_ef(IONO_nTheta-i+1  ,j-1)) * 0.125
                  end if
-                 write(*,*)'i,j,av_mono_value,discrete_ef=',i,j,av_mono_value,discrete_ef(IONO_nTheta-i+1,j)
-                 if (ABS(av_mono_value - discrete_ef(IONO_nTheta-i+1,j)) <= 0.15*discrete_ef(IONO_nTheta-i+1+1,j)) then
+                 if (ABS(av_mono_value - discrete_ef(IONO_nTheta-i+1,j)) &
+                      <= 0.15*discrete_ef(IONO_nTheta-i+1+1,j)) then
                     IONO_NORTH_MONO_EFLUX(IONO_nTheta-i+1,j) = discrete_ef(IONO_nTheta-i+1+1,j)
                  else
                     IONO_NORTH_MONO_EFLUX(IONO_nTheta-i+1,j) = av_mono_value
@@ -1494,7 +1487,7 @@ subroutine FACs_to_fluxes(iModel, iBlock)
            do i = 1, IONO_nTheta
               ! At boundaries, the values sharply drop to the minimum Ave E value
               !if (iono_north_ave_e(i,j) <= IONO_Min_Ave_E) then
-              !   write(*,*)IONO_NORTH_Theta(i,j)*180./cPi
+              !   write(*,*)IONO_NORTH_Theta(i,j)*cRadToDeg
 
               ! Since the Theta value is actually colatitude, the values start from 0 to 90
               ! i.e. it starts from Latitude 90 (pole) to latitude 0 (equator)
@@ -1503,30 +1496,27 @@ subroutine FACs_to_fluxes(iModel, iBlock)
 
               ! Case 1
               if (i <= 2) then ! Latitudinal 
-                 !write(*,*) "Lat Boundary", IONO_NORTH_Theta(IONO_nTheta-i+1,j)*180./cPi
+                 !write(*,*) "Lat Boundary", IONO_NORTH_Theta(IONO_nTheta-i+1,j)*cRadToDeg
                  ! Longitudinal Boundary
                  if(j == 1) then
-                    !write(*,*) "Lon Boundary", IONO_NORTH_Psi(IONO_nTheta-i+1,j)*180./cPi
+                    !write(*,*) "Lon Boundary", IONO_NORTH_Psi(IONO_nTheta-i+1,j)*cRadToDeg
                  elseif(j == IONO_nPsi) then
-                    !write(*,*) "Lon Boundary", IONO_NORTH_Psi(IONO_nTheta-i+1,j)*180./cPi
+                    !write(*,*) "Lon Boundary", IONO_NORTH_Psi(IONO_nTheta-i+1,j)*cRadToDeg
                  end if
                  ! Case 2   
               elseif (i == IONO_nTheta) then
-                 !write(*,*) "Lat Boundary", IONO_NORTH_Theta(IONO_nTheta-i+1,j)*180./cPi
+                 !write(*,*) "Lat Boundary", IONO_NORTH_Theta(IONO_nTheta-i+1,j)*cRadToDeg
                  ! Longitudinal Boundary
                  if(j == 1) then
-                    !write(*,*) "Lon Boundary", IONO_NORTH_Psi(IONO_nTheta-i+1,j)*180./cPi
+                    !write(*,*) "Lon Boundary", IONO_NORTH_Psi(IONO_nTheta-i+1,j)*cRadToDeg
                  elseif(j == IONO_nPsi) then
-                    !write(*,*) "Lon Boundary", IONO_NORTH_Psi(IONO_nTheta-i+1,j)*180./cPi
+                    !write(*,*) "Lon Boundary", IONO_NORTH_Psi(IONO_nTheta-i+1,j)*cRadToDeg
                  end if
                  ! Case 3 - Not on a Latitudinal Boundary
               else
                  ! Longitudinal Boundary
                  if(j == 1) then
-                    !write(*,*) "Lon Boundary", IONO_NORTH_Psi(IONO_nTheta-i+1,j)*180./cPi
-
-                    write(*,*)'!!!',i,j,discrete_nf(IONO_nTheta-i+1+1,j  ),discrete_nf(IONO_nTheta-i+1-1,j  ),discrete_nf(IONO_nTheta-i+1-1,j+1),discrete_nf(IONO_nTheta-i+1  ,j+1)
-                    
+                    !write(*,*) "Lon Boundary", IONO_NORTH_Psi(IONO_nTheta-i+1,j)*cRadToDeg
                     av_mono_value = (&
                          discrete_nf(IONO_nTheta-i+1+1,j  )+ &
                          discrete_nf(IONO_nTheta-i+1+1,j+1)+ &
@@ -1534,7 +1524,7 @@ subroutine FACs_to_fluxes(iModel, iBlock)
                          discrete_nf(IONO_nTheta-i+1-1,j+1)+ &
                          discrete_nf(IONO_nTheta-i+1  ,j+1)) * 1./5.
                  elseif(j == IONO_nPsi) then
-                    !write(*,*) "Lon Boundary", IONO_NORTH_Psi(IONO_nTheta-i+1,j)*180./cPi
+                    !write(*,*) "Lon Boundary", IONO_NORTH_Psi(IONO_nTheta-i+1,j)*cRadToDeg
                     av_mono_value = (&
                          discrete_nf(IONO_nTheta-i+1+1,j  )+ &
                          discrete_nf(IONO_nTheta-i+1+1,j-1)+ &
@@ -1554,7 +1544,8 @@ subroutine FACs_to_fluxes(iModel, iBlock)
                          discrete_nf(IONO_nTheta-i+1  ,j+1)+ &
                          discrete_nf(IONO_nTheta-i+1  ,j-1)) * 0.125
                  end if
-                 if (ABS(av_mono_value - discrete_nf(IONO_nTheta-i+1,j)) <= 0.15*discrete_nf(IONO_nTheta-i+1+1,j)) then
+                 if (ABS(av_mono_value - discrete_nf(IONO_nTheta-i+1,j)) &
+                      <= 0.15*discrete_nf(IONO_nTheta-i+1+1,j)) then
                     IONO_NORTH_MONO_EFLUX(IONO_nTheta-i+1,j) = discrete_nf(IONO_nTheta-i+1+1,j)
                  else
                     IONO_NORTH_MONO_EFLUX(IONO_nTheta-i+1,j) = av_mono_value
@@ -1615,14 +1606,14 @@ subroutine FACs_to_fluxes(iModel, iBlock)
         do j = 1, IONO_nPsi
            do i = 1, IONO_nTheta
               ! Equatorward Boundary Limit
-              if ((IONO_NORTH_Theta(i,j)*180./cPi) >= 40.) then
+              if ((IONO_NORTH_Theta(i,j)*cRadToDeg) >= 40.) then
                  !if (iono_north_jr(i,j) <= 1E-09) then 
                  iono_north_ave_e(i,j) = IONO_Min_Ave_E
                  iono_north_eflux(i,j) = IONO_Min_EFlux
               end if
 
               ! Open-Closed Boundary Limit
-              if ((IONO_NORTH_Theta(i,j)*180./cPi) <= OCFLB(j)*180./cPi) then
+              if ((IONO_NORTH_Theta(i,j)*cRadToDeg) <= OCFLB(j)*cRadToDeg) then
                  !if (iono_north_jr(i,j) <= 1E-09) then 
                  iono_north_ave_e(i,j) = IONO_Min_Ave_E
                  iono_north_eflux(i,j) = IONO_Min_EFlux
@@ -1646,7 +1637,7 @@ subroutine FACs_to_fluxes(iModel, iBlock)
            do i = 1, IONO_nTheta
               ! At boundaries, the values sharply drop to the minimum Ave E value
               !if (iono_north_ave_e(i,j) <= IONO_Min_Ave_E) then
-              !   write(*,*)IONO_NORTH_Theta(i,j)*180./cPi
+              !   write(*,*)IONO_NORTH_Theta(i,j)*cRadToDeg
 
               ! Since the Theta value is actually colatitude, the values start from 0 to 90
               ! i.e. it starts from Latitude 90 (pole) to latitude 0 (equator)
@@ -1656,29 +1647,29 @@ subroutine FACs_to_fluxes(iModel, iBlock)
               if (iono_north_ave_e(IONO_nTheta-i+1,j) <= IONO_Min_Ave_E) then
                  ! Case 1
                  if (i == 1) then ! Latitudinal 
-                    !write(*,*) "Lat Boundary", IONO_NORTH_Theta(IONO_nTheta-i+1,j)*180./cPi
+                    !write(*,*) "Lat Boundary", IONO_NORTH_Theta(IONO_nTheta-i+1,j)*cRadToDeg
                     ! Longitudinal Boundary
                     if(j == 1) then
-                       !write(*,*) "Lon Boundary", IONO_NORTH_Psi(IONO_nTheta-i+1,j)*180./cPi
+                       !write(*,*) "Lon Boundary", IONO_NORTH_Psi(IONO_nTheta-i+1,j)*cRadToDeg
                     elseif(j == IONO_nPsi) then
-                       !write(*,*) "Lon Boundary", IONO_NORTH_Psi(IONO_nTheta-i+1,j)*180./cPi
+                       !write(*,*) "Lon Boundary", IONO_NORTH_Psi(IONO_nTheta-i+1,j)*cRadToDeg
                     end if
                     ! Case 2   
                  elseif (i == IONO_nTheta) then
-                    !write(*,*) "Lat Boundary", IONO_NORTH_Theta(IONO_nTheta-i+1,j)*180./cPi
+                    !write(*,*) "Lat Boundary", IONO_NORTH_Theta(IONO_nTheta-i+1,j)*cRadToDeg
                     ! Longitudinal Boundary
                     if(j == 1) then
-                       !write(*,*) "Lon Boundary", IONO_NORTH_Psi(IONO_nTheta-i+1,j)*180./cPi
+                       !write(*,*) "Lon Boundary", IONO_NORTH_Psi(IONO_nTheta-i+1,j)*cRadToDeg
                     elseif(j == IONO_nPsi) then
-                       !write(*,*) "Lon Boundary", IONO_NORTH_Psi(IONO_nTheta-i+1,j)*180./cPi
+                       !write(*,*) "Lon Boundary", IONO_NORTH_Psi(IONO_nTheta-i+1,j)*cRadToDeg
                     end if
                     ! Case 3 - Not on a Latitudinal Boundary
                  else
                     ! Longitudinal Boundary
                     if(j == 1) then
-                       !write(*,*) "Lon Boundary", IONO_NORTH_Psi(IONO_nTheta-i+1,j)*180./cPi
+                       !write(*,*) "Lon Boundary", IONO_NORTH_Psi(IONO_nTheta-i+1,j)*cRadToDeg
                     elseif(j == IONO_nPsi) then
-                       !write(*,*) "Lon Boundary", IONO_NORTH_Psi(IONO_nTheta-i+1,j)*180./cPi
+                       !write(*,*) "Lon Boundary", IONO_NORTH_Psi(IONO_nTheta-i+1,j)*cRadToDeg
                     else
                        !write(*,*) "Before Smooth", iono_north_ave_e(IONO_nTheta-i+1,j), &
                        !     iono_north_eflux(IONO_nTheta-i+1,j) 
@@ -1990,14 +1981,13 @@ subroutine FACs_to_fluxes(iModel, iBlock)
            ! IONO_nTheta is the equator and the formulas below break down
            do i = 1, IONO_nTheta - 1
               !iono_north_jr(i,j) = iono_north_jr(i,j) * 10.
-              !(180. - IONO_SOUTH_Theta(i,j)*180./cPi)*cPi/180.
-              rm = SQRT(1 + 3*SIN(cPi/2. - (180. - IONO_SOUTH_Theta(i,j)*180./cPi)*cPi/180.)) !* 10.
+              !(180. - IONO_SOUTH_Theta(i,j)*cRadToDeg)*cPi/180.
+              rm = sqrt(1 - 3*cos(IONO_SOUTH_Theta(i,j)))
               !IONO_SOUTH_Theta(i,j))
               !----------------- DISCRETE NUMBER FLUX -------------------
-              !\
+
               ! Discrete N_flux = J/e
               ! Consider only upward FACs
-              !/
               if (iono_south_jr(i,j) > 0.) then
                  discrete_nf(i,j) = ABS(iono_south_jr(i,j)) / 1.6E-19
               else
@@ -2060,9 +2050,9 @@ subroutine FACs_to_fluxes(iModel, iBlock)
               discrete_ae(i,j) = discrete_ae(i,j) / 1E03 ! Convert to keV
 
               ! Limit 1 - Equatorward Boundary
-              if ((180. - IONO_SOUTH_Theta(i,j)*180./cPi) >= 40.) then
+              if ((180. - IONO_SOUTH_Theta(i,j)*cRadToDeg) >= 40.) then
                  !if (iono_south_jr(i,j) <= 1E-09) then
-                 !write(*,*) IONO_SOUTH_Theta(i,j)*180./cPi, 180. - IONO_SOUTH_Theta(i,j)*180./cPi
+                 !write(*,*) IONO_SOUTH_Theta(i,j)*cRadToDeg, 180. - IONO_SOUTH_Theta(i,j)*cRadToDeg
                  !write(*,*) 'Discrete and Diffuse AE and EF (before)', &
                  !     discrete_ae(i,j), discrete_ef(i,j), diffuse_ae(i,j), diffuse_ef(i,j)
                  discrete_ae(i,j) = IONO_Min_Ave_E
@@ -2074,8 +2064,8 @@ subroutine FACs_to_fluxes(iModel, iBlock)
               end if
 
               ! Limit 2 - Open-Closed FL Boundary
-              if ((180. - IONO_SOUTH_Theta(i,j)*180./cPi) <= 180. - OCFLB(j)*180./cPi) then
-                 !write(*,*) 'CoLat', 180. - IONO_SOUTH_Theta(i,j)*180./cPi, 'OCFLB', 180. - OCFLB(j)*180./cPi 
+              if ((180. - IONO_SOUTH_Theta(i,j)*cRadToDeg) <= 180. - OCFLB(j)*cRadToDeg) then
+                 !write(*,*) 'CoLat', 180. - IONO_SOUTH_Theta(i,j)*cRadToDeg, 'OCFLB', 180. - OCFLB(j)*cRadToDeg 
                  !write(*,*) 'Discrete and Diffuse AE and EF (before)', &
                  !     discrete_ae(i,j), discrete_ef(i,j), diffuse_ae(i,j), diffuse_ef(i,j)
                  discrete_ae(i,j) = IONO_Min_Ave_E
@@ -2131,7 +2121,7 @@ subroutine FACs_to_fluxes(iModel, iBlock)
            do i = 1, IONO_nTheta
               ! At boundaries, the values sharply drop to the minimum Ave E value
               !if (iono_north_ave_e(i,j) <= IONO_Min_Ave_E) then
-              !   write(*,*)IONO_NORTH_Theta(i,j)*180./cPi
+              !   write(*,*)IONO_NORTH_Theta(i,j)*cRadToDeg
 
               ! Since the Theta value is actually colatitude, the values start from 0 to 90
               ! i.e. it starts from Latitude 90 (pole) to latitude 0 (equator)
@@ -2140,34 +2130,34 @@ subroutine FACs_to_fluxes(iModel, iBlock)
 
               ! Case 1
               if (i == 1) then ! Latitudinal 
-                 !write(*,*) "Lat Boundary", IONO_NORTH_Theta(IONO_nTheta-i+1,j)*180./cPi
+                 !write(*,*) "Lat Boundary", IONO_NORTH_Theta(IONO_nTheta-i+1,j)*cRadToDeg
                  ! Longitudinal Boundary
                  if(j == 1) then
-                    !write(*,*) "Lon Boundary", IONO_NORTH_Psi(IONO_nTheta-i+1,j)*180./cPi
+                    !write(*,*) "Lon Boundary", IONO_NORTH_Psi(IONO_nTheta-i+1,j)*cRadToDeg
                  elseif(j == IONO_nPsi) then
-                    !write(*,*) "Lon Boundary", IONO_NORTH_Psi(IONO_nTheta-i+1,j)*180./cPi
+                    !write(*,*) "Lon Boundary", IONO_NORTH_Psi(IONO_nTheta-i+1,j)*cRadToDeg
                  end if
                  ! Case 2   
               elseif (i == IONO_nTheta) then
-                 !write(*,*) "Lat Boundary", IONO_NORTH_Theta(IONO_nTheta-i+1,j)*180./cPi
+                 !write(*,*) "Lat Boundary", IONO_NORTH_Theta(IONO_nTheta-i+1,j)*cRadToDeg
                  ! Longitudinal Boundary
                  if(j == 1) then
-                    !write(*,*) "Lon Boundary", IONO_NORTH_Psi(IONO_nTheta-i+1,j)*180./cPi
+                    !write(*,*) "Lon Boundary", IONO_NORTH_Psi(IONO_nTheta-i+1,j)*cRadToDeg
                  elseif(j == IONO_nPsi) then
-                    !write(*,*) "Lon Boundary", IONO_NORTH_Psi(IONO_nTheta-i+1,j)*180./cPi
+                    !write(*,*) "Lon Boundary", IONO_NORTH_Psi(IONO_nTheta-i+1,j)*cRadToDeg
                  end if
                  ! Case 3 - Not on a Latitudinal Boundary
               else
                  ! Longitudinal Boundary
                  if(j == 1) then
-                    !write(*,*) "Lon Boundary", IONO_NORTH_Psi(IONO_nTheta-i+1,j)*180./cPi
+                    !write(*,*) "Lon Boundary", IONO_NORTH_Psi(IONO_nTheta-i+1,j)*cRadToDeg
                     av_mono_value = (discrete_ef(IONO_nTheta-i+1+1,j)+ &
                          discrete_ef(IONO_nTheta-i+1+1,j+1)+ &
                          discrete_ef(IONO_nTheta-i+1-1,j)+ &
                          discrete_ef(IONO_nTheta-i+1-1,j+1)+ &
                          discrete_ef(IONO_nTheta-i+1,j-1)) * 1./5.
                  elseif(j == IONO_nPsi) then
-                    !write(*,*) "Lon Boundary", IONO_NORTH_Psi(IONO_nTheta-i+1,j)*180./cPi
+                    !write(*,*) "Lon Boundary", IONO_NORTH_Psi(IONO_nTheta-i+1,j)*cRadToDeg
                     av_mono_value = (discrete_ef(IONO_nTheta-i+1+1,j)+ &
                          discrete_ef(IONO_nTheta-i+1+1,j-1)+ &
                          discrete_ef(IONO_nTheta-i+1-1,j)+ &
@@ -2206,7 +2196,7 @@ subroutine FACs_to_fluxes(iModel, iBlock)
            do i = 1, IONO_nTheta
               ! At boundaries, the values sharply drop to the minimum Ave E value
               !if (iono_north_ave_e(i,j) <= IONO_Min_Ave_E) then
-              !   write(*,*)IONO_NORTH_Theta(i,j)*180./cPi
+              !   write(*,*)IONO_NORTH_Theta(i,j)*cRadToDeg
 
               ! Since the Theta value is actually colatitude, the values start from 0 to 90
               ! i.e. it starts from Latitude 90 (pole) to latitude 0 (equator)
@@ -2215,34 +2205,34 @@ subroutine FACs_to_fluxes(iModel, iBlock)
 
               ! Case 1
               if (i == 1) then ! Latitudinal 
-                 !write(*,*) "Lat Boundary", IONO_NORTH_Theta(IONO_nTheta-i+1,j)*180./cPi
+                 !write(*,*) "Lat Boundary", IONO_NORTH_Theta(IONO_nTheta-i+1,j)*cRadToDeg
                  ! Longitudinal Boundary
                  if(j == 1) then
-                    !write(*,*) "Lon Boundary", IONO_NORTH_Psi(IONO_nTheta-i+1,j)*180./cPi
+                    !write(*,*) "Lon Boundary", IONO_NORTH_Psi(IONO_nTheta-i+1,j)*cRadToDeg
                  elseif(j == IONO_nPsi) then
-                    !write(*,*) "Lon Boundary", IONO_NORTH_Psi(IONO_nTheta-i+1,j)*180./cPi
+                    !write(*,*) "Lon Boundary", IONO_NORTH_Psi(IONO_nTheta-i+1,j)*cRadToDeg
                  end if
                  ! Case 2   
               elseif (i == IONO_nTheta) then
-                 !write(*,*) "Lat Boundary", IONO_NORTH_Theta(IONO_nTheta-i+1,j)*180./cPi
+                 !write(*,*) "Lat Boundary", IONO_NORTH_Theta(IONO_nTheta-i+1,j)*cRadToDeg
                  ! Longitudinal Boundary
                  if(j == 1) then
-                    !write(*,*) "Lon Boundary", IONO_NORTH_Psi(IONO_nTheta-i+1,j)*180./cPi
+                    !write(*,*) "Lon Boundary", IONO_NORTH_Psi(IONO_nTheta-i+1,j)*cRadToDeg
                  elseif(j == IONO_nPsi) then
-                    !write(*,*) "Lon Boundary", IONO_NORTH_Psi(IONO_nTheta-i+1,j)*180./cPi
+                    !write(*,*) "Lon Boundary", IONO_NORTH_Psi(IONO_nTheta-i+1,j)*cRadToDeg
                  end if
                  ! Case 3 - Not on a Latitudinal Boundary
               else
                  ! Longitudinal Boundary
                  if(j == 1) then
-                    !write(*,*) "Lon Boundary", IONO_NORTH_Psi(IONO_nTheta-i+1,j)*180./cPi
+                    !write(*,*) "Lon Boundary", IONO_NORTH_Psi(IONO_nTheta-i+1,j)*cRadToDeg
                     av_mono_value = (discrete_nf(IONO_nTheta-i+1+1,j)+ &
                          discrete_nf(IONO_nTheta-i+1+1,j+1)+ &
                          discrete_nf(IONO_nTheta-i+1-1,j)+ &
                          discrete_nf(IONO_nTheta-i+1-1,j+1)+ &
                          discrete_nf(IONO_nTheta-i+1,j-1)) * 1./5.
                  elseif(j == IONO_nPsi) then
-                    !write(*,*) "Lon Boundary", IONO_NORTH_Psi(IONO_nTheta-i+1,j)*180./cPi
+                    !write(*,*) "Lon Boundary", IONO_NORTH_Psi(IONO_nTheta-i+1,j)*cRadToDeg
                     av_mono_value = (discrete_nf(IONO_nTheta-i+1+1,j)+ &
                          discrete_nf(IONO_nTheta-i+1+1,j-1)+ &
                          discrete_nf(IONO_nTheta-i+1-1,j)+ &
@@ -2313,20 +2303,20 @@ subroutine FACs_to_fluxes(iModel, iBlock)
         !end do
         
         !      ! Equatorward Boundary Limit
-        !      if ((IONO_SOUTH_Theta(i,j)*180./cPi) >= 40.) then
+        !      if ((IONO_SOUTH_Theta(i,j)*cRadToDeg) >= 40.) then
         !         !if (iono_south_jr(i,j) <= 1E-09) then 
         !         iono_south_ave_e(i,j) = IONO_Min_Ave_E
         !         iono_south_eflux(i,j) = IONO_Min_EFlux
         !      end if
 
-              !if ((IONO_SOUTH_Theta(i,j)*180./cPi) >= 45.) then
+              !if ((IONO_SOUTH_Theta(i,j)*cRadToDeg) >= 45.) then
               !   !if (iono_north_jr(i,j) <= 1E-09) then 
               !      hal_a1 = hal_a0
               !      ped_a1 = ped_a0
               !   end if
 
               ! Open-Closed Boundary Limit
-              !if ((IONO_SOUTH_Theta(i,j)*180./cPi) <= OCFLB(j)*180./cPi) then
+              !if ((IONO_SOUTH_Theta(i,j)*cRadToDeg) <= OCFLB(j)*cRadToDeg) then
               !   !if (iono_north_jr(i,j) <= 1E-09) then 
               !   iono_south_ave_e(i,j) = IONO_Min_Ave_E
               !   iono_south_eflux(i,j) = IONO_Min_EFlux
@@ -2336,9 +2326,9 @@ subroutine FACs_to_fluxes(iModel, iBlock)
         !end do
 
         ! Equatorward Boundary Limit
-        where ((180. - IONO_SOUTH_Theta*180./cPi) >= 40.) &
+        where ((180. - IONO_SOUTH_Theta*cRadToDeg) >= 40.) &
              iono_south_ave_e = IONO_Min_Ave_E
-        where ((180. - IONO_SOUTH_Theta*180./cPi) >= 40.) &
+        where ((180. - IONO_SOUTH_Theta*cRadToDeg) >= 40.) &
              iono_south_eflux = IONO_Min_EFlux
 
         ! For Storage
@@ -2352,7 +2342,7 @@ subroutine FACs_to_fluxes(iModel, iBlock)
            do i = 1, IONO_nTheta
               ! At boundaries, the values sharply drop to the minimum Ave E value
               !if (iono_north_ave_e(i,j) <= IONO_Min_Ave_E) then
-              !   write(*,*)IONO_NORTH_Theta(i,j)*180./cPi
+              !   write(*,*)IONO_NORTH_Theta(i,j)*cRadToDeg
 
               ! Since the Theta value is actually colatitude, the values start from 0 to 90
               ! i.e. it starts from Latitude 90 (pole) to latitude 0 (equator)
@@ -2362,29 +2352,29 @@ subroutine FACs_to_fluxes(iModel, iBlock)
               if (iono_south_ave_e(IONO_nTheta-i+1,j) <= IONO_Min_Ave_E) then
                  ! Case 1
                  if (i == 1) then ! Latitudinal 
-                    !write(*,*) "Lat Boundary", IONO_NORTH_Theta(IONO_nTheta-i+1,j)*180./cPi
+                    !write(*,*) "Lat Boundary", IONO_NORTH_Theta(IONO_nTheta-i+1,j)*cRadToDeg
                     ! Longitudinal Boundary
                     if(j == 1) then
-                       !write(*,*) "Lon Boundary", IONO_NORTH_Psi(IONO_nTheta-i+1,j)*180./cPi
+                       !write(*,*) "Lon Boundary", IONO_NORTH_Psi(IONO_nTheta-i+1,j)*cRadToDeg
                     elseif(j == IONO_nPsi) then
-                       !write(*,*) "Lon Boundary", IONO_NORTH_Psi(IONO_nTheta-i+1,j)*180./cPi
+                       !write(*,*) "Lon Boundary", IONO_NORTH_Psi(IONO_nTheta-i+1,j)*cRadToDeg
                     end if
                     ! Case 2   
                  elseif (i == IONO_nTheta) then
-                    !write(*,*) "Lat Boundary", IONO_NORTH_Theta(IONO_nTheta-i+1,j)*180./cPi
+                    !write(*,*) "Lat Boundary", IONO_NORTH_Theta(IONO_nTheta-i+1,j)*cRadToDeg
                     ! Longitudinal Boundary
                     if(j == 1) then
-                       !write(*,*) "Lon Boundary", IONO_NORTH_Psi(IONO_nTheta-i+1,j)*180./cPi
+                       !write(*,*) "Lon Boundary", IONO_NORTH_Psi(IONO_nTheta-i+1,j)*cRadToDeg
                     elseif(j == IONO_nPsi) then
-                       !write(*,*) "Lon Boundary", IONO_NORTH_Psi(IONO_nTheta-i+1,j)*180./cPi
+                       !write(*,*) "Lon Boundary", IONO_NORTH_Psi(IONO_nTheta-i+1,j)*cRadToDeg
                     end if
                     ! Case 3 - Not on a Latitudinal Boundary
                  else
                     ! Longitudinal Boundary
                     if(j == 1) then
-                       !write(*,*) "Lon Boundary", IONO_NORTH_Psi(IONO_nTheta-i+1,j)*180./cPi
+                       !write(*,*) "Lon Boundary", IONO_NORTH_Psi(IONO_nTheta-i+1,j)*cRadToDeg
                     elseif(j == IONO_nPsi) then
-                       !write(*,*) "Lon Boundary", IONO_NORTH_Psi(IONO_nTheta-i+1,j)*180./cPi
+                       !write(*,*) "Lon Boundary", IONO_NORTH_Psi(IONO_nTheta-i+1,j)*cRadToDeg
                     else
                        !write(*,*) "Before Smooth", iono_north_ave_e(IONO_nTheta-i+1,j), &
                        !     iono_north_eflux(IONO_nTheta-i+1,j) 
@@ -2490,12 +2480,10 @@ subroutine ionosphere_conductance(Sigma0, SigmaH, SigmaP,               &
      dTheta, dPsi,                         &
      iModel, f107)
 
-  !\
   ! This subroutine computes the height-integrated field-aligned and
   ! Hall and Pedersen conductances for the ionosphere at each
   ! location of the discretized solution domain.  The gradients of
   ! these quantities are also computed.
-  !/
 
   use IE_ModMain
   use ModIonosphere
@@ -2611,9 +2599,7 @@ subroutine ionosphere_conductance(Sigma0, SigmaH, SigmaP,               &
         do j = 1, nPsi
            do i = 1, nTheta
 
-!!$        !\
-!!$        ! Rasmussen and Schunk model B (JGR, Vol. 92, pp. 4491-4504, 1987).
-!!$        !/
+              ! Rasmussen and Schunk model B (JGR, Vol. 92, pp. 4491-4504, 1987).
 
               Sigma0(i,j) = 1000.00
 
@@ -2686,10 +2672,8 @@ subroutine ionosphere_conductance(Sigma0, SigmaH, SigmaP,               &
               SigmaH_STAR = StarLightPedConductance*2.0
               SigmaP_STAR = StarLightPedConductance
 
-              !\
               ! Use Robinson's Formula to convert the Ave_E and E_Flux to 
               ! SigmaP and SigmaH
-              !/
 
               SigmaP_Particles = 40.0 * Ave_E(i,j) /                     &
                    (16.0 + Ave_E(i,j)*Ave_E(i,j))  *                     &
