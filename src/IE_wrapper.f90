@@ -631,8 +631,10 @@ contains
     use IE_ModMain, ONLY: IsNewInput, LatBoundaryGm
     use ModProcIE
     use ModIonosphere
+    use ModConductance, ONLY: GmRhoFloor, GmPFloor
 
     integer,          intent(in) :: iSize, jSize, nVar
+    integer                      :: i, j
     real                         :: Buffer_IIV(iSize, jSize, nVar)
 
     logical :: DoTest, DoTestMe
@@ -644,6 +646,14 @@ contains
 
     IsNewInput = .true.
 
+    
+    ! Here, we change the coupler values to be palatable to the
+    ! SPECIFIC code: coord transform, unit conversion, floors, ceilings.
+
+    ! Set minimum acceptable values for density & pressure:
+    where (Buffer_IIV(:,:,3) < GmRhoFloor) Buffer_IIV(:,:,3)=GmRhoFloor
+    where (Buffer_IIV(:,:,4) < GmPFloor  ) Buffer_IIV(:,:,4)=GmPFloor
+    
     if (iProc == 0) then
        LatBoundaryGm = Buffer_IIV(IONO_nTheta,1,1)
        if(DoTest)write(*,*) "LatBoundary : ",LatBoundaryGm*180.0/3.1415926
@@ -672,7 +682,19 @@ contains
           if(DoTest) call write_dataS
        end if
     endif
-
+    
+    ! Debug statements:
+    if(DoTest)then
+       !write statements here.
+       do j = 1, IONO_nPsi
+          do i = 1, IONO_nTheta
+             write(*,'(2(i4.4,1x), 2(E10.5, 1x))') i, j, &
+                  Iono_North_p(i,j), Iono_North_rho(i,j)
+          end do
+       end do
+       
+    endif
+    
     if(DoTest)write(*,*)NameSub,' finished'
 
   contains

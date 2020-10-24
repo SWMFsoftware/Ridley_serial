@@ -34,5 +34,8 @@ Module ModConductance
 
   ! Option to turn on new oval:
   logical :: UseNewOval = .false.
+
+  ! Floor values for GM density and pressure, SI units:
+  real, parameter :: GmRhoFloor = 1E-21, GmPFloor = 1E-13
   
 end Module ModConductance
