@@ -31,4 +31,4 @@ allclean:
 	rm -f *~
 
 test:
-	echo "IE/Ridley_serial test is incomplete" > notest.diff
+	@echo "IE/Ridley_serial has no tests"
