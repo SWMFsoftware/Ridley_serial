@@ -23,7 +23,9 @@ subroutine FACs_to_fluxes(iModel, iBlock)
   use ModIonosphere
   use IE_ModMain
   use ModNumConst
-  use ModConductance, ONLY: UseSubOvalCond, UseOval, UseNewOval
+  use ModConst, ONLY: cEVToK
+  use ModConductance, ONLY: UseSubOvalCond, UseOval, UseNewOval, &
+       smooth_lagrange_polar
   implicit none
 
   integer, intent(in) :: iModel  ! model number, 
@@ -50,10 +52,10 @@ subroutine FACs_to_fluxes(iModel, iBlock)
   real :: f, MaxP, MaxT, MulFac_ae, MulFac_ef, MinWidth, ThetaOCB, AuroraWidth
   real, dimension(IONO_nTheta,IONO_nPsi) :: nDen, &
        discrete_k, discrete_ae, discrete_ef, diffuse_ae, diffuse_ef, &
-       iono_Ne, iono_T, discrete_nf, diffuse_nf, eV
+       iono_Ne, iono_T, discrete_nf, diffuse_nf, eV, av_mono_value
   real, dimension(IONO_nPsi) :: OCFLB, EquatorwardEdge, Smooth, OCFLB_s, beta
   real :: MulFac_Dae, MulFac_Def, var_rm, var_tot, numerator, denominator, &
-       rm, vari, av_mono_value
+       rm, vari
   !real, dimension(IONO_nTheta,IONO_nPsi) :: nDen, &
   !     discrete_k, discrete_ae, discrete_ef, diffuse_ae, diffuse_ef, &
   !     iono_Ne, iono_T, discrete_nf, diffuse_nf, eV
@@ -70,8 +72,12 @@ subroutine FACs_to_fluxes(iModel, iBlock)
   !     discrete_k, discrete_ae, discrete_ef, diffuse_ae, diffuse_ef, &
   !     iono_Ne, iono_T, discrete_nf, diffuse_nf, eV
   !real, dimension(IONO_nPsi) :: OCFLB, OCFLB_s, beta, EquatorwardEdge, Smooth
-  
+
+  logical :: DoTest, DoTestMe
+  character(len=*), parameter :: NameSub='facs_to_fluxes'
   !---------------------------------------------------------------------------
+  call CON_set_do_test(NameSub, DoTest, DoTestMe)
+  
   Hall_to_Ped_Ratio = 1.5
 
   if (PolarCapPedConductance > 0.0) then
@@ -1110,7 +1116,7 @@ subroutine FACs_to_fluxes(iModel, iBlock)
            ! Conversion to amu/cm3
            iono_Ne(:,j) = iono_north_rho(:,IONO_nPsi-j+1) / 1.66e-21
         enddo
-        
+
         !write(*,*) 'MaxVal Number Density (in amu/cm3)', maxval(iono_Ne)
         ! Conversion to Kelvins
         iono_T = iono_north_ave_e * 1e03 * 1.1e04! * 1./6.
@@ -1400,192 +1406,58 @@ subroutine FACs_to_fluxes(iModel, iBlock)
         ! leads to localized pockets of high FACs with unphysical
         ! values as the simulation marches in time. This step is
         ! added to make sure such localization is arrested early on.
-        !
-        ! This is a temporary measure. This may not be applied for
-        ! lower resolution simulations and/or with anomalous conductivity.
 
-        ! Smoothing Filter on Boundaries
-        do j = 1, IONO_nPsi
-           do i = 1, IONO_nTheta
-              ! At boundaries, the values sharply drop to the minimum Ave E value
-              !if (iono_north_ave_e(i,j) <= IONO_Min_Ave_E) then
-              !   write(*,*)IONO_NORTH_Theta(i,j)*cRadToDeg
+        ! Smoothing Filter on Boundaries - discrete_ef
+        call smooth_lagrange_polar(discrete_ef, IONO_nTheta, IONO_nPsi)
 
-              ! Since the Theta value is actually colatitude, the values start from 0 to 90
-              ! i.e. it starts from Latitude 90 (pole) to latitude 0 (equator)
-              ! Since we want to go from equator to pole, we are reversing the latitudinal
-              ! march in space = (IONO_nTheta + 1) - i
-
-              ! Case 1
-              if (i == 1) then ! Latitudinal 
-                 !write(*,*) "Lat Boundary", IONO_NORTH_Theta(IONO_nTheta-i+1,j)*cRadToDeg
-                 ! Longitudinal Boundary
-                 if(j == 1) then
-                    !write(*,*) "Lon Boundary", IONO_NORTH_Psi(IONO_nTheta-i+1,j)*cRadToDeg
-                 elseif(j == IONO_nPsi) then
-                    !write(*,*) "Lon Boundary", IONO_NORTH_Psi(IONO_nTheta-i+1,j)*cRadToDeg
-                 end if
-                 ! Case 2   
-              elseif (i == IONO_nTheta) then
-                 !write(*,*) "Lat Boundary", IONO_NORTH_Theta(IONO_nTheta-i+1,j)*cRadToDeg
-                 ! Longitudinal Boundary
-                 if(j == 1) then
-                    !write(*,*) "Lon Boundary", IONO_NORTH_Psi(IONO_nTheta-i+1,j)*cRadToDeg
-                 elseif(j == IONO_nPsi) then
-                    !write(*,*) "Lon Boundary", IONO_NORTH_Psi(IONO_nTheta-i+1,j)*cRadToDeg
-                 end if
-                 ! Case 3 - Not on a Latitudinal Boundary
-              else
-                 ! Longitudinal Boundary
-                 if(j == 1) then
-                    !write(*,*) "Lon Boundary", IONO_NORTH_Psi(IONO_nTheta-i+1,j)*cRadToDeg
-                    av_mono_value = (&
-                         discrete_ef(IONO_nTheta-i+1+1,j  )+ &
-                         discrete_ef(IONO_nTheta-i+1+1,j+1)+ &
-                         discrete_ef(IONO_nTheta-i+1-1,j  )+ &
-                         discrete_ef(IONO_nTheta-i+1-1,j+1)+ &
-                         discrete_ef(IONO_nTheta-i+1  ,j+1)) * 1./5.
-                 elseif(j == IONO_nPsi) then
-                    !write(*,*) "Lon Boundary", IONO_NORTH_Psi(IONO_nTheta-i+1,j)*cRadToDeg
-                    av_mono_value = (&
-                         discrete_ef(IONO_nTheta-i+1+1,j  )+ &
-                         discrete_ef(IONO_nTheta-i+1+1,j-1)+ &
-                         discrete_ef(IONO_nTheta-i+1-1,j  )+ &
-                         discrete_ef(IONO_nTheta-i+1-1,j-1)+ &
-                         discrete_ef(IONO_nTheta-i+1  ,j-1)) * 1./5.
-                 else
-                    !write(*,*) "Before Smooth", iono_north_ave_e(IONO_nTheta-i+1,j), &
-                    !     iono_north_eflux(IONO_nTheta-i+1,j) 
-                    av_mono_value = ( &
-                         discrete_ef(IONO_nTheta-i+1+1,j  )+ &
-                         discrete_ef(IONO_nTheta-i+1+1,j+1)+ &
-                         discrete_ef(IONO_nTheta-i+1+1,j-1)+ &
-                         discrete_ef(IONO_nTheta-i+1-1,j  )+ &
-                         discrete_ef(IONO_nTheta-i+1-1,j+1)+ &
-                         discrete_ef(IONO_nTheta-i+1-1,j-1)+ &
-                         discrete_ef(IONO_nTheta-i+1  ,j+1)+ &
-                         discrete_ef(IONO_nTheta-i+1  ,j-1)) * 0.125
-                 end if
-                 if (ABS(av_mono_value - discrete_ef(IONO_nTheta-i+1,j)) &
-                      <= 0.15*discrete_ef(IONO_nTheta-i+1+1,j)) then
-                    IONO_NORTH_MONO_EFLUX(IONO_nTheta-i+1,j) = discrete_ef(IONO_nTheta-i+1+1,j)
-                 else
-                    IONO_NORTH_MONO_EFLUX(IONO_nTheta-i+1,j) = av_mono_value
-                    !write(*,*) "After Smooth", iono_north_ave_e(IONO_nTheta-i+1,j), &
-                    !     iono_north_eflux(IONO_nTheta-i+1,j)
-                 end if
-              end if
-
-           end do
-        end do
-        ! Use the IONO_MONO array as a buffer
-        discrete_ef = ABS(IONO_NORTH_MONO_EFLUX)
-        
-        IONO_NORTH_MONO_EFLUX = 0.
-        ! Smoothing Filter on Boundaries
-        do j = 1, IONO_nPsi
-           do i = 1, IONO_nTheta
-              ! At boundaries, the values sharply drop to the minimum Ave E value
-              !if (iono_north_ave_e(i,j) <= IONO_Min_Ave_E) then
-              !   write(*,*)IONO_NORTH_Theta(i,j)*cRadToDeg
-
-              ! Since the Theta value is actually colatitude, the values start from 0 to 90
-              ! i.e. it starts from Latitude 90 (pole) to latitude 0 (equator)
-              ! Since we want to go from equator to pole, we are reversing the latitudinal
-              ! march in space = (IONO_nTheta + 1) - i
-
-              ! Case 1
-              if (i <= 2) then ! Latitudinal 
-                 !write(*,*) "Lat Boundary", IONO_NORTH_Theta(IONO_nTheta-i+1,j)*cRadToDeg
-                 ! Longitudinal Boundary
-                 if(j == 1) then
-                    !write(*,*) "Lon Boundary", IONO_NORTH_Psi(IONO_nTheta-i+1,j)*cRadToDeg
-                 elseif(j == IONO_nPsi) then
-                    !write(*,*) "Lon Boundary", IONO_NORTH_Psi(IONO_nTheta-i+1,j)*cRadToDeg
-                 end if
-                 ! Case 2   
-              elseif (i == IONO_nTheta) then
-                 !write(*,*) "Lat Boundary", IONO_NORTH_Theta(IONO_nTheta-i+1,j)*cRadToDeg
-                 ! Longitudinal Boundary
-                 if(j == 1) then
-                    !write(*,*) "Lon Boundary", IONO_NORTH_Psi(IONO_nTheta-i+1,j)*cRadToDeg
-                 elseif(j == IONO_nPsi) then
-                    !write(*,*) "Lon Boundary", IONO_NORTH_Psi(IONO_nTheta-i+1,j)*cRadToDeg
-                 end if
-                 ! Case 3 - Not on a Latitudinal Boundary
-              else
-                 ! Longitudinal Boundary
-                 if(j == 1) then
-                    !write(*,*) "Lon Boundary", IONO_NORTH_Psi(IONO_nTheta-i+1,j)*cRadToDeg
-                    av_mono_value = (&
-                         discrete_nf(IONO_nTheta-i+1+1,j  )+ &
-                         discrete_nf(IONO_nTheta-i+1+1,j+1)+ &
-                         discrete_nf(IONO_nTheta-i+1-1,j  )+ &
-                         discrete_nf(IONO_nTheta-i+1-1,j+1)+ &
-                         discrete_nf(IONO_nTheta-i+1  ,j+1)) * 1./5.
-                 elseif(j == IONO_nPsi) then
-                    !write(*,*) "Lon Boundary", IONO_NORTH_Psi(IONO_nTheta-i+1,j)*cRadToDeg
-                    av_mono_value = (&
-                         discrete_nf(IONO_nTheta-i+1+1,j  )+ &
-                         discrete_nf(IONO_nTheta-i+1+1,j-1)+ &
-                         discrete_nf(IONO_nTheta-i+1-1,j  )+ &
-                         discrete_nf(IONO_nTheta-i+1-1,j-1)+ &
-                         discrete_nf(IONO_nTheta-i+1  ,j-1)) * 1./5.
-                 else
-                    !write(*,*) "Before Smooth", iono_north_ave_e(IONO_nTheta-i+1,j), &
-                    !     iono_north_eflux(IONO_nTheta-i+1,j) 
-                    av_mono_value = (&
-                         discrete_nf(IONO_nTheta-i+1+1,j  )+ &
-                         discrete_nf(IONO_nTheta-i+1+1,j+1)+ &
-                         discrete_nf(IONO_nTheta-i+1+1,j-1)+ &
-                         discrete_nf(IONO_nTheta-i+1-1,j  )+ &
-                         discrete_nf(IONO_nTheta-i+1-1,j+1)+ &
-                         discrete_nf(IONO_nTheta-i+1-1,j-1)+ &
-                         discrete_nf(IONO_nTheta-i+1  ,j+1)+ &
-                         discrete_nf(IONO_nTheta-i+1  ,j-1)) * 0.125
-                 end if
-                 if (ABS(av_mono_value - discrete_nf(IONO_nTheta-i+1,j)) &
-                      <= 0.15*discrete_nf(IONO_nTheta-i+1+1,j)) then
-                    IONO_NORTH_MONO_EFLUX(IONO_nTheta-i+1,j) = discrete_nf(IONO_nTheta-i+1+1,j)
-                 else
-                    IONO_NORTH_MONO_EFLUX(IONO_nTheta-i+1,j) = av_mono_value
-                    !write(*,*) "After Smooth", iono_north_ave_e(IONO_nTheta-i+1,j), &
-                    !     iono_north_eflux(IONO_nTheta-i+1,j)
-                 end if
-              end if
-           end do
-        end do
-        ! Use the IONO_MONO array as a buffer
-        discrete_nf = ABS(IONO_NORTH_MONO_EFLUX)
+        ! Smoothing Filter on Boundaries - discrete_nf
+        call smooth_lagrange_polar(discrete_nf, IONO_nTheta, IONO_nPsi)
 
         ! -----------------------------------------------------
-        ! Calculate net conductance ===========================
+        ! Calculate net electron fluxes =======================
         ! -----------------------------------------------------
-        ! Let's weight the average energy by the number flux, which is ef/av
-        !iono_north_ave_e = diffuse_ae
+
+        ! NOTE: This calculation is only for diffuse and discrete
+        ! electron precip. For ion diffuse and broadband, the flux
+        ! is converted into conductance differently. - AM
+
+        if(DoTest) then ! Debug
+           write(*,*)'IONO_nPsi and nTheta = ', IONO_nPsi, IONO_nTheta
+           write(*,*)'Let us look at diffuse_ef, discrete_ef, diffuse_nf, discrete_nf'
+           do j = 1, IONO_nPsi
+              do i = 1, IONO_nTheta
+                 write(*,'(2(i4.4,1x),4(E10.5, 1x))') i,j,diffuse_ef(i,j), &
+                      discrete_ef(i,j), diffuse_nf(i,j), discrete_nf(i,j)
+              end do
+           end do
+        end if
+
+        ! Energy Flux ================================================
+        ! Weight the Average Energy by the Number Flux, which is ef/av
         
-        !iono_north_ave_e = diffuse_ef / &
+        ! These will be parameterized in the future... - AM & DTW
+        !iono_north_ave_e = &            ! If only using diffuse precip
+        !     diffuse_ef /  & 
         !     (1E03 * 1.6e-19 * diffuse_nf)
-        !iono_north_ave_e = discrete_ae
-        iono_north_ave_e = & ! Convert this into keV (x 10^3)
-             (diffuse_ef + discrete_ef) / &
-             (1E03 * 1.6e-19 * (diffuse_nf + discrete_nf))
+        !iono_north_ave_e = discrete_ae  ! If only using discrete precip
         
+        iono_north_ave_e =                & ! If using both precip
+             (diffuse_ef + discrete_ef) / &
+             (1E03 * 1.6e-19 *            & ! Convert this into keV (x 10^3)
+             (diffuse_nf + discrete_nf))
+
+        ! Average Energy =========================================
         ! The energy flux should be weighted by the average energy
-        !iono_north_eflux = diffuse_ef
-        !iono_north_eflux = discrete_ef
-        iono_north_eflux = &
-             (1E03 * 1.6e-19 * (diffuse_nf + discrete_nf)) * &
+
+        ! These will be parameterized in the future... - AM & DTW
+        !iono_north_eflux = diffuse_ef      ! If only using diffuse prcip
+        !iono_north_eflux = discrete_ef     ! If only using discrete precip
+        iono_north_eflux =                 & ! If using both precip
+             (1E03 * 1.6e-19 *             &
+             (diffuse_nf + discrete_nf)) * &
              iono_north_ave_e
-        !iono_north_eflux = iono_north_eflux * 0.5
 
-        ! The energy flux should be weighted by the average energy
-        !iono_north_eflux = diffuse_ef
-        !iono_north_eflux = &
-        !     (diffuse_nf + discrete_nf) * &
-        !     iono_north_ave_e
-
-        ! High and Low Ceilings
+        ! High and Low Ceilings - From iModel 6
         where (iono_north_ave_e < IONO_Min_Ave_E) &
              iono_north_ave_e = IONO_Min_Ave_E
         where (iono_north_ave_e < IONO_Min_Ave_E) &
@@ -1625,130 +1497,33 @@ subroutine FACs_to_fluxes(iModel, iBlock)
         where (iono_north_ave_e > 10.0) &
              iono_north_ave_e = IONO_Min_Ave_E
 
-        ! For Storage
+        ! For Storage onto global variables
         IONO_NORTH_DIFF_Ave_E = diffuse_ae
         IONO_NORTH_DIFF_EFlux = diffuse_ef
 
         IONO_NORTH_MONO_Ave_E = discrete_ae
         IONO_NORTH_MONO_EFlux = discrete_ef
+
+        ! Smoothing Filter on Boundaries - Total Electron E-Flux
+        call smooth_lagrange_polar(iono_north_eflux, IONO_nTheta, IONO_nPsi)
+
+        ! Smoothing Filter on Boundaries - Total Electron Ave-E
+        call smooth_lagrange_polar(iono_north_ave_e, IONO_nTheta, IONO_nPsi)
         
-        ! Smoothing Filter on Boundaries
-        do j = 1, IONO_nPsi
-           do i = 1, IONO_nTheta
-              ! At boundaries, the values sharply drop to the minimum Ave E value
-              !if (iono_north_ave_e(i,j) <= IONO_Min_Ave_E) then
-              !   write(*,*)IONO_NORTH_Theta(i,j)*cRadToDeg
 
-              ! Since the Theta value is actually colatitude, the values start from 0 to 90
-              ! i.e. it starts from Latitude 90 (pole) to latitude 0 (equator)
-              ! Since we want to go from equator to pole, we are reversing the latitudinal
-              ! march in space = (IONO_nTheta + 1) - i
-              
-              if (iono_north_ave_e(IONO_nTheta-i+1,j) <= IONO_Min_Ave_E) then
-                 ! Case 1
-                 if (i == 1) then ! Latitudinal 
-                    !write(*,*) "Lat Boundary", IONO_NORTH_Theta(IONO_nTheta-i+1,j)*cRadToDeg
-                    ! Longitudinal Boundary
-                    if(j == 1) then
-                       !write(*,*) "Lon Boundary", IONO_NORTH_Psi(IONO_nTheta-i+1,j)*cRadToDeg
-                    elseif(j == IONO_nPsi) then
-                       !write(*,*) "Lon Boundary", IONO_NORTH_Psi(IONO_nTheta-i+1,j)*cRadToDeg
-                    end if
-                    ! Case 2   
-                 elseif (i == IONO_nTheta) then
-                    !write(*,*) "Lat Boundary", IONO_NORTH_Theta(IONO_nTheta-i+1,j)*cRadToDeg
-                    ! Longitudinal Boundary
-                    if(j == 1) then
-                       !write(*,*) "Lon Boundary", IONO_NORTH_Psi(IONO_nTheta-i+1,j)*cRadToDeg
-                    elseif(j == IONO_nPsi) then
-                       !write(*,*) "Lon Boundary", IONO_NORTH_Psi(IONO_nTheta-i+1,j)*cRadToDeg
-                    end if
-                    ! Case 3 - Not on a Latitudinal Boundary
-                 else
-                    ! Longitudinal Boundary
-                    if(j == 1) then
-                       !write(*,*) "Lon Boundary", IONO_NORTH_Psi(IONO_nTheta-i+1,j)*cRadToDeg
-                    elseif(j == IONO_nPsi) then
-                       !write(*,*) "Lon Boundary", IONO_NORTH_Psi(IONO_nTheta-i+1,j)*cRadToDeg
-                    else
-                       !write(*,*) "Before Smooth", iono_north_ave_e(IONO_nTheta-i+1,j), &
-                       !     iono_north_eflux(IONO_nTheta-i+1,j) 
-
-                       iono_north_ave_e(IONO_nTheta-i+1,j) = &
-                            (iono_north_ave_e(IONO_nTheta-i+1+1,j) + &
-                            iono_north_ave_e(IONO_nTheta-i+1+1,j+1)+ &
-                            iono_north_ave_e(IONO_nTheta-i+1+1,j-1)+ &
-                            iono_north_ave_e(IONO_nTheta-i+1-1,j)+ &
-                            iono_north_ave_e(IONO_nTheta-i+1-1,j+1)+ &
-                            iono_north_ave_e(IONO_nTheta-i+1-1,j-1)+ &
-                            iono_north_ave_e(IONO_nTheta-i+1,j+1)+ &
-                            iono_north_ave_e(IONO_nTheta-i+1,j-1)) * 0.125
-                       iono_north_eflux(IONO_nTheta-i+1,j) = &
-                            (iono_north_eflux(IONO_nTheta-i+1+1,j)+ &
-                            iono_north_eflux(IONO_nTheta-i+1+1,j+1)+ &
-                            iono_north_eflux(IONO_nTheta-i+1+1,j-1)+ &
-                            iono_north_eflux(IONO_nTheta-i+1-1,j)+ &
-                            iono_north_eflux(IONO_nTheta-i+1-1,j+1)+ &
-                            iono_north_eflux(IONO_nTheta-i+1-1,j-1)+ &
-                            iono_north_eflux(IONO_nTheta-i+1,j+1)+ &
-                            iono_north_eflux(IONO_nTheta-i+1,j-1)) * 0.125
-
-                       IONO_NORTH_DIFF_AVE_E(IONO_nTheta-i+1,j) = &
-                            (IONO_NORTH_DIFF_AVE_E(IONO_nTheta-i+1+1,j) + &
-                            IONO_NORTH_DIFF_AVE_E(IONO_nTheta-i+1+1,j+1)+ &
-                            IONO_NORTH_DIFF_AVE_E(IONO_nTheta-i+1+1,j-1)+ &
-                            IONO_NORTH_DIFF_AVE_E(IONO_nTheta-i+1-1,j)+ &
-                            IONO_NORTH_DIFF_AVE_E(IONO_nTheta-i+1-1,j+1)+ &
-                            IONO_NORTH_DIFF_AVE_E(IONO_nTheta-i+1-1,j-1)+ &
-                            IONO_NORTH_DIFF_AVE_E(IONO_nTheta-i+1,j+1)+ &
-                            IONO_NORTH_DIFF_AVE_E(IONO_nTheta-i+1,j-1)) * 0.125
-                       IONO_NORTH_DIFF_EFLUX(IONO_nTheta-i+1,j) = &
-                            (IONO_NORTH_DIFF_EFLUX(IONO_nTheta-i+1+1,j)+ &
-                            IONO_NORTH_DIFF_EFLUX(IONO_nTheta-i+1+1,j+1)+ &
-                            IONO_NORTH_DIFF_EFLUX(IONO_nTheta-i+1+1,j-1)+ &
-                            IONO_NORTH_DIFF_EFLUX(IONO_nTheta-i+1-1,j)+ &
-                            IONO_NORTH_DIFF_EFLUX(IONO_nTheta-i+1-1,j+1)+ &
-                            IONO_NORTH_DIFF_EFLUX(IONO_nTheta-i+1-1,j-1)+ &
-                            IONO_NORTH_DIFF_EFLUX(IONO_nTheta-i+1,j+1)+ &
-                            IONO_NORTH_DIFF_EFLUX(IONO_nTheta-i+1,j-1)) * 0.125
-
-                       IONO_NORTH_MONO_AVE_E(IONO_nTheta-i+1,j) = &
-                            (IONO_NORTH_MONO_AVE_E(IONO_nTheta-i+1+1,j) + &
-                            IONO_NORTH_MONO_AVE_E(IONO_nTheta-i+1+1,j+1)+ &
-                            IONO_NORTH_MONO_AVE_E(IONO_nTheta-i+1+1,j-1)+ &
-                            IONO_NORTH_MONO_AVE_E(IONO_nTheta-i+1-1,j)+ &
-                            IONO_NORTH_MONO_AVE_E(IONO_nTheta-i+1-1,j+1)+ &
-                            IONO_NORTH_MONO_AVE_E(IONO_nTheta-i+1-1,j-1)+ &
-                            IONO_NORTH_MONO_AVE_E(IONO_nTheta-i+1,j+1)+ &
-                            IONO_NORTH_MONO_AVE_E(IONO_nTheta-i+1,j-1)) * 0.125
-                       IONO_NORTH_MONO_EFLUX(IONO_nTheta-i+1,j) = &
-                            (IONO_NORTH_MONO_EFLUX(IONO_nTheta-i+1+1,j)+ &
-                            IONO_NORTH_MONO_EFLUX(IONO_nTheta-i+1+1,j+1)+ &
-                            IONO_NORTH_MONO_EFLUX(IONO_nTheta-i+1+1,j-1)+ &
-                            IONO_NORTH_MONO_EFLUX(IONO_nTheta-i+1-1,j)+ &
-                            IONO_NORTH_MONO_EFLUX(IONO_nTheta-i+1-1,j+1)+ &
-                            IONO_NORTH_MONO_EFLUX(IONO_nTheta-i+1-1,j-1)+ &
-                            IONO_NORTH_MONO_EFLUX(IONO_nTheta-i+1,j+1)+ &
-                            IONO_NORTH_MONO_EFLUX(IONO_nTheta-i+1,j-1)) * 0.125
-                       !write(*,*) "After Smooth", iono_north_ave_e(IONO_nTheta-i+1,j), &
-                       !     iono_north_eflux(IONO_nTheta-i+1,j)
-                    end if
-                 end if
-              end if
-           end do
-        end do
+        if(DoTest) write(*,*) "MAGNIT: Done with northern aurora."
         
-!        ! Let's add a little conductance on ANY not in the polar cap,
-!        ! so the code doesn't blow up
-!        do j = 1, IONO_nPsi
-!           do i = 1, IONO_nTheta
-!              if (iono_north_p(i,j) <= 0.0) then
-!                 iono_north_ave_e(i,j) = max(iono_north_ave_e(i,j),polarcap_avee)
-!                 iono_north_eflux(i,j) = &
-!                      max(iono_north_eflux(i,j),polarcap_eflux)
-!              endif
-!           enddo
-!        enddo
+        !! Let's add a little conductance on ANY not in the polar cap,
+        !! so the code doesn't blow up
+        !do j = 1, IONO_nPsi
+        !   do i = 1, IONO_nTheta
+        !      if (iono_north_p(i,j) <= 0.0) then
+        !         iono_north_ave_e(i,j) = max(iono_north_ave_e(i,j),polarcap_avee)
+        !         iono_north_eflux(i,j) = &
+        !              max(iono_north_eflux(i,j),polarcap_eflux)
+        !      endif
+        !   enddo
+        !enddo
 
      else !----------------- SOUTHERN HEMISPHERE --------------------------
 
@@ -2021,7 +1796,6 @@ subroutine FACs_to_fluxes(iModel, iBlock)
                  eV(i,j) = 0.
               end if
 
-
               ! Grand Calculation for the Energy Flux (in W/m2)
               ! See Knight [1973] and Fridman and Lemaire [1980] for details.
               !write(*,*)'!!! South', i,j,ev(i,j),iono_T(i,j),rm
@@ -2112,176 +1886,56 @@ subroutine FACs_to_fluxes(iModel, iBlock)
         ! leads to localized pockets of high FACs with unphysical
         ! values as the simulation marches in time. This step is
         ! added to make sure such localization is arrested early on.
-        !
-        ! This is a temporary measure. This may not be applied for
-        ! lower resolution simulations and/or with anomalous conductivity.
 
-        ! Smoothing Filter on Boundaries
-        do j = 1, IONO_nPsi
-           do i = 1, IONO_nTheta
-              ! At boundaries, the values sharply drop to the minimum Ave E value
-              !if (iono_north_ave_e(i,j) <= IONO_Min_Ave_E) then
-              !   write(*,*)IONO_NORTH_Theta(i,j)*cRadToDeg
+        ! Smoothing Filter on Boundaries - discrete_ef
+        call smooth_lagrange_polar(discrete_ef, IONO_nTheta, IONO_nPsi)
 
-              ! Since the Theta value is actually colatitude, the values start from 0 to 90
-              ! i.e. it starts from Latitude 90 (pole) to latitude 0 (equator)
-              ! Since we want to go from equator to pole, we are reversing the latitudinal
-              ! march in space = (IONO_nTheta + 1) - i
-
-              ! Case 1
-              if (i == 1) then ! Latitudinal 
-                 !write(*,*) "Lat Boundary", IONO_NORTH_Theta(IONO_nTheta-i+1,j)*cRadToDeg
-                 ! Longitudinal Boundary
-                 if(j == 1) then
-                    !write(*,*) "Lon Boundary", IONO_NORTH_Psi(IONO_nTheta-i+1,j)*cRadToDeg
-                 elseif(j == IONO_nPsi) then
-                    !write(*,*) "Lon Boundary", IONO_NORTH_Psi(IONO_nTheta-i+1,j)*cRadToDeg
-                 end if
-                 ! Case 2   
-              elseif (i == IONO_nTheta) then
-                 !write(*,*) "Lat Boundary", IONO_NORTH_Theta(IONO_nTheta-i+1,j)*cRadToDeg
-                 ! Longitudinal Boundary
-                 if(j == 1) then
-                    !write(*,*) "Lon Boundary", IONO_NORTH_Psi(IONO_nTheta-i+1,j)*cRadToDeg
-                 elseif(j == IONO_nPsi) then
-                    !write(*,*) "Lon Boundary", IONO_NORTH_Psi(IONO_nTheta-i+1,j)*cRadToDeg
-                 end if
-                 ! Case 3 - Not on a Latitudinal Boundary
-              else
-                 ! Longitudinal Boundary
-                 if(j == 1) then
-                    !write(*,*) "Lon Boundary", IONO_NORTH_Psi(IONO_nTheta-i+1,j)*cRadToDeg
-                    av_mono_value = (discrete_ef(IONO_nTheta-i+1+1,j)+ &
-                         discrete_ef(IONO_nTheta-i+1+1,j+1)+ &
-                         discrete_ef(IONO_nTheta-i+1-1,j)+ &
-                         discrete_ef(IONO_nTheta-i+1-1,j+1)+ &
-                         discrete_ef(IONO_nTheta-i+1,j-1)) * 1./5.
-                 elseif(j == IONO_nPsi) then
-                    !write(*,*) "Lon Boundary", IONO_NORTH_Psi(IONO_nTheta-i+1,j)*cRadToDeg
-                    av_mono_value = (discrete_ef(IONO_nTheta-i+1+1,j)+ &
-                         discrete_ef(IONO_nTheta-i+1+1,j-1)+ &
-                         discrete_ef(IONO_nTheta-i+1-1,j)+ &
-                         discrete_ef(IONO_nTheta-i+1-1,j-1)+ &
-                         discrete_ef(IONO_nTheta-i+1,j-1)) * 1./5.
-                 else
-                    !write(*,*) "Before Smooth", iono_north_ave_e(IONO_nTheta-i+1,j), &
-                    !     iono_north_eflux(IONO_nTheta-i+1,j) 
-                    av_mono_value = (discrete_ef(IONO_nTheta-i+1+1,j)+ &
-                         discrete_ef(IONO_nTheta-i+1+1,j+1)+ &
-                         discrete_ef(IONO_nTheta-i+1+1,j-1)+ &
-                         discrete_ef(IONO_nTheta-i+1-1,j)+ &
-                         discrete_ef(IONO_nTheta-i+1-1,j+1)+ &
-                         discrete_ef(IONO_nTheta-i+1-1,j-1)+ &
-                         discrete_ef(IONO_nTheta-i+1,j+1)+ &
-                         discrete_ef(IONO_nTheta-i+1,j-1)) * 0.125
-                 end if
-              end if
-              if(i>1)then
-                 if (ABS(av_mono_value - discrete_ef(IONO_nTheta-i+1,j)) <= 0.15*discrete_ef(IONO_nTheta-i+1+1,j)) then
-                    IONO_SOUTH_MONO_EFLUX(IONO_nTheta-i+1,j) = discrete_ef(IONO_nTheta-i+1+1,j)
-                 else
-                    IONO_SOUTH_MONO_EFLUX(IONO_nTheta-i+1,j) = av_mono_value
-                    !write(*,*) "After Smooth", iono_north_ave_e(IONO_nTheta-i+1,j), &
-                    !     iono_north_eflux(IONO_nTheta-i+1,j)
-                 end if
-              end if
-           end do
-        end do
-        ! Use the IONO_MONO array as a buffer
-        discrete_ef = ABS(IONO_SOUTH_MONO_EFLUX)
-
-        IONO_SOUTH_MONO_EFLUX = 0.
-        ! Smoothing Filter on Boundaries
-        do j = 1, IONO_nPsi
-           do i = 1, IONO_nTheta
-              ! At boundaries, the values sharply drop to the minimum Ave E value
-              !if (iono_north_ave_e(i,j) <= IONO_Min_Ave_E) then
-              !   write(*,*)IONO_NORTH_Theta(i,j)*cRadToDeg
-
-              ! Since the Theta value is actually colatitude, the values start from 0 to 90
-              ! i.e. it starts from Latitude 90 (pole) to latitude 0 (equator)
-              ! Since we want to go from equator to pole, we are reversing the latitudinal
-              ! march in space = (IONO_nTheta + 1) - i
-
-              ! Case 1
-              if (i == 1) then ! Latitudinal 
-                 !write(*,*) "Lat Boundary", IONO_NORTH_Theta(IONO_nTheta-i+1,j)*cRadToDeg
-                 ! Longitudinal Boundary
-                 if(j == 1) then
-                    !write(*,*) "Lon Boundary", IONO_NORTH_Psi(IONO_nTheta-i+1,j)*cRadToDeg
-                 elseif(j == IONO_nPsi) then
-                    !write(*,*) "Lon Boundary", IONO_NORTH_Psi(IONO_nTheta-i+1,j)*cRadToDeg
-                 end if
-                 ! Case 2   
-              elseif (i == IONO_nTheta) then
-                 !write(*,*) "Lat Boundary", IONO_NORTH_Theta(IONO_nTheta-i+1,j)*cRadToDeg
-                 ! Longitudinal Boundary
-                 if(j == 1) then
-                    !write(*,*) "Lon Boundary", IONO_NORTH_Psi(IONO_nTheta-i+1,j)*cRadToDeg
-                 elseif(j == IONO_nPsi) then
-                    !write(*,*) "Lon Boundary", IONO_NORTH_Psi(IONO_nTheta-i+1,j)*cRadToDeg
-                 end if
-                 ! Case 3 - Not on a Latitudinal Boundary
-              else
-                 ! Longitudinal Boundary
-                 if(j == 1) then
-                    !write(*,*) "Lon Boundary", IONO_NORTH_Psi(IONO_nTheta-i+1,j)*cRadToDeg
-                    av_mono_value = (discrete_nf(IONO_nTheta-i+1+1,j)+ &
-                         discrete_nf(IONO_nTheta-i+1+1,j+1)+ &
-                         discrete_nf(IONO_nTheta-i+1-1,j)+ &
-                         discrete_nf(IONO_nTheta-i+1-1,j+1)+ &
-                         discrete_nf(IONO_nTheta-i+1,j-1)) * 1./5.
-                 elseif(j == IONO_nPsi) then
-                    !write(*,*) "Lon Boundary", IONO_NORTH_Psi(IONO_nTheta-i+1,j)*cRadToDeg
-                    av_mono_value = (discrete_nf(IONO_nTheta-i+1+1,j)+ &
-                         discrete_nf(IONO_nTheta-i+1+1,j-1)+ &
-                         discrete_nf(IONO_nTheta-i+1-1,j)+ &
-                         discrete_nf(IONO_nTheta-i+1-1,j-1)+ &
-                         discrete_nf(IONO_nTheta-i+1,j-1)) * 1./5.
-                 else
-                    !write(*,*) "Before Smooth", iono_north_ave_e(IONO_nTheta-i+1,j), &
-                    !     iono_north_eflux(IONO_nTheta-i+1,j) 
-                    av_mono_value = (discrete_nf(IONO_nTheta-i+1+1,j)+ &
-                         discrete_nf(IONO_nTheta-i+1+1,j+1)+ &
-                         discrete_nf(IONO_nTheta-i+1+1,j-1)+ &
-                         discrete_nf(IONO_nTheta-i+1-1,j)+ &
-                         discrete_nf(IONO_nTheta-i+1-1,j+1)+ &
-                         discrete_nf(IONO_nTheta-i+1-1,j-1)+ &
-                         discrete_nf(IONO_nTheta-i+1,j+1)+ &
-                         discrete_nf(IONO_nTheta-i+1,j-1)) * 0.125
-                 end if
-              end if
-              if (ABS(av_mono_value - discrete_nf(IONO_nTheta-i+1,j)) <= 0.15*discrete_nf(IONO_nTheta-i+1+1,j)) then
-                 IONO_SOUTH_MONO_EFLUX(IONO_nTheta-i+1,j) = discrete_nf(IONO_nTheta-i+1+1,j)
-              else
-                 IONO_SOUTH_MONO_EFLUX(IONO_nTheta-i+1,j) = av_mono_value
-                 !write(*,*) "After Smooth", iono_north_ave_e(IONO_nTheta-i+1,j), &
-                 !     iono_north_eflux(IONO_nTheta-i+1,j)
-              end if
-           end do
-        end do
-        ! Use the IONO_MONO array as a buffer
-        discrete_nf = ABS(IONO_SOUTH_MONO_EFLUX)
+        ! Smoothing Filter on Boundaries - discrete_nf
+        call smooth_lagrange_polar(discrete_nf, IONO_nTheta, IONO_nPsi)
 
         ! -----------------------------------------------------
-        ! Calculate net conductance ===========================
+        ! Calculate net electron fluxes =======================
         ! -----------------------------------------------------
-        ! Let's weight the average energy by the number flux, which is ef/av
-        !iono_south_ave_e = diffuse_ef / &
-        !     (1E03 * 1.6e-19 * diffuse_nf)
-        !iono_south_ave_e = discrete_ae
-        iono_south_ave_e = & ! Convert this into keV (x 10^3)
-             (diffuse_ef + discrete_ef) / &
-             (1E03 * 1.6e-19 * (diffuse_nf + discrete_nf))
+
+        ! NOTE: This calculation is only for diffuse and discrete
+        ! electron precip. For ion diffuse and broadband, the flux
+        ! is converted into conductance differently. - AM
+
+        if(DoTest) then ! Debug
+           write(*,*)'IONO_nPsi and nTheta = ', IONO_nPsi, IONO_nTheta
+           write(*,*)'Let us look at diffuse_ef, discrete_ef, diffuse_nf, discrete_nf'
+           do j = 1, IONO_nPsi
+              do i = 1, IONO_nTheta
+                 write(*,'(2(i4.4,1x),4(E10.5, 1x))') i,j,diffuse_ef(i,j), &
+                      discrete_ef(i,j), diffuse_nf(i,j), discrete_nf(i,j)
+              end do
+           end do
+        end if
+
+        ! Energy Flux ================================================
+        ! Weight the Average Energy by the Number Flux, which is ef/av
         
-        ! The energy flux should be weighted by the average energy
-        !iono_south_eflux = diffuse_ef
-        !iono_south_eflux = discrete_ef
-        iono_south_eflux = &
-             (1E03 * 1.6e-19 * (diffuse_nf + discrete_nf)) * &
-             iono_south_ave_e
+        ! These will be parameterized in the future... - AM & DTW
+        !iono_south_ave_e = &            ! If only using diffuse precip
+        !     diffuse_ef /  & 
+        !     (1E03 * 1.6e-19 * diffuse_nf)
+        !iono_south_ave_e = discrete_ae  ! If only using discrete precip
+        
+        iono_south_ave_e =                & ! If using both precip
+             (diffuse_ef + discrete_ef) / &
+             (1E03 * 1.6e-19 *            & ! Convert this into keV (x 10^3)
+             (diffuse_nf + discrete_nf))
 
-        !iono_south_eflux = iono_south_eflux * 0.5
+        ! Average Energy =========================================
+        ! The energy flux should be weighted by the average energy
+
+        ! These will be parameterized in the future... - AM & DTW
+        !iono_south_eflux = diffuse_ef      ! If only using diffuse prcip
+        !iono_south_eflux = discrete_ef     ! If only using discrete precip
+        iono_south_eflux =                 & ! If using both precip
+             (1E03 * 1.6e-19 *             &
+             (diffuse_nf + discrete_nf)) * &
+             iono_south_ave_e
 
         where (iono_south_ave_e > 10.) &
           iono_south_ave_e = IONO_Min_Ave_E
@@ -2338,112 +1992,14 @@ subroutine FACs_to_fluxes(iModel, iBlock)
         IONO_SOUTH_MONO_Ave_E = discrete_ae
         IONO_SOUTH_MONO_EFlux = discrete_ef
 
-        do j = 1, IONO_nPsi
-           do i = 1, IONO_nTheta
-              ! At boundaries, the values sharply drop to the minimum Ave E value
-              !if (iono_north_ave_e(i,j) <= IONO_Min_Ave_E) then
-              !   write(*,*)IONO_NORTH_Theta(i,j)*cRadToDeg
-
-              ! Since the Theta value is actually colatitude, the values start from 0 to 90
-              ! i.e. it starts from Latitude 90 (pole) to latitude 0 (equator)
-              ! Since we want to go from equator to pole, we are reversing the latitudinal
-              ! march in space = (IONO_nTheta + 1) - i
-
-              if (iono_south_ave_e(IONO_nTheta-i+1,j) <= IONO_Min_Ave_E) then
-                 ! Case 1
-                 if (i == 1) then ! Latitudinal 
-                    !write(*,*) "Lat Boundary", IONO_NORTH_Theta(IONO_nTheta-i+1,j)*cRadToDeg
-                    ! Longitudinal Boundary
-                    if(j == 1) then
-                       !write(*,*) "Lon Boundary", IONO_NORTH_Psi(IONO_nTheta-i+1,j)*cRadToDeg
-                    elseif(j == IONO_nPsi) then
-                       !write(*,*) "Lon Boundary", IONO_NORTH_Psi(IONO_nTheta-i+1,j)*cRadToDeg
-                    end if
-                    ! Case 2   
-                 elseif (i == IONO_nTheta) then
-                    !write(*,*) "Lat Boundary", IONO_NORTH_Theta(IONO_nTheta-i+1,j)*cRadToDeg
-                    ! Longitudinal Boundary
-                    if(j == 1) then
-                       !write(*,*) "Lon Boundary", IONO_NORTH_Psi(IONO_nTheta-i+1,j)*cRadToDeg
-                    elseif(j == IONO_nPsi) then
-                       !write(*,*) "Lon Boundary", IONO_NORTH_Psi(IONO_nTheta-i+1,j)*cRadToDeg
-                    end if
-                    ! Case 3 - Not on a Latitudinal Boundary
-                 else
-                    ! Longitudinal Boundary
-                    if(j == 1) then
-                       !write(*,*) "Lon Boundary", IONO_NORTH_Psi(IONO_nTheta-i+1,j)*cRadToDeg
-                    elseif(j == IONO_nPsi) then
-                       !write(*,*) "Lon Boundary", IONO_NORTH_Psi(IONO_nTheta-i+1,j)*cRadToDeg
-                    else
-                       !write(*,*) "Before Smooth", iono_north_ave_e(IONO_nTheta-i+1,j), &
-                       !     iono_north_eflux(IONO_nTheta-i+1,j) 
-
-                       iono_south_ave_e(IONO_nTheta-i+1,j) = &
-                            (iono_south_ave_e(IONO_nTheta-i+1+1,j) + &
-                            iono_south_ave_e(IONO_nTheta-i+1+1,j+1)+ &
-                            iono_south_ave_e(IONO_nTheta-i+1+1,j-1)+ &
-                            iono_south_ave_e(IONO_nTheta-i+1-1,j)+ &
-                            iono_south_ave_e(IONO_nTheta-i+1-1,j+1)+ &
-                            iono_south_ave_e(IONO_nTheta-i+1-1,j-1)+ &
-                            iono_south_ave_e(IONO_nTheta-i+1,j+1)+ &
-                            iono_south_ave_e(IONO_nTheta-i+1,j-1)) * 0.125
-                       iono_south_eflux(IONO_nTheta-i+1,j) = &
-                            (iono_south_eflux(IONO_nTheta-i+1+1,j)+ &
-                            iono_south_eflux(IONO_nTheta-i+1+1,j+1)+ &
-                            iono_south_eflux(IONO_nTheta-i+1+1,j-1)+ &
-                            iono_south_eflux(IONO_nTheta-i+1-1,j)+ &
-                            iono_south_eflux(IONO_nTheta-i+1-1,j+1)+ &
-                            iono_south_eflux(IONO_nTheta-i+1-1,j-1)+ &
-                            iono_south_eflux(IONO_nTheta-i+1,j+1)+ &
-                            iono_south_eflux(IONO_nTheta-i+1,j-1)) * 0.125
-
-                       IONO_SOUTH_DIFF_AVE_E(IONO_nTheta-i+1,j) = &
-                            (IONO_SOUTH_DIFF_AVE_E(IONO_nTheta-i+1+1,j) + &
-                            IONO_SOUTH_DIFF_AVE_E(IONO_nTheta-i+1+1,j+1)+ &
-                            IONO_SOUTH_DIFF_AVE_E(IONO_nTheta-i+1+1,j-1)+ &
-                            IONO_SOUTH_DIFF_AVE_E(IONO_nTheta-i+1-1,j)+ &
-                            IONO_SOUTH_DIFF_AVE_E(IONO_nTheta-i+1-1,j+1)+ &
-                            IONO_SOUTH_DIFF_AVE_E(IONO_nTheta-i+1-1,j-1)+ &
-                            IONO_SOUTH_DIFF_AVE_E(IONO_nTheta-i+1,j+1)+ &
-                            IONO_SOUTH_DIFF_AVE_E(IONO_nTheta-i+1,j-1)) * 0.125
-                       IONO_SOUTH_DIFF_EFLUX(IONO_nTheta-i+1,j) = &
-                            (IONO_SOUTH_DIFF_EFLUX(IONO_nTheta-i+1+1,j)+ &
-                            IONO_SOUTH_DIFF_EFLUX(IONO_nTheta-i+1+1,j+1)+ &
-                            IONO_SOUTH_DIFF_EFLUX(IONO_nTheta-i+1+1,j-1)+ &
-                            IONO_SOUTH_DIFF_EFLUX(IONO_nTheta-i+1-1,j)+ &
-                            IONO_SOUTH_DIFF_EFLUX(IONO_nTheta-i+1-1,j+1)+ &
-                            IONO_SOUTH_DIFF_EFLUX(IONO_nTheta-i+1-1,j-1)+ &
-                            IONO_SOUTH_DIFF_EFLUX(IONO_nTheta-i+1,j+1)+ &
-                            IONO_SOUTH_DIFF_EFLUX(IONO_nTheta-i+1,j-1)) * 0.125
-
-                       IONO_SOUTH_MONO_AVE_E(IONO_nTheta-i+1,j) = &
-                            (IONO_SOUTH_MONO_AVE_E(IONO_nTheta-i+1+1,j) + &
-                            IONO_SOUTH_MONO_AVE_E(IONO_nTheta-i+1+1,j+1)+ &
-                            IONO_SOUTH_MONO_AVE_E(IONO_nTheta-i+1+1,j-1)+ &
-                            IONO_SOUTH_MONO_AVE_E(IONO_nTheta-i+1-1,j)+ &
-                            IONO_SOUTH_MONO_AVE_E(IONO_nTheta-i+1-1,j+1)+ &
-                            IONO_SOUTH_MONO_AVE_E(IONO_nTheta-i+1-1,j-1)+ &
-                            IONO_SOUTH_MONO_AVE_E(IONO_nTheta-i+1,j+1)+ &
-                            IONO_SOUTH_MONO_AVE_E(IONO_nTheta-i+1,j-1)) * 0.125
-                       IONO_SOUTH_MONO_EFLUX(IONO_nTheta-i+1,j) = &
-                            (IONO_SOUTH_MONO_EFLUX(IONO_nTheta-i+1+1,j)+ &
-                            IONO_SOUTH_MONO_EFLUX(IONO_nTheta-i+1+1,j+1)+ &
-                            IONO_SOUTH_MONO_EFLUX(IONO_nTheta-i+1+1,j-1)+ &
-                            IONO_SOUTH_MONO_EFLUX(IONO_nTheta-i+1-1,j)+ &
-                            IONO_SOUTH_MONO_EFLUX(IONO_nTheta-i+1-1,j+1)+ &
-                            IONO_SOUTH_MONO_EFLUX(IONO_nTheta-i+1-1,j-1)+ &
-                            IONO_SOUTH_MONO_EFLUX(IONO_nTheta-i+1,j+1)+ &
-                            IONO_SOUTH_MONO_EFLUX(IONO_nTheta-i+1,j-1)) * 0.125
-                       !write(*,*) "After Smooth", iono_north_ave_e(IONO_nTheta-i+1,j), &
-                       !     iono_north_eflux(IONO_nTheta-i+1,j)
-                    end if
-                 end if
-              end if
-           end do
-        end do
         
-        write(*,*) "MAGNIT: Done with southern aurora."
+        ! Smoothing Filter on Boundaries - Total Electron E-Flux
+        call smooth_lagrange_polar(iono_south_eflux, IONO_nTheta, IONO_nPsi)
+
+        ! Smoothing Filter on Boundaries - Total Electron Ave-E
+        call smooth_lagrange_polar(iono_south_ave_e, IONO_nTheta, IONO_nPsi)
+        
+        if(DoTest) write(*,*) "MAGNIT: Done with southern aurora."
 
 !        do j = 1, IONO_nPsi
 !           do i = 1, IONO_nTheta
