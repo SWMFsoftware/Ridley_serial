@@ -143,6 +143,10 @@ subroutine ionosphere_fine_grid
      case(8)
         write(iUnitOut,'(a)') "MAGNIT Physics-based Aurora"
         write(iUnitOut,'(a)') "(Beta-testing Phase)"
+        write(*,*) '################## CAUTION ##################'
+        write(*,*) '(Beta Testing) The conductance calculations from MAGNIT are unstable.'
+        write(*,*) 'Please proceed with caution. For issues, please contact developers.'
+        write(*,*) '#############################################'
      case default
         call CON_stop(NameSub//" IE_ERROR invalid conductance_model")
      end select

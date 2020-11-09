@@ -970,14 +970,14 @@ subroutine FACs_to_fluxes(iModel, iBlock)
      MulFac_ef = 0.3e6! * 1e03
      MulFac_ae = 3.65e-12
 
+     ! Warning Message
+     write(*,*) '################## CAUTION ##################'
+     write(*,*) '(Beta Testing) The conductance calculations from MAGNIT are unstable.'
+     write(*,*) 'Please proceed with caution. For issues, please contact developers.'
+     write(*,*) '#############################################'
+
      if (iBlock == 1) then ! Northern Hemisphere
 
-        ! Warning Message
-        write(*,*) '################## CAUTION ##################'
-        write(*,*) '(Beta Testing) The conductance calculations from MAGNIT are unstable.'
-        write(*,*) 'Please proceed with caution. For issues, please contact developers.'
-        write(*,*) '#############################################'
-        
         ! First, we set up some basic limits to our flux values
         iono_north_eflux = 1.0e-6
         iono_north_ave_e = 1.0
@@ -1120,13 +1120,16 @@ subroutine FACs_to_fluxes(iModel, iBlock)
         !write(*,*) 'MaxVal Number Density (in amu/cm3)', maxval(iono_Ne)
         ! Conversion to Kelvins
         iono_T = iono_north_ave_e * 1e03 * 1.1e04! * 1./6.
-        write(*,*) 'N_Diff: MaxVal Ave_E (in keV)', maxval(iono_north_ave_e)
-        !write(*,*) 'MaxVal Temperature (in K)', maxval(iono_T)
         ! Energy Flux
         iono_north_eflux = iono_Ne * 1.38e-23 * 1e06 * &
              1553.5632  * iono_T**1.5 !* &
              !0.4 ! Beta = Loss Cone Factor (Can be replaced using same method as in RCM)
-        write(*,*) 'N_Diff: MaxVal EFlux (in W/m2)', maxval(iono_north_eflux)
+
+        if (DoTest) then
+           write(*,*) 'N_Diff: MaxVal Ave_E (in keV)', maxval(iono_north_ave_e)
+           !write(*,*) 'MaxVal Temperature (in K)', maxval(iono_T)
+           write(*,*) 'N_Diff: MaxVal EFlux (in W/m2)', maxval(iono_north_eflux)
+        end if
 
         ! Loss Cone Factor, as derived in Wolf et al. 1991
         !do j = 1, IONO_nPsi
@@ -1225,6 +1228,8 @@ subroutine FACs_to_fluxes(iModel, iBlock)
 
         ! Let's have somw default values
         ev = 0.0
+
+        discrete_nf = 1.0e-8
 
         ! The Great Loop of our time...
         do j = 1, IONO_nPsi
@@ -1357,10 +1362,12 @@ subroutine FACs_to_fluxes(iModel, iBlock)
         where (iono_north_ave_e > 100.0) &
              iono_north_ave_e = 100.0
 
-        write(*,*) 'N_Discr: MaxVal Downward FAC', minval(iono_north_jr)
-        write(*,*) 'N_Discr: MaxVal NFlux ', maxval(discrete_nf(1:IONO_ntheta-1,:))
-        write(*,*) 'N_Discr: MaxVal EFlux (in W/m2)', maxval(discrete_ef)
-        write(*,*) 'N_Discr: MaxVal Ave_E (in keV)', maxval(discrete_ae)
+        if (DoTest) then
+           write(*,*) 'N_Discr: MinVal Downward FAC', minval(iono_north_jr)
+           write(*,*) 'N_Discr: MaxVal NFlux ', maxval(discrete_nf(1:IONO_ntheta-1,:))
+           write(*,*) 'N_Discr: MaxVal EFlux (in W/m2)', maxval(discrete_ef)
+           write(*,*) 'N_Discr: MaxVal Ave_E (in keV)', maxval(discrete_ae)
+        end if
         
         ! Let's add a little conductance on ANY not in the polar cap,
         ! so the code doesn't blow up
@@ -1473,7 +1480,7 @@ subroutine FACs_to_fluxes(iModel, iBlock)
         !     diffuse_ef = iono_north_im_eflux/1000.0
         !where ((iono_north_im_eflux/1000.0) > IONO_Min_Eflux) &
         !     diffuse_ae = iono_north_im_avee
-        
+
         ! The Great Loop of our time...
         do j = 1, IONO_nPsi
            do i = 1, IONO_nTheta
@@ -1510,7 +1517,6 @@ subroutine FACs_to_fluxes(iModel, iBlock)
         ! Smoothing Filter on Boundaries - Total Electron Ave-E
         call smooth_lagrange_polar(iono_north_ave_e, IONO_nTheta, IONO_nPsi)
         
-
         if(DoTest) write(*,*) "MAGNIT: Done with northern aurora."
         
         !! Let's add a little conductance on ANY not in the polar cap,
@@ -1530,12 +1536,6 @@ subroutine FACs_to_fluxes(iModel, iBlock)
         !iono_south_eflux = 1.0e-6
         !iono_south_ave_e = 1.0
 
-        ! Warning Message
-        write(*,*) '################## CAUTION ##################'
-        write(*,*) '(Beta Testing) The conductance calculations from MAGNIT are unstable.'
-        write(*,*) 'Please proceed with caution. For issues, please contact developers.'
-        write(*,*) '#############################################'        
-        
         ! The OCFLB Calculation is a little different in the
         ! Southern Hemisphere (because of how the colatitudes
         ! work), so be careful of doing this calculation separately
@@ -1669,13 +1669,18 @@ subroutine FACs_to_fluxes(iModel, iBlock)
         !write(*,*) 'MaxVal Number Density (in amu/cm3)', maxval(iono_Ne)
         ! Conversion to Kelvins
         iono_T = iono_south_ave_e * 1e03 * 1.1e04! * 1./6.
-        write(*,*) 'S_Diff: MaxVal Ave_E (in keV)', maxval(iono_south_ave_e)
+
         !write(*,*) 'MaxVal Temperature (in K)', maxval(iono_T)
         ! Energy Flux
+
         iono_south_eflux = iono_Ne * 1.38e-23 * 1e06 * &
              1553.5632  * iono_T**1.5 !* &
              !0.4 ! Beta = Loss Cone Factor (Can be replaced using same method as in RCM)
-        write(*,*) 'S_Diff: MaxVal EFlux (in W/m2)', maxval(iono_south_eflux)
+
+        if (DoTest) then
+           write(*,*) 'S_Diff: MaxVal Ave_E (in keV)', maxval(iono_south_ave_e)
+           write(*,*) 'S_Diff: MaxVal EFlux (in W/m2)', maxval(iono_south_eflux)
+        end if
         !-----------------------------------------------------------------
         !-----------------------------------------------------------------
 
@@ -1736,8 +1741,10 @@ subroutine FACs_to_fluxes(iModel, iBlock)
 
         !================== Discrete Conductance =========================
         
-        !discrete_ef = 0.0
+        discrete_ef = 1e-12
         !discrete_k  = 0.0
+        discrete_nf = 1e-8
+        discrete_ae = 1e-12
 
         ! =================== SOURCE ====================
         ! Electron Monoenergetic Precipitation (Discrete)
@@ -1747,7 +1754,7 @@ subroutine FACs_to_fluxes(iModel, iBlock)
         ! Fridman and Lemaire (1980). Re-done in Zhang et al.
         ! (2015) and Yu et al. (2016)
         !
-        
+
         ! DISCRETE PRECIP
         diffuse_nf = iono_Ne * 1e06 * 1553.5632 * iono_T**0.5 ! * 0.15 
         rm = 1.1
@@ -1857,10 +1864,12 @@ subroutine FACs_to_fluxes(iModel, iBlock)
         where (iono_south_ave_e > 100.0) &
           iono_south_ave_e = IONO_Min_Ave_E!100.0
 
-        !write(*,*) 'S_Discr: MaxVal Downward FAC', minval(iono_south_jr)
-        write(*,*) 'S_Discr: MaxVal NFlux ', maxval(discrete_nf)
-        write(*,*) 'S_Discr: MaxVal EFlux (in W/m2)', maxval(discrete_ef)
-        write(*,*) 'S_Discr: MaxVal Ave_E (in keV)', maxval(discrete_ae)
+        if (DoTest) then
+           !write(*,*) 'S_Discr: MaxVal Downward FAC', minval(iono_south_jr)
+           write(*,*) 'S_Discr: MaxVal NFlux ', maxval(discrete_nf)
+           write(*,*) 'S_Discr: MaxVal EFlux (in W/m2)', maxval(discrete_ef)
+           write(*,*) 'S_Discr: MaxVal Ave_E (in keV)', maxval(discrete_ae)
+        end if
         
         ! Let's add a little conductance on ANY not in the polar cap,
         ! so the code doesn't blow up
