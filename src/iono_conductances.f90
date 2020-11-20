@@ -1226,10 +1226,9 @@ subroutine FACs_to_fluxes(iModel, iBlock)
         diffuse_nf = iono_Ne * 1e06 * 1553.5632 * iono_T**0.5 ! * 0.15
         rm = 1.1 !+ 3*SIN(cHalfPi - IONO_NORTH_Theta(i,j))!100
 
-        ! Let's have somw default values
+        ! Let's have some default values
         ev = 0.0
-
-        discrete_nf = 1.0e-8
+        discrete_nf = 1.0E-12/1.6E-19
 
         ! The Great Loop of our time...
         do j = 1, IONO_nPsi
@@ -1249,7 +1248,7 @@ subroutine FACs_to_fluxes(iModel, iBlock)
                  ! constants like 1.6e-19 should be named constants
                  discrete_nf(i,j) = ABS(iono_north_jr(i,j)) / 1.6E-19
               else
-                 discrete_nf(i,j) = 1E-3
+                 discrete_nf(i,j) = 1.0E-12/1.6E-19
               end if
               !if(i==2 .and. j==1)then
               !   write(*,*)'!!! iono_north_jr(i,j)=',iono_north_jr(i,j)
@@ -1258,14 +1257,13 @@ subroutine FACs_to_fluxes(iModel, iBlock)
 
               ! Set a minimum on diffuse number flux
               ! maximum function can be used above to avoid this
-              if (diffuse_nf(i,j) < 1E-5) then
-                 diffuse_nf(i,j) = 1E-5
+              if (diffuse_nf(i,j) < 1.0E-12/1.6E-19) then
+                 diffuse_nf(i,j) = 1.0E-12/1.6E-19
               end if
 
-              ! Set a minimum on electron temperature.
-              ! What about max function. Also, that's pretty cold in Kelvins
-              if (iono_T(i,j) < 1E-5) then
-                 iono_T(i,j) = 1E-5
+              ! Set a minimum on electron temperature = 1 eV.
+              if (iono_T(i,j) < 1.16E+5) then
+                 iono_T(i,j) = 1.16E+5
               end if              
 
               ! Deal with the following portion carefully
@@ -1758,6 +1756,10 @@ subroutine FACs_to_fluxes(iModel, iBlock)
         ! DISCRETE PRECIP
         diffuse_nf = iono_Ne * 1e06 * 1553.5632 * iono_T**0.5 ! * 0.15 
         rm = 1.1
+
+        ev = 0.0
+        discrete_nf = 1.0E-12/1.6E-19
+        
         ! The Great Loop of our time...
         do j = 1, IONO_nPsi
            ! IONO_nTheta is the equator and the formulas below break down
@@ -1773,17 +1775,17 @@ subroutine FACs_to_fluxes(iModel, iBlock)
               if (iono_south_jr(i,j) > 0.) then
                  discrete_nf(i,j) = ABS(iono_south_jr(i,j)) / 1.6E-19
               else
-                 discrete_nf(i,j) = 1E-3
+                 discrete_nf(i,j) = 1.0E-12/1.6E-19
               end if
 
               ! Set a minimum on diffuse number flux
-              if (diffuse_nf(i,j) < 1E-5) then
-                 diffuse_nf(i,j) = 1E-5
+              if (diffuse_nf(i,j) < 1.0E-12/1.6E-19) then
+                 diffuse_nf(i,j) = 1.0E-12/1.6E-19
               end if
 
-              ! Set a minimum on electron temperature
-              if (iono_T(i,j) < 1E-5) then
-                 iono_T(i,j) = 1E-5
+              ! Set a minimum on electron temperature = 1 eV.
+              if (iono_T(i,j) < 1.16E+5) then
+                 iono_T(i,j) = 1.16E+5
               end if              
 
               ! Deal with the following portion carefully
