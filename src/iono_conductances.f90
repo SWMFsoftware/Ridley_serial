@@ -23,7 +23,7 @@ subroutine FACs_to_fluxes(iModel, iBlock)
   use ModIonosphere
   use IE_ModMain
   use ModNumConst
-  use ModConst, ONLY: cEVToK
+  use ModConst, ONLY: cEVToK, cElectronCharge
   use ModConductance, ONLY: UseSubOvalCond, UseOval, UseNewOval, &
        smooth_lagrange_polar
   implicit none
@@ -55,7 +55,7 @@ subroutine FACs_to_fluxes(iModel, iBlock)
        iono_Ne, iono_T, discrete_nf, diffuse_nf, eV, av_mono_value
   real, dimension(IONO_nPsi) :: OCFLB, EquatorwardEdge, Smooth, OCFLB_s, beta
   real :: MulFac_Dae, MulFac_Def, var_rm, var_tot, numerator, denominator, &
-       rm, vari
+       rm, vari, numflux_floor
   !real, dimension(IONO_nTheta,IONO_nPsi) :: nDen, &
   !     discrete_k, discrete_ae, discrete_ef, diffuse_ae, diffuse_ef, &
   !     iono_Ne, iono_T, discrete_nf, diffuse_nf, eV
@@ -1228,7 +1228,8 @@ subroutine FACs_to_fluxes(iModel, iBlock)
 
         ! Let's have some default values
         ev = 0.0
-        discrete_nf = 1.0E-12/1.6E-19
+        numflux_floor = cFACFloor/cElectronCharge
+        discrete_nf = numflux_floor
 
         ! The Great Loop of our time...
         do j = 1, IONO_nPsi
@@ -1246,9 +1247,9 @@ subroutine FACs_to_fluxes(iModel, iBlock)
               if (iono_north_jr(i,j) > 0.) then
                  ! positive numbers don't change with absolute value
                  ! constants like 1.6e-19 should be named constants
-                 discrete_nf(i,j) = ABS(iono_north_jr(i,j)) / 1.6E-19
+                 discrete_nf(i,j) = ABS(iono_north_jr(i,j)) / cElectronCharge
               else
-                 discrete_nf(i,j) = 1.0E-12/1.6E-19
+                 discrete_nf(i,j) = numflux_floor
               end if
               !if(i==2 .and. j==1)then
               !   write(*,*)'!!! iono_north_jr(i,j)=',iono_north_jr(i,j)
@@ -1257,13 +1258,13 @@ subroutine FACs_to_fluxes(iModel, iBlock)
 
               ! Set a minimum on diffuse number flux
               ! maximum function can be used above to avoid this
-              if (diffuse_nf(i,j) < 1.0E-12/1.6E-19) then
-                 diffuse_nf(i,j) = 1.0E-12/1.6E-19
+              if (diffuse_nf(i,j) < numflux_floor) then
+                 diffuse_nf(i,j) = numflux_floor
               end if
 
               ! Set a minimum on electron temperature = 1 eV.
-              if (iono_T(i,j) < 1.16E+5) then
-                 iono_T(i,j) = 1.16E+5
+              if (iono_T(i,j) < cEVtoK) then
+                 iono_T(i,j) = cEVtoK
               end if              
 
               ! Deal with the following portion carefully
@@ -1758,7 +1759,8 @@ subroutine FACs_to_fluxes(iModel, iBlock)
         rm = 1.1
 
         ev = 0.0
-        discrete_nf = 1.0E-12/1.6E-19
+        numflux_floor = cFACFloor/cElectronCharge
+        discrete_nf = numflux_floor
         
         ! The Great Loop of our time...
         do j = 1, IONO_nPsi
@@ -1773,19 +1775,19 @@ subroutine FACs_to_fluxes(iModel, iBlock)
               ! Discrete N_flux = J/e
               ! Consider only upward FACs
               if (iono_south_jr(i,j) > 0.) then
-                 discrete_nf(i,j) = ABS(iono_south_jr(i,j)) / 1.6E-19
+                 discrete_nf(i,j) = ABS(iono_south_jr(i,j)) / cElectronCharge
               else
-                 discrete_nf(i,j) = 1.0E-12/1.6E-19
+                 discrete_nf(i,j) = numflux_floor
               end if
 
               ! Set a minimum on diffuse number flux
-              if (diffuse_nf(i,j) < 1.0E-12/1.6E-19) then
-                 diffuse_nf(i,j) = 1.0E-12/1.6E-19
+              if (diffuse_nf(i,j) < numflux_floor) then
+                 diffuse_nf(i,j) = numflux_floor
               end if
 
               ! Set a minimum on electron temperature = 1 eV.
-              if (iono_T(i,j) < 1.16E+5) then
-                 iono_T(i,j) = 1.16E+5
+              if (iono_T(i,j) < cEVtoK) then
+                 iono_T(i,j) = cEVtoK
               end if              
 
               ! Deal with the following portion carefully

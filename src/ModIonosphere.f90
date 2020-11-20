@@ -23,7 +23,8 @@ module ModIonosphere
        IONO_Theta_0 = 0.0001,                   &
        IONO_Min_EFlux = 0.1e-16,                &     ! W/m2
        IONO_Min_Ave_E = 0.5,                    &     ! keV
-       Polar_Rain = 0.1e-2                            ! W/m2
+       Polar_Rain = 0.1e-2,                     &     ! W/m2
+       cFACFloor = 1.0E-12                            ! A/m2
 
   integer, parameter :: IONO_Model_No_Hall = 1, &
        IONO_Model_With_Hall = 2,                &
