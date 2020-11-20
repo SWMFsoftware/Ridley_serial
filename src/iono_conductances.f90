@@ -1758,9 +1758,12 @@ subroutine FACs_to_fluxes(iModel, iBlock)
         diffuse_nf = iono_Ne * 1e06 * 1553.5632 * iono_T**0.5 ! * 0.15 
         rm = 1.1
 
+        ! Set some floorline values
         ev = 0.0
         numflux_floor = cFACFloor/cElectronCharge
         discrete_nf = numflux_floor
+        discrete_ae = IONO_Min_Ave_E
+        discrete_ef = IONO_Min_EFlux
         
         ! The Great Loop of our time...
         do j = 1, IONO_nPsi
