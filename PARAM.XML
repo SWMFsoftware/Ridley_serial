@@ -204,22 +204,20 @@ The UseFullCurrent and UseFakeRegion2 logicals were used in the past
 to test various algorithmic choices. They should have a false value now.
 The default values are shown by the example above.
 
-The time variation of the F10.7 flux can be taken into account by loading
-a lookup table named "F107" in the main part of the SWMF, for example
+The time variation of the F10.7 flux can be taken into account by
+interpolating it from a lookup table. If F107Flux is set to -1.0, then
+th code is using a lookup table. This can be loaded explicitly in the
+main part of the PARAM.in file, for example
 
 #LOOKUPTABLE
 IE			StringComp
 F107			NameTable
 load			NameCommand
-Param/f107.txt		NameFile
+MyF107.txt		NameFile
 log			TypeFile
 
-In this case the F10.7 value is interplated to the current simulation
-time before the RIM solver gets called. In this case the constant
-value given by the F107Flux parameter is not used. Setting F107Flux to
--1 triggers a check on the lookup table being loaded, so that is the
-recommended value in that case.
-
+If there is no table loaded and F107Flux is -1.0, then the code loads
+the Param/f107.txt table automatically.
 </command>
 
 <command name="IM">
