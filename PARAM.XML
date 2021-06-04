@@ -205,11 +205,20 @@ to test various algorithmic choices. They should have a false value now.
 The default values are shown by the example above.
 
 The time variation of the F10.7 flux can be taken into account by loading
-a lookup table named "F107" in the main part of the SWMF. In this case
-the F10.7 value is interplated to the current simulation time before the
-RIM solver gets called. In this case the constant value given by the F107Flux
-parameter is not used. Setting F107Flux to -1 triggers a check on the lookup
-table being loaded, so that is the recommended value in that case.
+a lookup table named "F107" in the main part of the SWMF, for example
+
+#LOOKUPTABLE
+IE			StringComp
+F107			NameTable
+load			NameCommand
+Param/f107.txt		NameFile
+log			TypeFile
+
+In this case the F10.7 value is interplated to the current simulation
+time before the RIM solver gets called. In this case the constant
+value given by the F107Flux parameter is not used. Setting F107Flux to
+-1 triggers a check on the lookup table being loaded, so that is the
+recommended value in that case.
 
 </command>
 
