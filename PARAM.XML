@@ -168,15 +168,11 @@ information is written to a logfile.
 	</parameter>
 	<parameter name="UseFullCurrent" type="logical" default="F"/>
 	<parameter name="UseFakeRegion2" type="logical" default="F"/>
-	<parameter name="F107Flux" type="real" min="0" default="150"/>
+	<parameter name="F107Flux" type="real" min="-1" default="150"/>
 	<parameter name="StarLightPedConductance" type="real" min="0.001" 
 						default="0.25"/>
 	<parameter name="PolarCapPedConductance" type="real" min="0" 
 						default="0.25"/>
-
-	<rule expr="not ($iConductanceModel=~/3|4|5/ and $F107Flux==0)">
-		F107Flux must be positive for ConductanceModel = 3, 4 or 5
-	</rule>
 #IONOSPHERE
 5			iConductanceModel
 F			UseFullCurrent
@@ -207,6 +203,13 @@ more relaxed.
 The UseFullCurrent and UseFakeRegion2 logicals were used in the past
 to test various algorithmic choices. They should have a false value now.
 The default values are shown by the example above.
+
+The time variation of the F10.7 flux can be taken into account by loading
+a lookup table named "F107" in the main part of the SWMF. In this case
+the F10.7 value is interplated to the current simulation time before the
+RIM solver gets called. In this case the constant value given by the F107Flux
+parameter is not used. Setting F107Flux to -1 triggers a check on the lookup
+table being loaded, so that is the recommended value in that case.
 
 </command>
 
