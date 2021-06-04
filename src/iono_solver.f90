@@ -57,7 +57,8 @@ subroutine ionosphere_solver(iBlock, Jr, &
   !/
 
   use ModIonosphere
-  use IE_ModMain, ONLY: DoCoupleUaCurrent, LatBoundaryGm, LatBoundary, &
+  use IE_ModMain, ONLY: &
+       f107_flux, DoCoupleUaCurrent, LatBoundaryGm, LatBoundary, &
        NameSolver, UsePreconditioner, UseInitialGuess, Tolerance, MaxIteration
   use IE_ModIo, ONLY: write_prefix, iUnitOut
   use ModLinearSolver, ONLY: gmres, bicgstab, prehepta, Uhepta, Lhepta
@@ -264,6 +265,8 @@ subroutine ionosphere_solver(iBlock, Jr, &
      ! Apply average condition at north pole
      Phi_C(1,:) = sum(Phi_C(2,1:nPsiUsed))/nPsiUsed
      cpcp_north = (PhiMax - PhiMin)/1000.0
+     call write_prefix; write(iUnitOut,'(a,f10.2)') &
+          "iono_solver: F10.7=", f107_flux
      call write_prefix; write(iUnitOut,'(a,G14.6,a)') &
           "iono_solver: Northern Cross Polar Cap Potential=",&
           cpcp_north," kV"
