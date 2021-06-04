@@ -1173,7 +1173,6 @@ contains
     use ModIonosphere,  ONLY: IONO_Bdp, init_mod_ionosphere
     use IE_ModMain,     ONLY: time_accurate, time_simulation, ThetaTilt
     use IE_ModIo,       ONLY: dt_output, t_output_last
-    use ModLookupTable, ONLY: i_lookup_table
     use ModProcIE
 
     !INPUT PARAMETERS:
@@ -1214,9 +1213,6 @@ contains
        where(dt_output>0.) &
             t_output_last=int(time_simulation/dt_output)
     end if
-
-    ! Check to see if there is an F107 lookup table
-    iTableF107 = i_lookup_table('F107')
 
   end subroutine IE_init_session
   !============================================================================
@@ -1260,9 +1256,7 @@ contains
     call clean_mod_ionosphere
     
   end subroutine IE_finalize
-
   !============================================================================
-
   subroutine IE_save_restart(tSimulation)
 
     use CON_coupler, ONLY: NameRestartOutDirComp
@@ -1278,16 +1272,15 @@ contains
     call ionosphere_write_restart_file
 
   end subroutine IE_save_restart
-
   !============================================================================
-
-  subroutine IE_run(tSimulation,tSimulationLimit)
+  subroutine IE_run(tSimulation, tSimulationLimit)
 
     use ModProcIE
     use IE_ModMain
-    use IE_ModIo, ONLY: DoRestart
+    use IE_ModIo, ONLY: DoRestart, iUnitOut, StringPrefix
     use CON_physics, ONLY: get_time, get_axes, time_real_to_int
-    use ModLookupTable, ONLY: interpolate_lookup_table
+    use ModLookupTable, ONLY: i_lookup_table, init_lookup_table, &
+         interpolate_lookup_table
     use ModKind
 
     !INPUT/OUTPUT ARGUMENTS:
@@ -1348,18 +1341,34 @@ contains
     IsNewInput = .false.
 
     ! Obtain the position of the magnetix axis
-    call get_axes(tSimulation, MagAxisTiltGsmOut=ThetaTilt)
+    call get_axes(time_simulation, MagAxisTiltGsmOut=ThetaTilt)
 
     ! Get the current time
     call get_time(tStartOut=tStart)
-    tNow = tStart + tSimulation
+    tNow = tStart + time_simulation
     call time_real_to_int(tNow, Time_Array)
+
+    ! If f107_flux is negative, use lookup table
+    if(f107_flux < 0)then
+       iTableF107 = i_lookup_table('F107')
+       if(iTableF107 < 0)then
+          ! Load default F107 table from Param/f107.txt
+          write(iUnitOut,*) StringPrefix, ' loading Param/f107.txt'
+          call init_lookup_table( &
+               NameTable = 'F107', &
+               NameCommand = 'load', &
+               NameFile = 'Param/f107.txt', &
+               TypeFile = 'log')
+          iTableF107 = i_lookup_table('F107')
+       end if
+    end if
 
     ! get F10.7 from lookup table if available
     if(iTableF107 > 0) &
          call interpolate_lookup_table(iTableF107, tNow, f107_flux)
 
-    if(f107_flux < 0)call CON_stop(NameSub//': provide F10.7 value or table')
+    if(f107_flux < 0) &
+         call CON_stop(NameSub//': provide positive F10.7 value or table')
     
     nSolve = nSolve + 1
 
