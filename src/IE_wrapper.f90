@@ -1290,6 +1290,7 @@ contains
     real, intent(in) :: tSimulationLimit ! simulation time not to be exceeded
 
     real(Real8_) :: tStart, tNow
+    real         :: tNowReal
     integer      :: nStep
 
     logical :: DoTest, DoTestMe
@@ -1364,8 +1365,10 @@ contains
     end if
 
     ! get F10.7 from lookup table if available
-    if(iTableF107 > 0) &
-         call interpolate_lookup_table(iTableF107, tNow, f107_flux)
+    if(iTableF107 > 0)then
+       tNowReal = tNow ! so it compiles with single precision
+       call interpolate_lookup_table(iTableF107, tNowReal, f107_flux)
+    end if
 
     if(f107_flux < 0) &
          call CON_stop(NameSub//': provide positive F10.7 value or table')
