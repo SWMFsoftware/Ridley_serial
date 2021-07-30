@@ -436,13 +436,12 @@ Default values are shown above.
 </command>
 
 <command name="BOUNDARY">
-	<parameter name="LatBoundary" type="real" min="0" max="90" default="50"/>
+	<parameter name="LatBoundary" type="real" min="0" max="90" default="10"/>
 
 #BOUNDARY
 10.0			LatBoundary
 
-Define the low latitude boundary for the potential solver. The default is set 
-dynamically by the boundary of the closed field line region.
+Define the low latitude boundary for the potential solver. The default value is shown.
 </command>
 
 </commandgroup>
