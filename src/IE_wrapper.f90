@@ -632,7 +632,7 @@ contains
   !============================================================================
   subroutine IE_put_from_gm(Buffer_IIV, iSize, jSize, nVar)
 
-    use IE_ModMain, ONLY: IsNewInput, LatBoundaryGm
+    use IE_ModMain, ONLY: IsNewInput
     use ModProcIE
     use ModIonosphere
     use ModConductance, ONLY: GmRhoFloor, GmPFloor
@@ -659,8 +659,6 @@ contains
     where (Buffer_IIV(:,:,4) < GmPFloor  ) Buffer_IIV(:,:,4)=GmPFloor
     
     if (iProc == 0) then
-       LatBoundaryGm = Buffer_IIV(IONO_nTheta,1,1)
-       if(DoTest)write(*,*) "LatBoundary : ",LatBoundaryGm*180.0/3.1415926
        Iono_North_Jr = Buffer_IIV(1:IONO_nTheta,:,1)
        Iono_North_Jr(IONO_nTheta-1:IONO_nTheta,1) = 0.0
        if(nVar>1)then
@@ -673,8 +671,6 @@ contains
        end if
     endif
     if (iProc == nProc-1) then
-       LatBoundaryGm = Buffer_IIV(IONO_nTheta,1,1)
-       if(DoTest)write(*,*) "LatBoundary2 : ",LatBoundaryGm*180.0/3.1415926
        Iono_South_Jr = Buffer_IIV(IONO_nTheta:2*IONO_nTheta-1,:,1)
        Iono_South_Jr(1:2,1) = 0.0
        if(nVar>1)then
