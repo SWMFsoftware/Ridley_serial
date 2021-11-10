@@ -1541,18 +1541,9 @@ end module IE_wrapper
 subroutine SPS_put_into_ie(Buffer_II, iSize, jSize, NameVar, iBlock)
 
   ! THIS SUBROUTINE BYPASSES CON.  It is candidate for removal and should
-  ! not be called wihtin the SWMF.
-  ! Currently, remains for future reference.
-  
-  ! This gets called for each variable- external loop over all variable names.
-  ! Namevar = Pot, Ave, and Tot.
-  ! iBlock = 1:North, 2:South.
+  ! not be called within the SWMF.  It references non-existing variables
+  ! or variables in other codes directly.  The bulk of this has been removed.
 
-  ! Variables and what they do:
-  ! IEi_HavenLats = nLatsIE
-  ! IEi_HavenMlt  = nMltIE
-  !
-  !use ModEIE_Interface  ! Direct interface to empiricals is not desireable.
   use ModIE_Interface
   use ModUtilities, ONLY: CON_stop
 
@@ -1563,62 +1554,8 @@ subroutine SPS_put_into_ie(Buffer_II, iSize, jSize, NameVar, iBlock)
   character (len=*),intent(in)  :: NameVar 
   integer,intent(in)            :: iBlock
 
-  integer :: i,j,ii
-
   character (len=*), parameter :: NameSub='SPS_put_into_ie'
 
   call CON_stop(NameSub//': THIS FUNCTION SHOULD NOT BE CALLED.')
-  !WRITE(*,*)'NameVar=',NameVar
-  select case(NameVar)
-
-     
-  case('Pot')
-
-     do i = 1, IEi_HavenLats
-        ii = i
-!        if (iBlock == 2) ii = IEi_HavenLats - i + 1   ! MB - makes it count down instead
-        do j = 1, IEi_HavenMlts
-           IEr3_HavePotential(j,i,iBlock)  = Buffer_II(ii,j)
-           EIEr3_HavePotential(j,i,iBlock) = Buffer_II(ii,j)
-        enddo
-     enddo
-
-! size 3 re-set in couple_ie_ua_init to 1
-  case('Ave')
-
-     do i = 1, IEi_HavenLats
-        ii = i
- !       if (iBlock == 2) ii = IEi_HavenLats - i + 1
-        do j = 1, IEi_HavenMlts
-           IEr3_HaveAveE(j,i,iBlock) = Buffer_II(ii,j)
-           EIEr3_HaveAveE(j,i,iBlock) = Buffer_II(ii,j)
-        enddo
-     enddo
-
-     !     write(*,*) "Putting AveE : ",iBlock,&
-     !          maxval(IEr3_HaveAveE(:,:,iBlock)),&
-     !          minval(IEr3_HaveAveE(:,:,iBlock))
-
-  case('Tot')
-
-     do i = 1, IEi_HavenLats
-        ii = i
-!        if (iBlock == 2) ii = IEi_HavenLats - i + 1
-        do j = 1, IEi_HavenMlts
-           IEr3_HaveEFlux(j,i,iBlock) = &
-                Buffer_II(ii,j) / (1.0e-7 * 100.0 * 100.0)
-           EIEr3_HaveEFlux(j,i,iBlock) = &
-                Buffer_II(ii,j) / (1.0e-7 * 100.0 * 100.0)
-        enddo
-     enddo
-
-  case default
-
-     call CON_stop(NameSub//' invalid NameVar='//NameVar)
-
-  end select
-
-  UAl_UseGridBasedEIE = .true. 
-
 
 end subroutine SPS_put_into_ie
