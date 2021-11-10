@@ -38,6 +38,7 @@ module IE_wrapper
   public:: IE_get_for_rb
 
   ! Coupling with UA
+  public:: IE_get_info_for_ua
   public:: IE_get_for_ua
   public:: IE_put_from_ua
 
@@ -334,6 +335,7 @@ contains
       end do
 
     end subroutine read_param
+
     !==========================================================================
     subroutine set_defaults
 
@@ -561,28 +563,82 @@ contains
 
   end subroutine IE_get_for_rb
   !============================================================================
+  subroutine IE_get_info_for_ua(nVar, NameVar_V)
+    ! Get number and names of variables for UA to IE coupling.
+    ! IE reports what variables it needs from UA.
+    ! UA will use this info to create and fill buffers appropriately.
 
-  subroutine IE_get_for_ua(Buffer_II,iSize,jSize,NameVar,NameHem,tSimulation)
+    integer, intent(out) :: nVar
+    character(len=*), intent(out), optional :: NameVar_V(:)
+
+    logical :: DoTest, DoTestMe
+    character(len=*), parameter :: NameSub='IE_get_info_for_ua'
+    !--------------------------------------------------------------------------
+    call CON_set_do_test(NameSub, DoTest, DoTestMe)
+
+    ! Right now, only request Hall & Pedersen conductance.
+    ! In the future, neutral wind FAC coupling or other values can/will
+    ! be shared from UA.
+    nVar = 4
+    if(present(NameVar_V)) NameVar_V(1:4) = (/'lon','lat','hal','ped'/)
+
+    if(DoTestMe)then
+       write(*,*) NameSub//': nVar=', nVar
+       if(present(NameVar_V)) write(*,*) NameSub//': NameVar_V=',NameVar_V
+    end if
+    
+  end subroutine IE_get_info_for_ua
+
+  !============================================================================
+  subroutine IE_get_for_ua(Buffer_IIV, iSize, jSize, nVarIn, NameVar_V, &
+       iBlock,tSimulation)
 
     use ModProcIE
     use ModIonosphere
 
-    character (len=*),parameter :: NameSub='IE_get_for_ua'
-
-    integer,          intent(in)  :: iSize,jSize
-    real,             intent(out) :: Buffer_II(iSize,jSize)
-    character (len=*),intent(in)  :: NameVar
-    character (len=*),intent(in)  :: NameHem
+    integer,          intent(in)  :: iSize, jSize, nVarIn, iBlock
+    real,             intent(out) :: Buffer_IIV(iSize,jSize,nVarIn)
+    character (len=*),intent(in)  :: NameVar_V(nVarIn)
     real,             intent(in)  :: tSimulation
 
+    character(len=5) :: NameHem
+    integer :: iVar
     real    :: tSimulationTmp
+
+    ! Debug variables:
+    character (len=*),parameter :: NameSub='IE_get_for_ua'
+    logical :: DoTest, DoTestMe
     !--------------------------------------------------------------------------
+    call CON_set_do_test(NameSub, DoTest, DoTestMe)
+
+    if(DoTestMe)then
+       write(*,*)NameSub//': Gathering data for UA at t=', tSimulation
+       write(*,*)NameSub//': Current hemisphere block = ', iBlock
+       write(*,*)NameSub//': Variable list = '
+       do iVar=1, nVarIn
+          write(*,'(10x,i2.2,5x,a)')iVar, NameVar_V(iVar)
+       end do
+       write(*,*)NameSub//': Expected IE grid dimensions (iSize,jSize) =', &
+            iSize, jSize
+    end if
+
+    
     if(iSize /= IONO_nTheta .or. jSize /= IONO_nPsi)then
        write(*,*)NameSub//' incorrect buffer size=',iSize,jSize,&
             ' IONO_nTheta,IONO_nPsi=',IONO_nTheta, IONO_nPsi
        call CON_stop(NameSub//' SWMF_ERROR')
     end if
 
+    ! Set hemisphere to transfer:
+    if(iBlock==1) then
+       NameHem = 'North'
+    else if (iBlock==2) then
+       NameHem = 'South'
+    else
+       write(*,*) NameSub//': invalid iBlock = ', iBlock
+       call CON_stop(NameSub//': Error coupling with UA')
+    end if
+    
     ! Make sure that the most recent result is provided
     tSimulationTmp = tSimulation
     call IE_run(tSimulationTmp,tSimulation)
@@ -593,40 +649,37 @@ contains
 
        if(iProc /= 0) RETURN
 
-       select case(NameVar)
-
-       case('Pot')
-          Buffer_II = IONO_NORTH_Phi
-       case('Ave')
-          Buffer_II = IONO_NORTH_Ave_E
-       case('Tot')
-          Buffer_II = IONO_NORTH_EFlux
-       case default
-          call CON_stop(NameSub//' invalid NameVar='//NameVar)
-
-       end select
+       do iVar=1, nVarIn
+          select case(NameVar_V(iVar))
+             
+          case('pot')
+             Buffer_IIV(:,:,iVar) = IONO_NORTH_Phi
+          case('ave')
+             Buffer_IIV(:,:,iVar) = IONO_NORTH_Ave_E
+          case('tot')
+             Buffer_IIV(:,:,iVar) = IONO_NORTH_EFlux
+          case default
+             call CON_stop(NameSub//' invalid NameVar='//NameVar_V(iVar))
+          end select
+       end do
 
     case('South')
 
        if(iProc /= nProc - 1) RETURN
 
-       select case(NameVar)
+       do iVar=1, nVarIn
+          select case(NameVar_V(iVar))
 
-       case('Pot')
-          Buffer_II = IONO_SOUTH_Phi
-       case('Ave')
-          Buffer_II = IONO_SOUTH_Ave_E
-       case('Tot')
-          Buffer_II = IONO_SOUTH_EFlux
-       case default
-          call CON_stop(NameSub//' invalid NameVar='//NameVar)
-
-       end select
-
-    case default
-
-       call CON_stop(NameSub//' invalid NameHem='//NameHem)
-
+          case('pot')
+             Buffer_IIV(:,:,iVar) = IONO_SOUTH_Phi
+          case('ave')
+             Buffer_IIV(:,:,iVar) = IONO_SOUTH_Ave_E
+          case('tot')
+             Buffer_IIV(:,:,iVar) = IONO_SOUTH_EFlux
+          case default
+             call CON_stop(NameSub//' invalid NameVar='//NameVar_V(iVar))
+          end select
+       end do
     end select
 
   end subroutine IE_get_for_ua
@@ -754,20 +807,22 @@ contains
   end subroutine IE_put_from_gm
 
   !============================================================================
-
-  subroutine IE_put_from_ua(Buffer_III, iBlock, nMLTs, nLats, nVarsToPass)
-
+  subroutine IE_put_from_ua(Buffer_IIBV, nMLTs, nLats, nVarIn, NameVarUaIn_V)
+    
     use IE_ModMain, ONLY: &
          IsNewInput, DoCoupleUaCurrent, StarLightPedConductance
-
+    
     use ModIonosphere
     use ModConst
     use ModUtilities, ONLY: check_allocate
-
+    
     save
-
-    integer, intent(in) :: nMlts, nLats, iBlock, nVarsToPass
-    real, dimension(nMlts, nLats, nVarsToPass), intent(in) :: Buffer_III
+    
+    ! Arguments: returning IE variables on a MLT-Lat grid, one
+    ! per hemisphere, for nVarIn variables.
+    integer,          intent(in) :: nMlts, nLats, nVarIn
+    character(len=3), intent(in) :: NameVarUaIn_V(nVarIn)
+    real,             intent(in) :: Buffer_IIBV(nMlts, nLats, 2, nVarIn)
 
     !\
     ! UA_Lats and UA_Mlts are the latitudes and magnetic local times of the
@@ -781,10 +836,12 @@ contains
     real,    dimension(:,:,:), allocatable :: UA_Lats, UA_Mlts
     integer, dimension(Iono_nTheta,2) :: iLat
     integer, dimension(Iono_nPsi,2)   :: iMlt
-    real, dimension(Iono_nTheta,2)    :: rLat
-    real, dimension(Iono_nPsi,2)      :: rMlt
+    real,    dimension(Iono_nTheta,2) :: rLat
+    real,    dimension(Iono_nPsi,2)   :: rMlt
 
-    integer :: iError, i, j, ii, jj
+    real, dimension(IONO_nTheta,IONO_nPsi) :: TmpVar_II
+    
+    integer :: iError, i, j, ii, jj, iVar, iBlock
     real    :: t, p
 
     integer, parameter :: Fac_ = 1
@@ -793,30 +850,47 @@ contains
     integer, parameter :: Lat_ = 4
     integer, parameter :: Mlt_ = 5
 
+    logical :: DoTest, DoTestMe
     character(len=*), parameter :: NameSub='IE_put_from_ua'
-
     !--------------------------------------------------------------------------
-
+    ! Set test variables.
+    call CON_set_do_test(NameSub,DoTest,DoTestMe)
+    
+    ! Indicate that new information has arrived -> IE will recalculate solution
     IsNewInput=.true.
+    
+    ! Set intelligent defaults as needed:
+    IONO_NORTH_TGCM_JR = 0.0
+    IONO_SOUTH_TGCM_JR = 0.0
+    
+    ! Check if arrays are allocated & allocate as necessary
+    if (.not.allocated(UA_Lats)) then
+       allocate(UA_Lats(nMLTs, nLats,2), UA_Mlts(nMLTs, nLats,2), stat=iError)
+       call check_allocate(iError,NameSub//'UA_Lats,UA_Mlts')
+    endif
+    
+    ! Copy over lat/lon into UA_* vars
+    do iVar=1, nVarIn
+       select case (NameVarUaIn_V(iVar))
+       case('lat')
+          UA_Lats(:,:,1) = Buffer_IIBV(:,:,1,iVar)
+          UA_Lats(:,:,2) = Buffer_IIBV(:,:,2,iVar)
+       case('lon')
+          UA_Mlts(:,:,1) = Buffer_IIBV(:,:,1,iVar)
+          UA_Mlts(:,:,2) = Buffer_IIBV(:,:,2,iVar)
+       case default
+          ! Other vars handled below.
+       end select
+    enddo
 
-    if (nVarsToPass == 5) then
-       if (.not.allocated(UA_Lats)) then
-          allocate(UA_Lats(nMLTs, nLats,2), &
-               UA_Mlts(nMLTs, nLats,2),     &
-               stat=iError)
-          call check_allocate(iError,NameSub//'UA_Lats,UA_Mlts')
-       endif
-       UA_Lats(:,:,iBlock) = Buffer_III(:,:,Lat_)
-       UA_Mlts(:,:,iBlock) = Buffer_III(:,:,Mlt_)
-
-       !\
-       ! In this instance, t = theta
-       !/
-
-       do i = 1, IONO_nTheta
+    ! Set up index mapping for both hemispheres to
+    ! interpolate from UA to IE grid
+    BLOCK: do iBlock=1, 2
+       ! Mapping for lat/colat:
+       COLAT: do i = 1, IONO_nTheta ! convert colat to lat:                            
           if (iBlock == 1) t = 90.0 - Iono_North_Theta(i,1)*cRadToDeg
           if (iBlock == 2) t = 90.0 - Iono_South_Theta(i,1)*cRadToDeg
-
+          ! In this instance, t is theta -- Aaron Ridley, 1998
           if (t >= maxval(UA_Lats(1,:,iBlock))) then
              ii = nLats-1
              iLat(i,iBlock) = ii
@@ -841,145 +915,121 @@ contains
                 endif
                 ii = ii+1
              enddo
-
           endif
-
-       enddo
-
-       !\
-       ! In this instance, p = psi
-       !/
-
-       do j = 1, IONO_nPsi
+       enddo COLAT
+       
+       ! Mappint for MLT/longitude
+       LON: do j = 1, IONO_nPsi
           if (iBlock == 1) p = mod(Iono_North_Psi(1,j)*12.0/cPi + 12.0,24.0)
           if (iBlock == 2) p = mod(Iono_South_Psi(1,j)*12.0/cPi + 12.0,24.0)
-
+          ! added a compatible time shift in CON couple
+          
           jj = 1
+          
           do while (jj < nMlts)
-             if ((p >= UA_Mlts(jj,1,iBlock) .and. &
-                  p <  UA_Mlts(jj+1,1,iBlock)) .or.  &
-                  (p <= UA_Mlts(jj,1,iBlock) .and. &
-                  p >  UA_Mlts(jj+1,1,iBlock))) then
+             
+             if (p >= UA_Mlts(jj,1,iBlock) .and. &
+                  p <  UA_Mlts(jj+1,1,iBlock)) then
                 iMlt(j,iBlock) = jj
                 rMlt(j,iBlock) = 1.0 - (p - UA_Mlts(jj,1,iBlock)) / &
                      (UA_Mlts(jj+1,1,iBlock) - UA_Mlts(jj,1,iBlock))
                 jj = nMlts
+             else if (p >= UA_Mlts(nMlts,1,iBlock) .and. &
+                  p <  UA_Mlts(1,1,iBlock)) then
+                iMlt(j,iBlock) = nMlts
+                rMlt(j,iBlock) = 1.0 - (p - UA_Mlts(nMlts,1,iBlock)) / &
+                     (UA_Mlts(1,1,iBlock) - UA_Mlts(nMlts,1,iBlock))
+                jj = nMlts
+             else if (p <= minval(UA_Mlts(:,1,iBlock))) then
+                jj = minloc(UA_Mlts(:,1,iBlock),DIM=1)
+                if (jj == 1) then
+                   iMlt(j,iBlock) = nMlts
+                   rMlt(j,iBlock) = 1.0 - (p - (UA_Mlts(nMlts,1,iBlock)-24)) /&
+                        (UA_Mlts(jj,1,iBlock) - (UA_Mlts(nMlts,1,iBlock)-24))
+                else
+                   iMlt(j,iBlock) = jj-1
+                   rMlt(j,iBlock) = 1.0 - (p - (UA_Mlts(jj-1,1,iBlock) - 24))  /&
+                        (UA_Mlts(jj,1,iBlock) - (UA_Mlts(jj-1,1,iBlock) - 24))
+                end if
+                jj=nMlts
+             else if (p >= maxval(UA_Mlts(:,1,iBlock))) then
+                jj = maxloc(UA_Mlts(:,1,iBlock),DIM=1)
+                if (jj == nMlts) then
+                   iMlt(j,iBlock) = jj
+                   rMlt(j,iBlock) = 1.0 - (p - UA_Mlts(jj,1,iBlock)) / &
+                        (UA_Mlts(1,1,iBlock) - (UA_Mlts(jj,1,iBlock)-24))
+                else
+                   iMlt(j,iBlock) = jj
+                   rMlt(j,iBlock) = 1.0 - (p - UA_Mlts(jj,1,iBlock)) / &
+                        (UA_Mlts(jj+1,1,iBlock) - (UA_Mlts(jj,1,iBlock)-24))
+                end if
+                jj=nMlts
              end if
-             jj = jj+1
-          enddo
-
-       enddo
-
-       !write(*,*)NameSub,' iBlock=',iBlock,&
-       !     ' iLat(1:5)=',iLat(1:5,iBlock), &
-       !     ' rLat(1:5)=',rLat(1:5,iBlock)
-       !
-       !write(*,*)NameSub,' iBlock=',iBlock,&
-       !     ' iLat(Iono_nTheta-5:Iono_nTheta)=',&
-       !     iLat(Iono_nTheta-5:Iono_nTheta,iBlock), &
-       !     ' rLat(Iono_nTheta-5:Iono_nTheta)=',&
-       !     rLat(Iono_nTheta-5:Iono_nTheta,iBlock)
-
-    end if
-
-
-    if (iBlock == 1) then ! iBlock == 1: Northern Hemisphere
-
-       do i = 1, Iono_nTheta
-
-          !\
-          ! Now t = 0.0 - 1.0, and is the interpolation coefficient for theta
-          !/
-
-          ii = iLat(i,iBlock)
-          t  = rLat(i,iBlock)
-
-          do j = 1, Iono_nPsi
-
-             !\
-             ! Now p = 0.0 - 1.0, and is the interpolation coefficient for psi
-             !/
-
-             jj = iMlt(j,iBlock)
-             p  = rMlt(j,iBlock)
-
-             IONO_NORTH_SigmaH(i,j) =                          &
-                  (    t)*(    p)*Buffer_III(jj  ,ii  ,Hal_) + &
-                  (1.0-t)*(    p)*Buffer_III(jj  ,ii+1,Hal_) + &
-                  (    t)*(1.0-p)*Buffer_III(jj+1,ii  ,Hal_) + &
-                  (1.0-t)*(1.0-p)*Buffer_III(jj+1,ii+1,Hal_)
-
-             IONO_NORTH_SigmaP(i,j) =                          &
-                  (    t)*(    p)*Buffer_III(jj  ,ii  ,Ped_) + &
-                  (1.0-t)*(    p)*Buffer_III(jj  ,ii+1,Ped_) + &
-                  (    t)*(1.0-p)*Buffer_III(jj+1,ii  ,Ped_) + &
-                  (1.0-t)*(1.0-p)*Buffer_III(jj+1,ii+1,Ped_)
-
-             if(DoCoupleUaCurrent)then
-                IONO_NORTH_TGCM_JR(i,j) =                          &
-                     (    t)*(    p)*Buffer_III(jj  ,ii  ,Fac_) + &
-                     (1.0-t)*(    p)*Buffer_III(jj  ,ii+1,Fac_) + &
-                     (    t)*(1.0-p)*Buffer_III(jj+1,ii  ,Fac_) + &
-                     (1.0-t)*(1.0-p)*Buffer_III(jj+1,ii+1,Fac_)
+             if (iMlt(j,iBlock) == 0) then
+                iMlt(j,iBlock) = 1
+             end if
+             jj = jj+1            
+          end do
+       end do LON
+       
+    end do BLOCK
+   
+    ! Loop over variables and interpolate from UA to IE grid.
+    VAR: do iVar=1, nVarIn
+       ! Skip lat/lon
+       if ((NameVarUaIn_V(iVar).eq.'lat').or.(NameVarUaIn_V(iVar).eq.'lon')) &
+            cycle VAR
+       do iBlock=1,2
+          TmpVar_II=0.0
+          ! Interpolate value to IE grid...
+          do i = 1, Iono_nTheta
+             ! t is the interpolation coefficient for theta
+             ii = iLat(i,iBlock)
+             t  = rLat(i,iBlock)
+             
+             do j = 1, Iono_nPsi
+                ! p is the interpolation coefficient for psi                                     
+                jj = iMlt(j,iBlock)
+                p  = rMlt(j,iBlock)
+                
+                ! Interpolate variables                                                          
+                TmpVar_II(i,j) =    &
+                     (    t)*(    p)*Buffer_IIBV(jj  ,ii  ,iBlock,iVar) + &
+                     (1.0-t)*(    p)*Buffer_IIBV(jj  ,ii+1,iBlock,iVar) + &
+                     (    t)*(1.0-p)*Buffer_IIBV(jj+1,ii  ,iBlock,iVar) + &
+                     (1.0-t)*(1.0-p)*Buffer_IIBV(jj+1,ii+1,iBlock,iVar)
+             end do
+          end do
+          
+          ! Copy result to correct IE variable, taking care
+          ! to use the correct hemisphere.  Conducantances are
+          ! given floor values to prevent problems.
+          select case (NameVarUaIn_V(iVar))
+          case('hal') ! Hall conductance
+             if(iBlock==1)then
+                IONO_NORTH_SigmaH = max(TmpVar_II, 2*StarLightPedConductance)
              else
-                IONO_NORTH_TGCM_JR(i,j) = 0.0
+                IONO_SOUTH_SigmaH = max(TmpVar_II, 2*StarLightPedConductance)
              end if
-
-          enddo
-       enddo
-       ! Limit the conductance with the StarLightConductance
-       IONO_NORTH_SigmaP = max(IONO_NORTH_SigmaP,   StarLightPedConductance)
-       IONO_NORTH_SigmaH = max(IONO_NORTH_SigmaH, 2*StarLightPedConductance)
-
-    else ! iBlock == 2: Southern Hemisphere
-
-       do i = 1, Iono_nTheta
-
-          !\
-          ! Now t = 0.0 - 1.0, and is the interpolation coefficient for theta
-          !/
-
-          ii = iLat(i,iBlock)
-          t  = rLat(i,iBlock)
-
-          do j = 1, Iono_nPsi
-
-             !\
-             ! Now p = 0.0 - 1.0, and is the interpolation coefficient for psi
-             !/
-
-             jj = iMlt(j,iBlock)
-             p  = rMlt(j,iBlock)
-
-             IONO_SOUTH_SigmaH(i,j) =                          &
-                  (    t)*(    p)*Buffer_III(jj  ,ii  ,Hal_) + &
-                  (1.0-t)*(    p)*Buffer_III(jj  ,ii+1,Hal_) + &
-                  (    t)*(1.0-p)*Buffer_III(jj+1,ii  ,Hal_) + &
-                  (1.0-t)*(1.0-p)*Buffer_III(jj+1,ii+1,Hal_)
-
-             IONO_SOUTH_SigmaP(i,j) =                          &
-                  (    t)*(    p)*Buffer_III(jj  ,ii  ,Ped_) + &
-                  (1.0-t)*(    p)*Buffer_III(jj  ,ii+1,Ped_) + &
-                  (    t)*(1.0-p)*Buffer_III(jj+1,ii  ,Ped_) + &
-                  (1.0-t)*(1.0-p)*Buffer_III(jj+1,ii+1,Ped_)
-
-             if(DoCoupleUaCurrent)then
-                IONO_SOUTH_TGCM_JR(i,j) =                          &
-                     (    t)*(    p)*Buffer_III(jj  ,ii  ,Fac_) + &
-                     (1.0-t)*(    p)*Buffer_III(jj  ,ii+1,Fac_) + &
-                     (    t)*(1.0-p)*Buffer_III(jj+1,ii  ,Fac_) + &
-                     (1.0-t)*(1.0-p)*Buffer_III(jj+1,ii+1,Fac_)
+          case('ped') ! Pedersen conductance
+             if(iBlock==1)then
+                IONO_NORTH_SigmaP = max(TmpVar_II, StarLightPedConductance)
              else
-                IONO_SOUTH_TGCM_JR(i,j) = 0.0
+                IONO_SOUTH_SigmaP = max(TmpVar_II, StarLightPedConductance)
              end if
-          enddo
-       enddo
-       ! Limit the conductance with the StarLightConductance
-       IONO_SOUTH_SigmaP = max(IONO_SOUTH_SigmaP,   StarLightPedConductance)
-       IONO_SOUTH_SigmaH = max(IONO_SOUTH_SigmaH, 2*StarLightPedConductance)
-
-    end if
-
+          case('fac') ! Neutral wind FACs
+             if(iBlock==1)then
+                IONO_NORTH_TGCM_JR = TmpVar_II
+             else
+                IONO_SOUTH_TGCM_JR = TmpVar_II
+             end if
+          case default
+             call CON_stop(NameSub//' Unrecognized coupling variable: ', &
+                  NameVarUaIn_V(iVar))
+          end select
+       end do
+    end do VAR
+    
   end subroutine IE_put_from_ua
 
   !============================================================================
@@ -1486,10 +1536,23 @@ contains
 
 end module IE_wrapper
 
-!==============================================================================
+!============================================================================
 
 subroutine SPS_put_into_ie(Buffer_II, iSize, jSize, NameVar, iBlock)
 
+  ! THIS SUBROUTINE BYPASSES CON.  It is candidate for removal and should
+  ! not be called wihtin the SWMF.
+  ! Currently, remains for future reference.
+  
+  ! This gets called for each variable- external loop over all variable names.
+  ! Namevar = Pot, Ave, and Tot.
+  ! iBlock = 1:North, 2:South.
+
+  ! Variables and what they do:
+  ! IEi_HavenLats = nLatsIE
+  ! IEi_HavenMlt  = nMltIE
+  !
+  !use ModEIE_Interface  ! Direct interface to empiricals is not desireable.
   use ModIE_Interface
   use ModUtilities, ONLY: CON_stop
 
@@ -1497,35 +1560,38 @@ subroutine SPS_put_into_ie(Buffer_II, iSize, jSize, NameVar, iBlock)
 
   integer, intent(in)           :: iSize,jSize
   real, intent(in)              :: Buffer_II(iSize,jSize)
-  character (len=*),intent(in)  :: NameVar
+  character (len=*),intent(in)  :: NameVar 
   integer,intent(in)            :: iBlock
 
   integer :: i,j,ii
 
   character (len=*), parameter :: NameSub='SPS_put_into_ie'
 
+  call CON_stop(NameSub//': THIS FUNCTION SHOULD NOT BE CALLED.')
+  !WRITE(*,*)'NameVar=',NameVar
   select case(NameVar)
 
+     
   case('Pot')
 
      do i = 1, IEi_HavenLats
         ii = i
-        if (iBlock == 2) ii = IEi_HavenLats - i + 1
+!        if (iBlock == 2) ii = IEi_HavenLats - i + 1   ! MB - makes it count down instead
         do j = 1, IEi_HavenMlts
-           IEr3_HavePotential(j,i,iBlock) = Buffer_II(ii,j)
+           IEr3_HavePotential(j,i,iBlock)  = Buffer_II(ii,j)
+           EIEr3_HavePotential(j,i,iBlock) = Buffer_II(ii,j)
         enddo
      enddo
-     !     write(*,*) "Putting Potential : ",iBlock,&
-     !          (maxval(IEr3_HavePotential(:,:,iBlock)) - &
-     !          minval(IEr3_HavePotential(:,:,iBlock)))/1000.0
 
+! size 3 re-set in couple_ie_ua_init to 1
   case('Ave')
 
      do i = 1, IEi_HavenLats
         ii = i
-        if (iBlock == 2) ii = IEi_HavenLats - i + 1
+ !       if (iBlock == 2) ii = IEi_HavenLats - i + 1
         do j = 1, IEi_HavenMlts
            IEr3_HaveAveE(j,i,iBlock) = Buffer_II(ii,j)
+           EIEr3_HaveAveE(j,i,iBlock) = Buffer_II(ii,j)
         enddo
      enddo
 
@@ -1537,9 +1603,11 @@ subroutine SPS_put_into_ie(Buffer_II, iSize, jSize, NameVar, iBlock)
 
      do i = 1, IEi_HavenLats
         ii = i
-        if (iBlock == 2) ii = IEi_HavenLats - i + 1
+!        if (iBlock == 2) ii = IEi_HavenLats - i + 1
         do j = 1, IEi_HavenMlts
            IEr3_HaveEFlux(j,i,iBlock) = &
+                Buffer_II(ii,j) / (1.0e-7 * 100.0 * 100.0)
+           EIEr3_HaveEFlux(j,i,iBlock) = &
                 Buffer_II(ii,j) / (1.0e-7 * 100.0 * 100.0)
         enddo
      enddo
@@ -1549,5 +1617,8 @@ subroutine SPS_put_into_ie(Buffer_II, iSize, jSize, NameVar, iBlock)
      call CON_stop(NameSub//' invalid NameVar='//NameVar)
 
   end select
+
+  UAl_UseGridBasedEIE = .true. 
+
 
 end subroutine SPS_put_into_ie
