@@ -6,6 +6,8 @@ module IE_wrapper
 
   ! Wrapper for Ridley's ionosphere model RIM
 
+  use ModUtilities, ONLY: CON_set_do_test, CON_stop
+
   implicit none
 
   private ! except
@@ -1489,6 +1491,7 @@ end module IE_wrapper
 subroutine SPS_put_into_ie(Buffer_II, iSize, jSize, NameVar, iBlock)
 
   use ModIE_Interface
+  use ModUtilities, ONLY: CON_stop
 
   implicit none
 
@@ -1548,6 +1551,3 @@ subroutine SPS_put_into_ie(Buffer_II, iSize, jSize, NameVar, iBlock)
   end select
 
 end subroutine SPS_put_into_ie
-
-
-

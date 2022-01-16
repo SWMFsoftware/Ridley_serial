@@ -12,7 +12,7 @@ subroutine create_auroral_oval(currentIn, thetaIn, psiIn, &
   ! weight the day-night shift by the strength of the binned FAC values.
 
   use ModNumConst,    ONLY: cDegToRad, cRadToDeg, cHalfPi, cPi
-  use ModIonosphere,  ONLY: IONO_nTheta, IONO_nPsi
+  use ModIonosphere,  ONLY: IONO_nTheta, IONO_nPsi, CON_set_do_test
   use IE_ModIo,       ONLY: NameIonoDir
   use ModConductance, ONLY: DoOvalShift, DoFitCircle
   use ModIoUnit,      ONLY: UnitTMP_

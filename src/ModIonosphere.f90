@@ -8,9 +8,11 @@
 !======================================
 
 module ModIonosphere
+
   use ModNumConst
   use IE_ModSize
-
+  use ModUtilities, ONLY: CON_stop, CON_set_do_test
+  
   implicit none
   save
 
