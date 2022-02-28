@@ -13,6 +13,7 @@ PIONO:
 
 rundir:
 	mkdir -p ${RUNDIR}/IE/ionosphere
+	cd ${RUNDIR}/IE; ln -s ionosphere plots; mkdir restartOUT	
 	cd ${RUNDIR}/IE; cp ${IEDIR}/input/cond_hal_coeffs.dat .
 	cd ${RUNDIR}/IE; cp ${IEDIR}/input/cond_ped_coeffs.dat .
 	cd ${RUNDIR}/IE; cp ${IEDIR}/input/cmee_hal_coeffs.dat .
