@@ -15,14 +15,16 @@ subroutine create_auroral_oval(currentIn, thetaIn, psiIn, &
   use ModIonosphere,  ONLY: IONO_nTheta, IONO_nPsi, CON_set_do_test
   use IE_ModIo,       ONLY: NameIonoDir
   use ModConductance, ONLY: DoOvalShift, DoFitCircle
-  use ModIoUnit,      ONLY: UnitTMP_
   use IE_ModMain,     ONLY: Time_Array, nSolve
+  use ModIoUnit,      ONLY: UnitTMP_
+  use ModUtilities,   ONLY: open_file, close_file
   
   implicit none
 
   ! Input/Output variables:  
-  real, intent(in),  dimension(IONO_nTheta,IONO_nPsi):: CurrentIn,thetaIn,psiIn
-  real, intent(out), dimension(IONO_nPsi) :: ColatOut, widthOut, strenOut
+  real, intent(in),  dimension(IONO_nTheta,IONO_nPsi):: &
+       CurrentIn, ThetaIn, PsiIn
+  real, intent(out), dimension(IONO_nPsi) :: ColatOut, WidthOut, StrenOut
 
   ! Working variables:
   logical :: IsNorth
@@ -41,9 +43,9 @@ subroutine create_auroral_oval(currentIn, thetaIn, psiIn, &
   real:: GradMean, GradDev, GradMeanPrev, GradDevPrev
 
   ! Testing variables:
-  logical       :: DoTest, DoTestMe
-  logical, save :: IsFirstWrite = .true.
-  character(len=100), save    :: NameFile, StringFormat
+  logical:: DoTest, DoTestMe
+  logical:: IsFirstWrite = .true.
+  character(len=100) :: NameFile, StringFormat
   character(len=*), parameter :: NameSub = 'create_auroral_oval'
   !--------------------------------------------------------------------------
   call CON_set_do_test(NameSub, DoTest, DoTestMe)
@@ -170,7 +172,8 @@ subroutine create_auroral_oval(currentIn, thetaIn, psiIn, &
         GradDevPrev  = GradDev
 
         if(DoTestMe) &
-             write(*,*) NameSub,' nIter, ColatMeanPrev, ColatDevPrev, ColatMean, ColatDev=', &
+             write(*,*) NameSub, &
+             ' nIter, ColatMeanPrev, ColatDevPrev, ColatMean, ColatDev=', &
              nIter, ColatMeanPrev, ColatDevPrev, ColatMean, ColatDev
 
         if(Tolerance2 > dStep**2 * (GradMean**2 + GradDev**2)) EXIT
@@ -244,15 +247,16 @@ subroutine create_auroral_oval(currentIn, thetaIn, psiIn, &
   if(.not.DoTestMe .or. .not. IsNorth) return
 
   write(NameFile,'(a,i8.8,a)')trim(NameIonoDir)//'aurora_n',nSolve,'.dat'
-  open(unit=UnitTmp_, file=NameFile, status='replace')
+  call open_file(FILE=NameFile, STATUS='replace', NameCaller=NameSub)
   write(UnitTmp_, '(a,2f8.2)')'Auroral oval fit: ColatMean, ColatDev=', &
        ColatMean*cRadToDeg, ColatDev*cRadToDeg
   write(UnitTmp_,'(a)') 'j Phi ThetaMax ThetaFit Weight Width'
   do j=1, IONO_nPsi
-     write(UnitTmp_,'(i4, 5es13.4)') j, Psi(1,j)*cRadToDeg, ColatMax(j)*cRadToDeg, &
+     write(UnitTmp_,'(i4, 5es13.4)') &
+          j, Psi(1,j)*cRadToDeg, ColatMax(j)*cRadToDeg, &
           ColatOut(j)*cRadToDeg, facMax(j)/FacSum, Width(j)*cRadToDeg
   end do
-  close(UnitTmp_)
+  call close_file(NameCaller=NameSub)
   
 !!!  if(IsFirstWrite)then
 !!!     ! Open file:

@@ -6,7 +6,8 @@ module IE_wrapper
 
   ! Wrapper for Ridley's ionosphere model RIM
 
-  use ModUtilities, ONLY: CON_set_do_test, CON_stop
+  use ModUtilities, ONLY: CON_set_do_test, CON_stop, open_file, close_file
+  use ModIoUnit, ONLY: UNITTMP_
 
   implicit none
 
@@ -755,17 +756,18 @@ contains
   contains
 
     !=========================================================================
-    !write values to North plot file
     subroutine write_dataN
-      use ModIoUnit, ONLY: UNITTMP_
-      CHARACTER (LEN=80) :: filename
-      integer :: i,j
-      integer, save :: nCall=0
-      !------------------------------------------------------------------------
 
+      !write values to North plot file
+
+      character(len=80) :: filename
+      integer:: i, j
+      integer:: nCall=0
+      character(len=*), parameter:: NameSub='write_dataN'
+      !------------------------------------------------------------------------
       nCall=nCall+1
       write(filename,'(a,i5.5,a)')"gm2ie_debugN_",nCall,".dat"
-      OPEN (UNIT=UNITTMP_, FILE=filename, STATUS='unknown')
+      call open_file(FILE=filename, STATUS='unknown')
       write(UNITTMP_,'(a)') 'TITLE="gm2ie debugN values"'
       write(UNITTMP_,'(a)') &
            'VARIABLES="J", "I", "Theta", "Psi", "JR", "1/B", "rho", "p"'
@@ -777,19 +779,22 @@ contains
               Iono_North_Theta(i,j),Iono_North_Psi(i,j),Iono_North_Jr(i,j), &
               Iono_North_invB(i,j),Iono_North_rho(i,j),Iono_North_p(i,j)
       end do; end do
-      CLOSE(UNITTMP_)
+      call close_file(NameCaller=NameSub)
+      
     end subroutine write_dataN
     !==========================================================================
-    !write values to South plot file
     subroutine write_dataS
-      use ModIoUnit, ONLY: UNITTMP_
-      CHARACTER (LEN=80) :: filename
-      integer :: i,j
-      integer, save :: nCall=0
+
+      !write values to South plot file
+
+      character(len=80) :: filename
+      integer:: i,j
+      integer:: nCall=0
+      character(len=*), parameter:: NameSub='write_dataS'
       !------------------------------------------------------------------------
       nCall=nCall+1
       write(filename,'(a,i5.5,a)')"gm2ie_debugS_",nCall,".dat"
-      OPEN (UNIT=UNITTMP_, FILE=filename, STATUS='unknown')
+      call open_file(FILE=filename, STATUS='unknown')
       write(UNITTMP_,'(a)') 'TITLE="gm2ie debugS values"'
       write(UNITTMP_,'(a)') &
            'VARIABLES="J", "I", "Theta", "Psi", "JR", "1/B", "rho", "p"'
@@ -801,11 +806,11 @@ contains
               Iono_South_Theta(i,j),Iono_South_Psi(i,j),Iono_South_Jr(i,j), &
               Iono_South_invB(i,j),Iono_South_rho(i,j),Iono_South_p(i,j)
       end do; end do
-      CLOSE(UNITTMP_)
+      call close_file(NameCaller=NameSub)
+
     end subroutine write_dataS
 
   end subroutine IE_put_from_gm
-
   !============================================================================
   subroutine IE_put_from_ua(Buffer_IIBV, nMLTs, nLats, nVarIn, NameVarUaIn_V)
     
@@ -1278,10 +1283,10 @@ contains
     !INPUT PARAMETERS:
     real,     intent(in) :: tSimulation   ! seconds from start time
 
-    character(len=*), parameter :: NameSub='IE_finalize'
-
     integer :: iFile
     real(Real8_) :: tCurrent
+
+    character(len=*), parameter :: NameSub='IE_finalize'
     !--------------------------------------------------------------------------
     call get_time(tCurrentOut = tCurrent)
     call time_real_to_int(tCurrent, Time_Array)
@@ -1294,9 +1299,8 @@ contains
        end do
     end if
 
-    if(DoSaveLogfile .and. iProc==0)then
-       close(unitlog)
-    end if
+    if(DoSaveLogfile .and. iProc==0) &
+         call close_file(unitlog, NameCaller=NameSub)
 
     if(allocated(PosMagnetometer_II)) deallocate(&
          PosMagnetometer_II, TypeCoordMag_I)
@@ -1448,7 +1452,6 @@ contains
   subroutine IE_get_for_ps(Buffer_II, iSize, jSize, tSimulation)
 
     use ModNumConst,   ONLY: cRadToDeg
-    use ModIoUnit,     ONLY: UnitTmp_
     use ModIonosphere, ONLY: IONO_nPsi, IONO_nTheta, &
          IONO_Phi, IONO_NORTH_Theta,IONO_NORTH_Psi 
     
@@ -1472,9 +1475,9 @@ contains
     tSimulationTmp = tSimulation
     call IE_run(tSimulationTmp, tSimulation)
 
-        ! Pass potential to coupler:
+    ! Pass potential to coupler:
     Buffer_II = IONO_Phi
-    
+
     if(DoTestMe)then
        ! Write info to screen:
        write(*,*) "IE: Preparing potential for PS"
@@ -1484,7 +1487,8 @@ contains
        write(*,*) "IE: Size of pot array = ", size(Buffer_II), &
             size(Buffer_II,1), size(Buffer_II,2)
        ! Write potential to file:
-       open(unit=UnitTmp_, file='ie_potential.txt', status='replace')
+       call open_file(FILE='ie_potential.txt', STATUS='replace', &
+            NameCaller=NameSub)
        write(UnitTmp_,*)'Colat   Lon   Potential(V)'
        do i=1, iSize
           do j=1, jSize
@@ -1493,14 +1497,13 @@ contains
                   IONO_North_Psi(i,j)*cRadToDeg, Buffer_II(i,j)
           end do
        end do
-       close(UnitTmp_)
+       call close_file(NameCaller=NameSub)
     end if
     
   end subroutine IE_get_for_ps
-
   !============================================================================
-
   subroutine IE_get_mag_for_gm(Buffer_DII, iSize)
+
     ! For all virtual magnetometers and virtual index magnetometers, collect
     ! the magnetic pertubation calculated from the IE/Ridley_serial results.
     ! These values are returned to the GM module to calculate the total

@@ -1,18 +1,12 @@
-!  Copyright (C) 2002 Regents of the University of Michigan, portions used with permission 
+!  Copyright (C) 2002 Regents of the University of Michigan,
+! portions used with permission 
 !  For more information, see http://csem.engin.umich.edu/tools/swmf
+
 !*************************************************************************
 !
 ! CONDUCTANCE Calculation Routines
 !
 !*************************************************************************
-
-
-!-------------------------------------------------------------------------
-! FACs_to_fluxes
-!
-!
-!
-!-------------------------------------------------------------------------
 
 subroutine FACs_to_fluxes(iModel, iBlock)
 
@@ -2032,16 +2026,8 @@ subroutine FACs_to_fluxes(iModel, iBlock)
   endif
   
 end subroutine FACs_to_fluxes
-
-
-!-------------------------------------------------------------------------
-! ionosphere_conductance
-!
-!
-!
-!-------------------------------------------------------------------------
-
-subroutine ionosphere_conductance(Sigma0, SigmaH, SigmaP,               &
+!==============================================================================
+subroutine ionosphere_conductance(Sigma0, SigmaH, SigmaP, &
      SigmaThTh, SigmaThPs, SigmaPsPs,      &
      dSigmaThTh_dTheta, dSigmaThPs_dTheta, &
      dSigmaPsPs_dTheta,                    &
@@ -2402,42 +2388,28 @@ subroutine ionosphere_conductance(Sigma0, SigmaH, SigmaP,               &
   end do
 
 end subroutine ionosphere_conductance
+!==============================================================================
+subroutine determine_oval_characteristics(Current_in, Theta_in, Psi_in, &
+     Loc_of_Oval, Width_of_Oval, Strength_of_Oval)
 
-
-
-subroutine Determine_Oval_Characteristics(Current_in, Theta_in, Psi_in, &
-     Loc_of_Oval, Width_of_Oval, &
-     Strength_of_Oval)
-
-  !
   ! This routine calculates everything in radians away from the pole.
-  !
 
   use ModIonosphere
   use IE_ModIo,       ONLY: NameIonoDir
   use ModConductance, ONLY: DoOvalShift
-  use ModIoUnit,      ONLY: UnitTMP_
   use IE_ModMain,     ONLY: Time_Array, nSolve
+  use ModIoUnit,      ONLY: UnitTMP_
+  use ModUtilities,   ONLY: open_file, close_file
 
   implicit none
 
-  !
   ! inputs:
-  !
-
   real, dimension(1:IONO_nTheta, 1:IONO_nPsi), intent(in) :: &
        Current_in, Theta_in, Psi_in
 
-  !
   ! Outputs:
-  !
-
   real, dimension(1:IONO_nPsi), intent(out) :: &
        Loc_of_Oval, Width_of_Oval, Strength_of_Oval
-
-  !
-  ! Working Variables:
-  !
 
   real, dimension(1:IONO_nTheta, 1:IONO_nPsi) :: &
        Current, Theta, Psi
@@ -2452,18 +2424,16 @@ subroutine Determine_Oval_Characteristics(Current_in, Theta_in, Psi_in, &
 
   integer :: i, j, n, nloc, dJ, J_Start, J_End
 
-  ! Testing & output variables:
+  ! Testing and output variables:
   character(len=100), save    :: NameFile, StringFormat
-  character(len=*), parameter :: NameSub = 'Determine_Oval_Characteristics'
-  logical, save :: IsFirstWrite = .true.
-  logical       :: DoTest, DoTestMe
+  logical:: IsFirstWrite = .true.
+  logical:: DoTest, DoTestMe
 
+  character(len=*), parameter :: NameSub = 'determine_oval_characteristics'
+  !----------------------------------------------------------------------------
   call CON_set_do_test(NameSub, DoTest, DoTestMe)
   
-  !
   ! Reverse the Arrays for Southern Hemisphere:
-  !
-
   if (Theta_in(1,1) < cHalfPi) then
      Current = Current_in
      Theta   = Theta_in
@@ -2594,7 +2564,7 @@ subroutine Determine_Oval_Characteristics(Current_in, Theta_in, Psi_in, &
   if(IsFirstWrite)then
      ! Open file:
      write(NameFile,'(a,i8.8,a)')trim(NameIonoDir)//'aurora_n',nSolve,'.txt'
-     open(unit=UnitTmp_, file=NameFile, status='replace')
+     call open_file(FILE=NameFile, STATUS='replace', NameCaller=NameSub)
      ! Write header w/ longitudes:
      write(UnitTmp_, '(a)', advance='NO')'Auroral oval location at Lon='
      do j=1, IONO_nPsi
@@ -2607,13 +2577,14 @@ subroutine Determine_Oval_Characteristics(Current_in, Theta_in, Psi_in, &
      IsFirstWrite=.false.
   else
      ! Open file in append mode:
-     open(unit=UnitTmp_, file=NameFile, status='old', position='append')
+     call open_file(FILE=NameFile, STATUS='old', POSITION='append', &
+          NameCaller=NameSub)
   end if
 
   ! Write record:
   write(UnitTmp_, StringFormat) Time_Array(1:7), Loc_of_oval(:)*cRadToDeg
 
-  close(UnitTmp_)
-end subroutine Determine_Oval_Characteristics
+  call close_file(NameCaller=NameSub)
 
+end subroutine determine_oval_characteristics
 
