@@ -384,6 +384,8 @@ T             UseCMEEFitting (rest of parameters read if true)
     <parameter name="UseOvalShift"          type="logical" default="T"/>
     <parameter name="UseSubOvalConductance" type="logical" default="F"/>
     <parameter name="UseAdvancedOval"       type="logical" default="F"/>
+    <parameter name="DoFitCircle"           type="logical" default="F"
+	       if="$UseAdvancedOval"/>
   </if>
   
 #AURORALOVAL
