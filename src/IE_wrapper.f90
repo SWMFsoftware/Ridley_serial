@@ -1299,7 +1299,7 @@ contains
        end do
     end if
 
-    if(DoSaveLogfile .and. iProc==0) &
+    if(DoSaveLogfile .and. iProc==0 .and. unitlog>0) &
          call close_file(unitlog, NameCaller=NameSub)
 
     if(allocated(PosMagnetometer_II)) deallocate(&
