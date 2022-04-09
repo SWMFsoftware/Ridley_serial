@@ -1080,7 +1080,7 @@ subroutine IE_save_logfile
      call open_file(unitlog, FILE=NameFile)
      write(unitlog,fmt="(a)")  'Ridley Ionosphere Model, [deg] and [kV]'
      write(unitlog,fmt="(a)") &
-          't yy mm dd hh mm ss ms tilt cpcpn cpcps'
+          't year mo dy hr mn sc msc tilt cpcpn cpcps'
 
      ! Only write data if the simulation time is zero so during
      ! restart we don't repeat the last item from a previous run.
