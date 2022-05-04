@@ -257,7 +257,63 @@ subroutine FACs_to_fluxes(iModel, iBlock)
      end select
   endif
 
-  if (iModel.eq.4 .or. iModel.eq.5) then
+  if (iModel.eq.11) then ! ADELPHI AMPERE-derived model
+
+     select case(iBlock)
+     case(1)
+        !  Do North First
+
+        do j = 1, IONO_nPsi
+           do i = 1, IONO_nTheta
+              ! Robinson ADELPHI model 8/3/2021
+              ! iono_north_jr in units of Amps/m^2
+              ! IONO_NORTH_Psi is mlt in units of radians 
+              
+              call ADELPHI_Calc(iono_north_jr(i,j),IONO_NORTH_Psi(i,j),hall,ped)
+              
+              if (abs(90 - IONO_NORTH_Theta(i,j)*cRadToDeg) <= 50) then
+                 hall=0
+                 ped=0
+              end if
+              
+              if ((hall.gt.1.0).and.(ped.gt.0.5)) then
+                 IONO_NORTH_Ave_E(i,j)  = ((hall/ped)/0.45)**(1.0/0.85)
+                 IONO_NORTH_EFlux(i,j) = (ped*(16.0+IONO_NORTH_Ave_E(i,j)**2)/&
+                      (40.0*IONO_NORTH_Ave_E(i,j)))**2/1000.0
+              else
+                 IONO_NORTH_Ave_E(i,j) = IONO_Min_Ave_E
+                 IONO_NORTH_EFlux(i,j) = IONO_Min_EFlux
+              endif
+           end do
+        end do
+     case(2)
+        !  Do South Next
+        
+        do j = 1, IONO_nPsi
+           do i = 1, IONO_nTheta
+              
+              call ADELPHI_Calc(iono_south_jr(i,j),IONO_SOUTH_Psi(i,j),hall,ped)
+              
+              if (abs(90 - IONO_SOUTH_Theta(i,j)*cRadToDeg) <= 50) then
+                 hall=0
+                 ped=0
+              end if
+              
+              if ((hall.gt.1.0).and.(ped.gt.0.5)) then
+                 IONO_SOUTH_Ave_E(i,j)  = ((hall/ped)/0.45)**(1.0/0.85)
+                 IONO_SOUTH_EFlux(i,j) = (ped*(16.0+IONO_SOUTH_Ave_E(i,j)**2)/&
+                      (40.0*IONO_SOUTH_Ave_E(i,j)))**2/1000.0
+              else
+                 IONO_SOUTH_Ave_E(i,j) = IONO_Min_Ave_E
+                 IONO_SOUTH_EFlux(i,j) = IONO_Min_EFlux
+              endif
+              
+           enddo
+        enddo
+     end select
+  end if
+
+  if (iModel.eq.4 .or. iModel.eq.5 .or. iModel.eq.9) then
 
      ! Calculate grid spacing for conductance grid
      dlat = (cond_lats(1) - cond_lats(2))*cDegToRad
@@ -324,7 +380,7 @@ subroutine FACs_to_fluxes(iModel, iBlock)
                  ped_a2 = x1*y1*ped_a2_up(imlt  ,jlat  ) + &
                       x2*y1*ped_a2_up(imlt+1,jlat  ) + &
                       x1*y2*ped_a2_up(imlt  ,jlat+1) + &
-                      x2*y2*ped_a2_up(imlt+1,jlat+1)
+                      x2*y2*ped_a2_up(imlt+1,jlat+1)                 
 
               else
 
@@ -375,22 +431,35 @@ subroutine FACs_to_fluxes(iModel, iBlock)
               else
                  polarcap = .true.
               endif
-
+              
+              if (iModel.eq.9) then
+                 ! A simple power law relation between FAC and conductance was added by Zihan Wang. 02/26/2021.
+                 ! Conductance files in PARAM.IN needs to be changed. The format is the same. However, a2 will not be used.
+                
+                 hall=exp(hal_a0+hal_a1*log(abs(iono_north_jr(i,j)*1.0e6)))
+                 ped=exp(ped_a0+ped_a1*log(abs(iono_north_jr(i,j)*1.0e6)))
+                 
+              endif
+              
               if (iModel.eq.4) then
                  ! Implemented Feb. 7, 2007 as modified version of iModel 5 with
                  !    new narrower fitting of the auroral oval.  DDZ
-
+                 
                  hall=exp(-1.0*(distance/(OvalWidthFactor*Width_of_Oval(j)))**2) * &
                       CondFactor*( &
                       hal_a0+(hal_a1-hal_a0)*exp(-abs(iono_north_jr(i,j)*1.0e9)*hal_a2**2))
                  ped =exp(-1.0*(distance/(OvalWidthFactor*Width_of_Oval(j)))**2) * &
                       CondFactor*( &
                       ped_a0+(ped_a1-ped_a0)*exp(-abs(iono_north_jr(i,j)*1.0e9)*ped_a2**2))
-              else  ! iModel=5
+              endif
+                 
+              if (iModel.eq.5) then
                  !
                  ! We want minimal conductance lower than the oval
                  !
-
+                 
+                 ! decrease conductance equatorward of the center of the auroral oval.
+                 ! The decrease is slow down with a factor of 3.
                  if (.not.polarcap .and. .not.UseSubOvalCond) then
                     distance = distance/3.0
                     hal_a0 = hal_a0 * exp(-(distance/(OvalWidthFactor*Width_of_Oval(j)))**2)
@@ -468,8 +537,6 @@ subroutine FACs_to_fluxes(iModel, iBlock)
 
         do j = 1, IONO_nPsi
            do i = 1, IONO_nTheta
-
-
               y1 = (cPi - IONO_SOUTH_Theta(i,j))/dlat + 1.0
               if (y1 > i_cond_nlats-1) then
                  jlat = i_cond_nlats-1
@@ -564,14 +631,28 @@ subroutine FACs_to_fluxes(iModel, iBlock)
                  polarcap = .true.
               endif
 
+              if (iModel.eq.9) then
+                 ! A simple power law relation between FAC and conductance was added by Zihan Wang. 02/26/2021.
+                 ! Conductance files in PARAM.IN needs to be changed. The format is the same. However, a2 will not be used.
+                 
+                 hall=exp(hal_a0+hal_a1*log(abs(iono_south_jr(i,j)*1.0e6)))
+                 ped=exp(ped_a0+ped_a1*log(abs(iono_south_jr(i,j)*1.0e6)))
+
+              endif
+
               if (iModel.eq.4) then
+                 ! Implemented Feb. 7, 2007 as modified version of iModel 5 with
+                 !    new narrower fitting of the auroral oval.  DDZ
+                 
                  hall=exp(-1.0*(distance/(OvalWidthFactor*Width_of_Oval(j)))**2) * &
                       CondFactor*( &
-                      hal_a0+(hal_a1-hal_a0)*exp(-abs(iono_north_jr(i,j)*1.0e9)*hal_a2**2))
+                      hal_a0+(hal_a1-hal_a0)*exp(-abs(iono_south_jr(i,j)*1.0e9)*hal_a2**2))
                  ped =exp(-1.0*(distance/(OvalWidthFactor*Width_of_Oval(j)))**2) * &
                       CondFactor*( &
-                      ped_a0+(ped_a1-ped_a0)*exp(-abs(iono_north_jr(i,j)*1.0e9)*ped_a2**2))
-              else  ! iModel=5
+                      ped_a0+(ped_a1-ped_a0)*exp(-abs(iono_south_jr(i,j)*1.0e9)*ped_a2**2))
+              endif
+                 
+              if (iModel.eq.5) then
                  ! Restrict FAC-related conductance outside auroral oval.
                  if (.not.polarcap .and. .not.UseSubOvalCond) then
                     distance = distance/3.0
@@ -2061,7 +2142,7 @@ subroutine ionosphere_conductance(Sigma0, SigmaH, SigmaP, &
        Eflux, Ave_E,                                            &
        Theta, Psi, sin_clat, cos_clat, sin_lon, cos_lon, cy,    &
        oSigmaH, oSigmaP, conv_SigmaH, conv_SigmaP, cos_SZA,     &
-       tmp_x, tmp_y, tmp_z
+       tmp_x, tmp_y, tmp_z, tmp_sigp, tmp_sigh
 
   real, dimension(1:IONO_NTheta) :: dTheta
   real, dimension(1:IONO_NPsi)   :: dPsi
@@ -2128,10 +2209,28 @@ subroutine ionosphere_conductance(Sigma0, SigmaH, SigmaP, &
 
         do j = 1, nPsi
            do i = 1, nTheta
-
+              
               Sigma0(i,j) = 1000.00
               SigmaH(i,j) = 0.00
               SigmaP(i,j) = StarLightPedConductance
+
+           enddo
+        enddo
+
+     endif
+
+     if (iModel.eq.10) then
+
+        do j = 1, nPsi
+           do i = 1, nTheta
+              if (north) then
+                 SigmaP(i,j) = PedConductance_North
+              else
+                 SigmaP(i,j) = PedConductance_South
+              endif
+
+              Sigma0(i,j) = 1000.00
+              SigmaH(i,j) = 0.00
 
            enddo
         enddo
@@ -2198,7 +2297,7 @@ subroutine ionosphere_conductance(Sigma0, SigmaH, SigmaP, &
 
      endif
 
-     if (iModel.ge.3) then
+     if ((iModel.ge.3) .and. (iModel.ne.10)) then
 
         do j = 1, nPsi
            do i = 1, nTheta
@@ -2257,6 +2356,20 @@ subroutine ionosphere_conductance(Sigma0, SigmaH, SigmaP, &
 
      endif
 
+     !if (iModel.eq.9) then
+
+     !   do j = 1, nPsi
+     !      do i = 2, nTheta-1
+     !         tmp_sigp(i,j)=(sigmap(i-1,j)+sigmap(i,j)+sigmap(i+1,j))/3
+     !         tmp_sigh(i,j)=(sigmah(i-1,j)+sigmah(i,j)+sigmah(i+1,j))/3
+     !      enddo
+     !   enddo
+
+     !   sigmap=tmp_sigp
+     !   sigmah=tmp_sigh
+
+     !endif
+        
      if (north) then
 
         ! Subsolar is i=nTheta ; j = 0
@@ -2588,3 +2701,70 @@ subroutine determine_oval_characteristics(Current_in, Theta_in, Psi_in, &
 
 end subroutine determine_oval_characteristics
 
+subroutine ADELPHI_Calc(jr,psi,hall,ped)
+
+  use ModIonosphere
+  use ModNumConst, ONLY: cPi, cDegToRad
+
+  implicit none
+
+  ! inputs:
+  real :: jr, psi
+
+  ! outputs:
+  real :: hall, ped
+
+  ! working variables:
+  real :: A_h0,B_h0,C_h0,A_h1,B_h1,C_h1
+  real :: A_p0,B_p0,C_p0,A_p1,B_p1,C_p1
+  real :: phi
+  real :: hal_a0,hal_a1,ped_a0,ped_a1
+
+  if (jr > 0) then
+     
+     A_h0 = 8.70
+     B_h0 = 4.60
+     C_h0 = 327.10
+     A_h1 = 14.80
+     B_h1 = -10.40
+     C_h1 = 129.90
+     A_p0 = 4.20
+     B_p0 = 1.10
+     C_p0 = 318.60
+     A_p1 = 6.80
+     B_p1 = -1.50
+     C_p1 = 184.90
+     
+  else
+     
+     A_h0 = 7.70
+     B_h0 = -1.80
+     C_h0 = 139.00
+     A_h1 = -7.30
+     B_h1 = 5.60
+     C_h1 = 100.90
+     A_p0 = 5.00
+     B_p0 = -0.80
+     C_p0 = 60.90
+     A_p1 = -3.20
+     B_p1 = -3.60
+     C_p1 = 21.90
+     
+  endif
+    
+  phi = mod((psi+cPi),2.0*cPi)
+  hal_a0 = A_h0 + B_h0*cos(C_h0*cDegToRad+phi)
+  hal_a1 = A_h1 + B_h1*cos(C_h1*cDegToRad+phi)
+  ped_a0 = A_p0 + B_p0*cos(C_p0*cDegToRad+phi)
+  ped_a1 = A_p1 + B_p1*cos(C_p1*cDegToRad+phi)
+  
+  ! I try to make sure all coefficients are positive. By Zihan Wang. 09/10/2021
+  ! I also add a mask function. By Zihan Wang. 10/08/2021
+  if (abs(jr*1.0e6)>0.01) then
+     hall=hal_a0+hal_a1*jr*1.0e6
+     ped=ped_a0+ped_a1*jr*1.0e6
+  else                 
+     hall=3
+     ped=1.5
+  endif
+end subroutine ADELPHI_Calc

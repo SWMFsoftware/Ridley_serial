@@ -18,6 +18,8 @@ rundir:
 	cd ${RUNDIR}/IE; cp ${IEDIR}/input/cond_ped_coeffs.dat .
 	cd ${RUNDIR}/IE; cp ${IEDIR}/input/cmee_hal_coeffs.dat .
 	cd ${RUNDIR}/IE; cp ${IEDIR}/input/cmee_ped_coeffs.dat .
+	cd ${RUNDIR}/IE; cp ${IEDIR}/input/cond_hal_coeffs_power.dat .
+	cd ${RUNDIR}/IE; cp ${IEDIR}/input/cond_ped_coeffs_power.dat .
 	cd ${RUNDIR}/IE; cp ${IEDIR}/Scripts/pION .
 	cd ${RUNDIR}/IE; ln -s ${BINDIR}/PostIONO.exe .
 

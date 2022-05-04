@@ -16,7 +16,7 @@ module IE_ModMain
   logical :: UseFakeRegion2=.false.
   integer :: conductance_model
   logical :: UseFullCurrent
-  real    :: f107_flux, PolarCapPedConductance, StarLightPedConductance
+  real    :: f107_flux, PolarCapPedConductance, StarLightPedConductance, PedConductance_North, PedConductance_South
   real    :: Hall_to_Ped_Ratio
 
   !\
