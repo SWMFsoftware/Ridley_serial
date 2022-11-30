@@ -1,74 +1,66 @@
-!  Copyright (C) 2002 Regents of the University of Michigan, 
-!  portions used with permission 
+!  Copyright (C) 2002 Regents of the University of Michigan,
+!  portions used with permission
 !  For more information, see http://csem.engin.umich.edu/tools/swmf
 !
-! This is the ionospheric solver for the BATS-R-US MHD code.
-! Initially written by Clinton Groth as a multigrid solver.
-! Modified by Aaron Ridley:
-!   Initial Modifications:
-!     - Changed to a GMRES solver, Sept. 99
-!   - Added f107 dependence to the conductance
-!   - Added a simple auroral oval
-!
-
-!====================================
-!                                   |
-!         Ionosphere Model          |
-!                                   |
-!====================================
-
 subroutine ionosphere(iter, iAction)
-  
-  !\
+
+  ! This is the ionospheric solver for the BATS-R-US MHD code.
+  ! Initially written by Clinton Groth as a multigrid solver.
+  ! Modified by Aaron Ridley:
+  !   Initial Modifications:
+  !     - Changed to a GMRES solver, Sept. 99
+  !   - Added f107 dependence to the conductance
+  !   - Added a simple auroral oval
+  !
+
   ! ionosphere driver (main or controlling) routine.
-  !/
-  
+
   use ModIonosphere
   use IE_ModMain
   use ModProcIE
 
   implicit none
-  
+
   integer, intent(in) :: iter, iAction
   integer :: iModel
   real :: f107
-  
-  logical :: oktest, oktest_me
-  
-  call CON_set_do_test('ionosphere',oktest,oktest_me)
-  if(oktest)write(*,*)'Ionosphere starting with action, me=',iAction, iProc
+
+  logical :: DoTest, DoTestMe
+
+  !----------------------------------------------------------------------------
+  call CON_set_do_test('ionosphere',DoTest,DoTestMe)
+  if(DoTest)write(*,*)'Ionosphere starting with action, me=',iAction, iProc
 
   iModel = conductance_model
-  
+
   f107 = f107_flux
-  
+
   select case (iAction)
-     
+
   case (1)
-     !\
-     ! Create fine grids for north and south 
+
+     ! Create fine grids for north and south
      ! hemisphere ionospheric solutions
-     !/
      call ionosphere_fine_grid
      call ionosphere_init
-     
+
   case(3)
      call ionosphere_read_restart_file
-     
+
   case (5)
-     !\
+
      ! Create a restart solution file containing the
      ! FAC driving the ionospheric solution.
-     !/
      call ionosphere_write_restart_file
 
   case default
      write(*,*)'IE ionosphere: ERROR, iAction = ',iAction
      call CON_stop('IE ionosphere: ERROR invalid iAction')
-     
+
   end select
-  
+
 end subroutine ionosphere
+!==============================================================================
 
 !*************************************************************************
 !
@@ -77,10 +69,9 @@ end subroutine ionosphere
 !*************************************************************************
 
 subroutine ionosphere_fine_grid
-  !\
+
   ! This routine sets the fine grid meshes for the
   ! northern and southern hemispheres.
-  !/
   use ModProcIE
   use IE_ModIO, ONLY: iUnitOut, write_prefix
   use IE_ModMain, ONLY: conductance_model
@@ -91,9 +82,9 @@ subroutine ionosphere_fine_grid
 
   integer :: i,j
   real :: dTheta_l, dPsi_l
-  character(len=*), parameter :: NameSub='ionosphere_fine_grid'
   character(len=lNamePlanet) :: NamePlanet
-  !------------------------------------------------------------------------
+  character(len=*), parameter:: NameSub = 'ionosphere_fine_grid'
+  !----------------------------------------------------------------------------
   dTheta_l = cHalfPi/(IONO_nTheta-1)
   dPsi_l   = cTwoPi/(IONO_nPsi-1)
 
@@ -106,7 +97,7 @@ subroutine ionosphere_fine_grid
      IONO_Height = 1000000.00
   case ('JUPITER')
      IONO_Height = 1000000.00
-  case default            
+  case default
      IONO_Height = IONO_Radius * 0.02  ! Most planets should work
   end select
 
@@ -245,20 +236,19 @@ subroutine ionosphere_fine_grid
        IONO_SOUTH_Theta(IONO_nTheta-1,1)
 
 end subroutine ionosphere_fine_grid
-
-!=============================================================================
+!==============================================================================
 
 subroutine ionosphere_init
-  !\
-  ! This routine initializes the fine grid 
+
+  ! This routine initializes the fine grid
   ! ionospheric solutions for the
   ! northern and southern hemispheres.
-  !/
   use ModIonosphere
   implicit none
 
+  !----------------------------------------------------------------------------
   IONO_NORTH_PHI = 0.00
-  IONO_NORTH_JR = 0.00 
+  IONO_NORTH_JR = 0.00
   IONO_NORTH_Jx = 0.00
   IONO_NORTH_Jy = 0.00
   IONO_NORTH_Jz = 0.00
@@ -283,7 +273,7 @@ subroutine ionosphere_init
   IONO_SOUTH_EPs = 0.00
   IONO_SOUTH_Ux = 0.00
   IONO_SOUTH_Uy = 0.00
-  IONO_SOUTH_Uz = 0.00  
+  IONO_SOUTH_Uz = 0.00
 
   IONO_NORTH_TGCM_JR = 0.00                                !^CFG IF TIEGCM
   IONO_SOUTH_TGCM_JR = 0.00                                !^CFG IF TIEGCM
@@ -311,6 +301,7 @@ subroutine ionosphere_init
   IONO_SOUTH_IonNumFlux = 0.0
 
 end subroutine ionosphere_init
+!==============================================================================
 
 !*************************************************************************
 !
@@ -331,18 +322,18 @@ subroutine write_timegcm_file(iter, phi_north, phi_south,   &
 
   use ModIonosphere
   use IE_ModIo
-  use IE_ModMain,ONLY: Time_Array
+  use IE_ModMain, ONLY: Time_Array
   implicit none
 
   integer, intent(in) :: iter
   real, dimension(1:IONO_nTheta,1:IONO_nPsi) ::             &
        phi_north, phi_south, eflux_north, eflux_south,      &
        avee_north, avee_south
-  real psi_offset
+  real:: psi_offset
 
   integer :: i, j
   character (len=4), Parameter :: IO_ext=".dat"
-  !----------------------------------------------------------------------
+  !----------------------------------------------------------------------------
   write(*,*) '=> Writing output datafiles for TIMEGCM.'
 
   call open_file(FILE=trim(NameIonoDir)//"MHD_to_TIMEGCM"//IO_ext)
@@ -356,7 +347,7 @@ subroutine write_timegcm_file(iter, phi_north, phi_south,   &
   write(iUnit,fmt="(2I10)") IONO_nTheta*2, IONO_nPsi
 
 ! Silliness to occur here:
-!   This ionospheric code starts with noon at 0.0 longitude.  This is 
+!   This ionospheric code starts with noon at 0.0 longitude.  This is
 !   different than almost all other ionospheres, so we need to shift
 !   the output by 180.0 degrees.
 !   Also, we want 0.0 and 360.0 to both be printed - but the new ones,
@@ -404,8 +395,9 @@ subroutine write_timegcm_file(iter, phi_north, phi_south,   &
   end do
 
   call close_file
- 
+
 end subroutine write_timegcm_file
+!==============================================================================
 !^CFG END TIEGCM
 
 !^CFG  IF TIEGCM BEGIN
@@ -428,6 +420,7 @@ subroutine read_timegcm_file
   real :: dum_lat, dum_lon, min_lat, max_lat, max_fac
   integer, dimension(1:6) :: time_array
 
+  !----------------------------------------------------------------------------
   min_lat = 60.0
   max_lat = 85.0
   max_fac = 0.0
@@ -447,13 +440,13 @@ subroutine read_timegcm_file
         read(iUnit,fmt="(3(E13.5))")  &
              dum_lat, dum_lon, IONO_SOUTH_TGCM_JR(i,j)
 
-        if (dum_lat.lt.(90+min_lat)) then
+        if (dum_lat < (90+min_lat)) then
            if (abs(iono_south_tgcm_jr(i,j)) > max_fac) &
                 max_fac = abs(iono_south_tgcm_jr(i,j))
            IONO_SOUTH_TGCM_JR(i,j) = 0.0
         endif
 
-        if (dum_lat.gt.(90+max_lat)) then
+        if (dum_lat > (90+max_lat)) then
            IONO_SOUTH_TGCM_JR(i,j) = 0.0
         endif
 
@@ -466,42 +459,36 @@ subroutine read_timegcm_file
         read(iUnit,fmt="(3(E13.5))")  &
              dum_lat, dum_lon, IONO_NORTH_TGCM_JR(i,j)
 
-        if (dum_lat.gt.(90-min_lat)) then
+        if (dum_lat > (90-min_lat)) then
            if (abs(iono_north_tgcm_jr(i,j)) > max_fac) &
                 max_fac = abs(iono_south_tgcm_jr(i,j))
            IONO_NORTH_TGCM_JR(i,j) = 0.0
         endif
 
-        if (dum_lat.lt.(90-max_lat)) then
+        if (dum_lat < (90-max_lat)) then
            IONO_NORTH_TGCM_JR(i,j) = 0.0
         endif
      end do
   end do
 
   call close_file
- 
+
 end subroutine read_timegcm_file
+!==============================================================================
 !^CFG END TIEGCM
 
-!-------------------------------------------------------------------------
-! ionosphere_write_output
-!
-!
-!
-!-------------------------------------------------------------------------
-
 subroutine IE_output
+  ! ionosphere_write_output
 
   use IE_ModIo
   use IE_ModMain
   use ModProcIE
-  !use ModIonoMagPerturb
 
   implicit none
 
   integer :: iFile
   logical :: DoSaveFile
-  !--------------------------------------------------------------------------
+  !----------------------------------------------------------------------------
   do iFile = 1, nFile
      DoSaveFile = .false.
      if(time_accurate .and. dt_output(ifile)>0.)then
@@ -516,7 +503,7 @@ subroutine IE_output
            DoSaveFile = .true.
         end if
      end if
-     
+
      if(DoSaveFile)then
         if(iProc==0)      call ionosphere_write_output(iFile, 1)
         if(iProc==nProc-1)call ionosphere_write_output(iFile, 2)
@@ -526,17 +513,16 @@ subroutine IE_output
 end subroutine IE_output
 !==============================================================================
 subroutine ionosphere_write_output(iFile, iBlock)
-  !\
-  ! This routine writes out the fine grid 
+
+  ! This routine writes out the fine grid
   ! ionospheric solutions for the
   ! northern and southern hemispheres to
   ! a data file.
-  !/
   use ModIonosphere
   use IE_ModIo
-  use IE_ModMain,ONLY: Time_Array, nSolve, Time_Accurate, Time_Simulation,&
+  use IE_ModMain, ONLY: Time_Array, nSolve, Time_Accurate, Time_Simulation,&
        ThetaTilt
-  use ModNumConst,ONLY: cRadToDeg
+  use ModNumConst, ONLY: cRadToDeg
 
   implicit none
 
@@ -553,10 +539,10 @@ subroutine ionosphere_write_output(iFile, iBlock)
   integer :: output_type, variables
 
   integer :: i, j
-  character(len=*), parameter :: NameSub='IE_write_output'
   character(len=4) :: IO_ext
   character (len=23) :: textNandT
-  !------------------------------------------------------------------------
+  character(len=*), parameter:: NameSub = 'ionosphere_write_output'
+  !----------------------------------------------------------------------------
 
   variables = min_vars
   output_type = idl_type
@@ -689,7 +675,7 @@ subroutine ionosphere_write_output(iFile, iBlock)
            write(iUnit, '(I5,a)') 25, ' RT P [Pa]'
            write(iUnit, '(I5,a)') 26, ' conjugate dLat [deg]'
            write(iUnit, '(I5,a)') 27, ' conjugate dLon [deg]'
-         
+
         case(uam_vars)                                  !^CFG  IF TIEGCM BEGIN
            write(iUnit, '(I5,a)')  1, ' Theta [deg]'
            write(iUnit, '(I5,a)')  2, ' Psi [deg]'
@@ -1046,8 +1032,7 @@ subroutine ionosphere_write_output(iFile, iBlock)
   call close_file
 
 end subroutine ionosphere_write_output
-
-!=============================================================================
+!==============================================================================
 
 subroutine IE_save_logfile
 
@@ -1062,12 +1047,12 @@ subroutine IE_save_logfile
   implicit none
   integer :: iError
   logical :: IsFirstTime = .true., DoWrite
-  !--------------------------------------------------------------------------
-  if (.not.DoSaveLogfile) return
+  !----------------------------------------------------------------------------
+  if (.not.DoSaveLogfile) RETURN
 
   if(nProc>1) call MPI_bcast(cpcp_south,1,MPI_REAL,1,iComm,iError)
 
-  if(iProc/=0) return
+  if(iProc/=0) RETURN
 
   DoWrite = .true.
 
@@ -1099,24 +1084,23 @@ subroutine IE_save_logfile
   call flush_unit(unitlog)
 
 end subroutine IE_save_logfile
-!============================================================================
+!==============================================================================
 subroutine ionosphere_read_restart_file
-  !\
+
   ! This routine reads an ionospheric restart solution file.
-  !/
-  use ModProcIE 
+  use ModProcIE
   use ModIonosphere
   use IE_ModIo
   implicit none
-  !---------------------------------------------------------------------------
+  !----------------------------------------------------------------------------
   if(iProc == 0)then
      write(*,*) '=> Reading restart file for ionosphere.'
      call check_dir(NameRestartInDir)
 
      ! Read header information?
-     !call open_file(FILE=trim(NameRestartInDir)//"restart.H", &
+     ! call open_file(FILE=trim(NameRestartInDir)//"restart.H", &
      !     STATUS="OLD")
-     !call close_file
+     ! call close_file
 
      ! Read north restart file
      call open_file(FILE=trim(NameRestartInDir)//"north.rst", &
@@ -1126,8 +1110,8 @@ subroutine ionosphere_read_restart_file
      read(iUnit) IONO_NORTH_IonNumFlux
      read(iUnit) IONO_NORTH_Joule
      read(iUnit) IONO_NORTH_Jr
-     read(iUnit) IONO_NORTH_Ave_E   
-     read(iUnit) IONO_NORTH_EFlux 
+     read(iUnit) IONO_NORTH_Ave_E
+     read(iUnit) IONO_NORTH_EFlux
      read(iUnit) IONO_NORTH_SigmaP
      read(iUnit) IONO_NORTH_SigmaH
 
@@ -1141,8 +1125,8 @@ subroutine ionosphere_read_restart_file
      read(iUnit) IONO_SOUTH_IonNumFlux
      read(iUnit) IONO_SOUTH_Joule
      read(iUnit) IONO_SOUTH_Jr
-     read(iUnit) IONO_SOUTH_Ave_E   
-     read(iUnit) IONO_SOUTH_EFlux 
+     read(iUnit) IONO_SOUTH_Ave_E
+     read(iUnit) IONO_SOUTH_EFlux
      read(iUnit) IONO_SOUTH_SigmaP
      read(iUnit) IONO_SOUTH_SigmaH
 
@@ -1150,10 +1134,10 @@ subroutine ionosphere_read_restart_file
   end if
 
 end subroutine ionosphere_read_restart_file
-!=============================================================================
+!==============================================================================
 subroutine ionosphere_write_restart_file
 
-  ! This routine writes out 3 files: 
+  ! This routine writes out 3 files:
   !       restart.H with scalar data
   !       north.rst with arrays for northern hemisphere
   !       south.rst with arrays for southern hemisphere
@@ -1190,8 +1174,8 @@ subroutine ionosphere_write_restart_file
      write(iUnit) IONO_NORTH_IonNumFlux
      write(iUnit) IONO_NORTH_Joule
      write(iUnit) IONO_NORTH_Jr
-     write(iUnit) IONO_NORTH_Ave_E   
-     write(iUnit) IONO_NORTH_EFlux 
+     write(iUnit) IONO_NORTH_Ave_E
+     write(iUnit) IONO_NORTH_EFlux
      write(iUnit) IONO_NORTH_SigmaP
      write(iUnit) IONO_NORTH_SigmaH
 
@@ -1205,8 +1189,8 @@ subroutine ionosphere_write_restart_file
      write(iUnit) IONO_SOUTH_IonNumFlux
      write(iUnit) IONO_SOUTH_Joule
      write(iUnit) IONO_SOUTH_Jr
-     write(iUnit) IONO_SOUTH_Ave_E   
-     write(iUnit) IONO_SOUTH_EFlux 
+     write(iUnit) IONO_SOUTH_Ave_E
+     write(iUnit) IONO_SOUTH_EFlux
      write(iUnit) IONO_SOUTH_SigmaP
      write(iUnit) IONO_SOUTH_SigmaH
 
@@ -1228,7 +1212,7 @@ subroutine iono_getpot(isize,jsize,MHD_lat,MHD_lon,MHD_pot,MHD_Jr)
   integer                  :: inter_lat, inter_lon
   real                     :: colat, dx_lat, dx_lon, mlt
   logical                  :: DoTest
-  !--------------------------------------------------------------------------
+  !----------------------------------------------------------------------------
   do i=1,isize
      do j=1,jsize
 
@@ -1264,7 +1248,7 @@ subroutine iono_getpot(isize,jsize,MHD_lat,MHD_lon,MHD_pot,MHD_Jr)
         do inter_lon=IONO_nPsi,1,-1
            if (iono_north_psi(1,inter_lon) <= mlt) EXIT
         end do
-        
+
         if(inter_lon==0)then
            write(*,*)'WARNING: IM longitude is below psi(1)=',&
                 mlt,iono_north_psi(1,1)
@@ -1299,8 +1283,7 @@ subroutine iono_getpot(isize,jsize,MHD_lat,MHD_lon,MHD_pot,MHD_Jr)
   end do
 
 end subroutine iono_getpot
-
-! =============================================================================
+!==============================================================================
 subroutine calculate_xyz_geo_gse
 
   use ModIonosphere
@@ -1309,29 +1292,30 @@ subroutine calculate_xyz_geo_gse
 
   integer :: i, j
   real, dimension(3) :: xyz_D, xyz_out_D
-  ! --------------------------------------                                    
+  !----------------------------------------------------------------------------
   do j = 1, IONO_nPsi
      do i = 1, IONO_nTheta
         xyz_D(1) = IONO_NORTH_X(i,j)
         xyz_D(2) = IONO_NORTH_Y(i,j)
         xyz_D(3) = IONO_NORTH_Z(i,j)
-        
+
         xyz_out_D(:) = matmul(GeoSmg_DD, xyz_D)
         IONO_NORTH_GEO_XyzD(:, i, j) = xyz_out_D(:)
-        
+
         xyz_out_D(:) = matmul(GseSmg_DD, xyz_D)
         IONO_NORTH_GSE_XyzD(:, i, j) = xyz_out_D(:)
 
         xyz_D(1) = IONO_SOUTH_X(i,j)
         xyz_D(2) = IONO_SOUTH_Y(i,j)
         xyz_D(3) = IONO_SOUTH_Z(i,j)
-        
+
         xyz_out_D(:) = matmul(GeoSmg_DD, xyz_D)
         IONO_SOUTH_GEO_XyzD(:, i, j) = xyz_out_D(:)
-        
+
         xyz_out_D(:) = matmul(GseSmg_DD, xyz_D)
         IONO_SOUTH_GSE_XyzD(:, i, j) = xyz_out_D(:)
      end do
   end do
 end subroutine calculate_xyz_geo_gse
+!==============================================================================
 

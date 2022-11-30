@@ -1,5 +1,5 @@
-!  Copyright (C) 2002 Regents of the University of Michigan, 
-!  portions used with permission 
+!  Copyright (C) 2002 Regents of the University of Michigan,
+!  portions used with permission
 !  For more information, see http://csem.engin.umich.edu/tools/swmf
 module ModIonoMagPerturb
 
@@ -15,33 +15,34 @@ module ModIonoMagPerturb
 
   save
 
-  logical :: IsInitiated = .false.
-  integer :: nMagnetometer = 0
-  real,             allocatable :: PosMagnetometer_II(:,:)
-  character(len=3), allocatable :: TypeCoordMag_I(:)
+  private ! except
 
-contains 
-  !======================================================================
+  public:: get_iono_magperturb_now
+  
+  logical :: IsInitiated = .false.
+  integer, public :: nMagnetometer = 0
+  real, public, allocatable :: PosMagnetometer_II(:,:)
+  character(len=3), public, allocatable :: TypeCoordMag_I(:)
+  
+contains
+  !============================================================================
   subroutine iono_mag_init
     ! Initialize ionospheric magnetometers by allocating arrays.
-    !--------------------------------------------------------------------
+    !--------------------------------------------------------------------------
 
     IsInitiated = .true.
     if(.not.allocated(PosMagnetometer_II)) allocate( &
          PosMagnetometer_II(2, nMagnetometer), TypeCoordMag_I(nMagnetometer))
 
   end subroutine iono_mag_init
-
-  !======================================================================
+  !============================================================================
   subroutine iono_mag_perturb(nMag, Xyz0_DI, JhMagPerturb_DI, JpMagPerturb_DI)
-    ! For a series of nMag virtual observatories at SMG coordinates Xyz0_DI, 
+    ! For a series of nMag virtual observatories at SMG coordinates Xyz0_DI,
     ! calculate the magnetic pertubation from the ionospheric Pederson currents
     ! (JpMagPerturb_DI) and Hall currents (JhMagPerturb_DI) in three orthogonal
     ! directions.
 
     use CON_planet_field, ONLY: get_planet_field
-
-    implicit none
 
     integer,intent(in)                     :: nMag
     real,   intent(in),  dimension(3,nMag) :: Xyz0_DI
@@ -69,7 +70,7 @@ contains
 
     logical:: DoTest, DoTestMe
     character(len=*), parameter:: NameSub = 'iono_mag_perturb'
-    !======================================================================
+    !--------------------------------------------------------------------------
     call CON_set_do_test(NameSub, DoTest, DoTestMe)
 
     if(DoTestMe)write(*,*) NameSub,' starting with XyzSm(iMag=1)=', &
@@ -77,11 +78,9 @@ contains
 
     call timing_start(NameSub)
 
-    !\
     ! calculate the magnetic perturbations at the location of (SMLat, SMLon)
     ! in the SM coordinates, by integrating over the Hall and Perdersen
     ! current systems.
-    !/
     JhMagPerturb_DI = 0.0
     JpMagPerturb_DI = 0.0
 
@@ -121,7 +120,7 @@ contains
     do j = 1, nPsi; do i = 2, 2*nTheta-1
        ETh(i,j) = -(Phi_G(i+1,j) - Phi_G(i-1,j))/(2*dTheta*Radius)
        EPs(i,j) = -(Phi_G(i,j+1) - Phi_G(i,j-1)) &
-            /(2*dPsi*Radius*SinTheta(i,j)) 
+            /(2*dPsi*Radius*SinTheta(i,j))
     end do; end do
 
     ! convert to xyz coords
@@ -160,10 +159,9 @@ contains
        end do
     end do
 
-
     call timing_start('iono_mag_db')
 
-    do iMag=1, nMag
+    do iMag = 1, nMag
 
        Xyz0_D = Xyz0_DI(:,iMag)
 
@@ -188,7 +186,7 @@ contains
                 dv = cMu/(4*cPi)*Radius**2*dTheta*dPsi*SinTheta(i,j)
 
                 MagJh_D = MagJh_D + tempJh_dB * dv
-                MagJp_D = MagJp_D + tempJp_dB * dv                
+                MagJp_D = MagJp_D + tempJp_dB * dv
 
              end do
           end do
@@ -254,18 +252,16 @@ contains
          JhMagPerturb_DI(:,1), JpMagPerturb_DI(:,1)
 
   end subroutine iono_mag_perturb
-
-  !=====================================================================
+  !============================================================================
   subroutine get_iono_magperturb_now(PerturbJh_DI, PerturbJp_DI, Xyz_DI)
-    ! For all virtual magnetometers, update magnetometer coordinates in SMG 
-    ! coordinates. Then, calculate the perturbation from the Hall and Pederson 
+
+    ! For all virtual magnetometers, update magnetometer coordinates in SMG
+    ! coordinates. Then, calculate the perturbation from the Hall and Pederson
     ! currents and return them to caller as PerturbJhOut_DI, PerturbJpOut_DI.
     ! Updated magnetometer coordinates are also returned as Xyz_DI.
 
     use CON_axes, ONLY: transform_matrix
     use ModMpi
-
-    implicit none
 
     real, intent(out), dimension(3,nMagnetometer) :: PerturbJh_DI, PerturbJp_DI
     real, intent(out), dimension(3,nMagnetometer) :: Xyz_DI
@@ -275,8 +271,8 @@ contains
     real, dimension(3,3) :: MagtoSmg_DD
 
     integer :: iMag, iError
-    !--------------------------------------------------------------------------
     ! Get current positions of magnetometers in SMG coordinates.
+    !--------------------------------------------------------------------------
     do iMag = 1 , nMagnetometer
        ! Create rotation matrix.
        MagtoSmg_DD = transform_matrix(Time_Simulation, TypeCoordMag_I(iMag), &
@@ -298,12 +294,10 @@ contains
     ! calculate the magnetic perturbation caused by Hall and Perdersen currents
     call iono_mag_perturb(nMagnetometer, Xyz_DI, PerturbJh_DI, PerturbJp_DI)
 
-    !\
     ! Collect the variables from all the PEs
-    !/
     MagVarSum_Jh_DI = 0.0
     MagVarSum_Jp_DI = 0.0
-    if(nProc > 1)then 
+    if(nProc > 1)then
        call MPI_reduce(PerturbJh_DI, MagVarSum_Jh_DI, 3*nMagnetometer, &
             MPI_REAL, MPI_SUM, 0, iComm, iError)
        call MPI_reduce(PerturbJp_DI, MagVarSum_Jp_DI, 3*nMagnetometer, &
@@ -313,8 +307,8 @@ contains
           PerturbJp_DI = MagVarSum_Jp_DI
        end if
     end if
-    
-  end subroutine get_iono_magperturb_now
-  !=====================================================================
 
+  end subroutine get_iono_magperturb_now
+  !============================================================================
 end module ModIonoMagPerturb
+!==============================================================================
