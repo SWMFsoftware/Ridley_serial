@@ -18,12 +18,12 @@ module ModIonoMagPerturb
   private ! except
 
   public:: get_iono_magperturb_now
-  
+
   logical :: IsInitiated = .false.
   integer, public :: nMagnetometer = 0
   real, public, allocatable :: PosMagnetometer_II(:,:)
   character(len=3), public, allocatable :: TypeCoordMag_I(:)
-  
+
 contains
   !============================================================================
   subroutine iono_mag_init

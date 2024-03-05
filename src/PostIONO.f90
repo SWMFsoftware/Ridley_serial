@@ -1,19 +1,18 @@
-!  Copyright (C) 2002 Regents of the University of Michigan, portions used with permission 
+!  Copyright (C) 2002 Regents of the University of Michigan,
+!  portions used with permission
 !  For more information, see http://csem.engin.umich.edu/tools/swmf
-!\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+
 !                                                                |
-!/////////////////////////////////////////////////////////////////
+
 program PostIONO
   implicit none
-  
-  !\
+
   ! PostProcessing variables.
-  !/
   integer :: ptLength,pvLength
   integer :: nvars,nTheta,nPhi
   integer :: nYear,nMonth,nDay,nHour,nMinute,nSecond,nMillisecond
   integer :: i,j,n,n_step
-  
+
   real :: Theta,Phi, X,Y,Z, DegToRad, TimeSimulation, ttilt,ptilt, Radius
 
   character (len=1000) :: PlotTitle, PlotVars, ZoneTitle
@@ -23,21 +22,19 @@ program PostIONO
 
   character (LEN=4) :: TimeH4
   character (LEN=2) :: TimeM2,TimeS2
-  !--------------------------------------------------------------------------
+  !----------------------------------------------------------------------------
   Radius = (6378.+100.)/6378.
 
   ! Setup Degree to Radian conversion factor
   DegToRad = (2.*asin(1.))/180.
-  
-  !\
+
   ! Begin processing
-  !/
   write(*,*) ' '
   write(*,*) 'PostIONO: BATSRUS Post-Processing Package for converting'
   write(*,*) '          ionosphere files from idl format to tecplot format.'
   write(*,*) '    -Written by  Darren De Zeeuw          '
   write(*,*) ' '
-  
+
   ! Open file
   text='inputfile.DAT'
   call FixChar(n)
@@ -246,51 +243,55 @@ program PostIONO
   write(*,*) ' '
 
 contains
-  
-  !\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+  !============================================================================
+
   ! Character String Fix Subroutine                                |
-  !/////////////////////////////////////////////////////////////////
-  
+
   subroutine FixChar(LenTot)
     integer, intent(inout) :: LenTot
     integer :: k
-    
-    if (text.eq.' ') then
+
+    !--------------------------------------------------------------------------
+    if (text == ' ') then
        LenTot=0
        text=' '
     else
        LenTot=len(text)
        k=0
-       do while (text(1:1).eq.' '.and.k.le.LenTot)
+       do while (text(1:1) == ' '.and.k <= LenTot)
           k=k+1
           text=text(2:LenTot)
           text(LenTot:LenTot)=' '
        end do
        k=LenTot
-       do while (text(k:k).eq.' '.and.k.ge.1)
+       do while (text(k:k) == ' '.and.k >= 1)
           k=k-1
           LenTot=LenTot-1
        end do
     end if
-    
+
   end subroutine FixChar
-  
+  !============================================================================
+
   subroutine FixCharEnd(LenTot)
     integer, intent(inout) :: LenTot
     integer :: k
-    
-    if (text.eq.' ') then
+
+    !--------------------------------------------------------------------------
+    if (text == ' ') then
        LenTot=0
        text=' '
     else
        LenTot=len(text)
        k=LenTot
-       do while (text(k:k).eq.' '.and.k.ge.1)
+       do while (text(k:k) == ' '.and.k >= 1)
           k=k-1
           LenTot=LenTot-1
        end do
     end if
-    
+
   end subroutine FixCharEnd
-  
+  !============================================================================
+
 end program PostIONO
+!==============================================================================

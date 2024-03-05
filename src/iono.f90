@@ -1,8 +1,7 @@
-!  Copyright (C) 2002 Regents of the University of Michigan, portions used with permission 
+!  Copyright (C) 2002 Regents of the University of Michigan,
+!  portions used with permission
 !  For more information, see http://csem.engin.umich.edu/tools/swmf
-!=====================================
 ! IONO: Stand-Alone Ionosphere Model |
-!=====================================
 program IONO
   use ModProcIE
   use ModIonosphere
@@ -10,10 +9,10 @@ program IONO
   use ModIO
   use ModPhysics
   implicit none
-  
+
   integer :: n_start, n_end, dummy, ierr
   real    :: dt_dummy
-  
+
   ! One line of input
   character (len=100) :: line
 
@@ -23,9 +22,9 @@ program IONO
   logical :: done
 
   ! Initialize Ionosphere
+  !----------------------------------------------------------------------------
   call ionosphere(0,1)
-  
-  !\\\
+
   !
   ! Solar EUV depends on the day of year and the solar EUV
   !   intensity depends on the F10.7 flux.
@@ -108,40 +107,36 @@ program IONO
   rBody = 6378.00E03
 
   UseFakeRegion2 = .true.
-             
+
   call Calculate_Dipole_Tilt
 
   !
-  !///
-  
-  !\
+
   ! Peform ionosphere calculations.
-  !/
-  
+
   IONO_NORTH_nMagBndPts = 100
   IONO_SOUTH_nMagBndPts = 100
-  
+
   plot_vars(1) = 'minimum'
   plot_form(1) = 'idl'
 
   do n_step=n_start,n_end
-     
+
      ! Read in restart file
      call ionosphere(n_step,3)
-     
+
      ! Solve for potential
      call ionosphere(n_step,6)
-     
-     !\
+
      ! Save ionosphere solution in output data file.
-     !/
 
      call ionosphere_write_output(1)
 
      call increment_real_world_time(dt_dummy)
-     
+
   enddo
-  
-  write(*,'(/,1X,''IONO: Execution complete.'',/)')
-  
+
+  write(*,'(/,1X,''IONO: Execution complete.'',]')
+
 end program IONO
+!==============================================================================

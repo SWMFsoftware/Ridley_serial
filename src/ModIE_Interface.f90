@@ -1,4 +1,5 @@
-!  Copyright (C) 2002 Regents of the University of Michigan, portions used with permission 
+!  Copyright (C) 2002 Regents of the University of Michigan,
+!  portions used with permission
 !  For more information, see http://csem.engin.umich.edu/tools/swmf
 module ModIE_Interface
 
@@ -48,11 +49,11 @@ module ModIE_Interface
   integer, allocatable, dimension(:,:,:) :: IOi3_InterpolationIndices
   real, allocatable, dimension(:,:,:)    :: IOr3_InterpolationRatios
   real :: IOr_NeedIMFBz   = -1.0e32
-  real :: IOr_NeedIMFBy   = -1.0e32 
-  real :: IOr_NeedSWV     = -1.0e32 
-  real :: IOr_NeedHPI     = -1.0e32 
-  real :: IOr_NeedHPINorm = -1.0e32 
-  real :: IOr_NeedKp      = -1.0e32 
+  real :: IOr_NeedIMFBy   = -1.0e32
+  real :: IOr_NeedSWV     = -1.0e32
+  real :: IOr_NeedHPI     = -1.0e32
+  real :: IOr_NeedHPINorm = -1.0e32
+  real :: IOr_NeedKp      = -1.0e32
   logical :: IOl_IsNorth  = .true.
 
   integer, parameter                :: IE_Closest_     = 1
@@ -70,3 +71,4 @@ module ModIE_Interface
   logical :: UsePPS
 
 end module ModIE_Interface
+!==============================================================================

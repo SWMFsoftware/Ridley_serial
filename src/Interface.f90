@@ -1,4 +1,5 @@
-!  Copyright (C) 2002 Regents of the University of Michigan, portions used with permission 
+!  Copyright (C) 2002 Regents of the University of Michigan,
+!  portions used with permission
 !  For more information, see http://csem.engin.umich.edu/tools/swmf
 program Interface
 
@@ -14,6 +15,7 @@ program Interface
   integer, dimension(7) :: iTime_i
   real, dimension(4,2) :: templat, tempmlt, temppot
 
+  !----------------------------------------------------------------------------
   iDebugLevel = 100
 
   write(6,*) 'Enter file name :'
@@ -115,3 +117,4 @@ program Interface
   call IE_End
 
 end program Interface
+!==============================================================================

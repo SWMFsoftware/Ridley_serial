@@ -1,4 +1,5 @@
-!  Copyright (C) 2002 Regents of the University of Michigan, portions used with permission 
+!  Copyright (C) 2002 Regents of the University of Michigan,
+!  portions used with permission
 !  For more information, see http://csem.engin.umich.edu/tools/swmf
 subroutine ionosphere_currents(iBlock, Jx,Jy,Jz,                             &
                                Ex,Ey,Ez,ETh,EPs,                             &
@@ -8,11 +9,9 @@ subroutine ionosphere_currents(iBlock, Jx,Jy,Jz,                             &
                                Theta, Psi,                                   &
                                dTheta, dPsi)
 
-  !\
   ! For the calculated ionospheric potential solution,
   ! this routine determines the ionospheric currents and
   ! electric fields, as well as convection velocities.
-  !/
 
   use ModIonosphere
   use ModCoordTransform, ONLY: dir_to_xyz, cross_product
@@ -43,7 +42,7 @@ subroutine ionosphere_currents(iBlock, Jx,Jy,Jz,                             &
   ! Compute the ionospheric electric field.
 
   do j = 1, nPsi
-     if (j > 1 .and. j < nPsi ) then 
+     if (j > 1 .and. j < nPsi ) then
         do i = 2, nTheta-1
            sinTheta = sin(Theta(i,j))
            ETh(i,j) = -(PHI(i+1,j)-PHI(i-1,j))/                               &
@@ -97,9 +96,9 @@ subroutine ionosphere_currents(iBlock, Jx,Jy,Jz,                             &
         cosPhi = cos(Psi(i,j))
         sinPhi = sin(Psi(i,j))
 
-        ! The radial gradient of the potential is related to the 
+        ! The radial gradient of the potential is related to the
         ! theta gradient as dPhi/dr = dPhi/dTheta*dTheta/dr
-        ! where dTheta/dr = sin(theta)/(2cos(theta)) along the 
+        ! where dTheta/dr = sin(theta)/(2cos(theta)) along the
         ! dipole field line which is an equipotential line.
         ! This formula diverges at the equator.
         if (north .and. i == nTheta) then
@@ -115,11 +114,11 @@ subroutine ionosphere_currents(iBlock, Jx,Jy,Jz,                             &
         Ey(i,j) = ER*sinTheta*sinPhi + ETh(i,j)*cosTheta*sinPhi + &
                   EPs(i,j)*cosPhi
         Ez(i,j) = ER*cosTheta - ETh(i,j)*sinTheta
-        
+
         JR = 0.00
         JTh =  SigmaThTh(i,j)*ETh(i,j) + SigmaThPs(i,j)*EPs(i,j)
         JPs = -SigmaThPs(i,j)*ETh(i,j) + SigmaPsPs(i,j)*EPs(i,j)
-        
+
         if (north) then
            IONO_NORTH_JTh(i,j) = JTh
            IONO_NORTH_JPs(i,j) = JPs
@@ -142,13 +141,14 @@ subroutine ionosphere_currents(iBlock, Jx,Jy,Jz,                             &
 
         ! Get potential V = E x B/|B^2|
         b_D = b_D/sum(b_D**2)
-        Vp_D = cross_product((/Ex(i,j), Ey(i,j), Ez(i,j)/), b_D)
+        Vp_D = cross_product([Ex(i,j), Ey(i,j), Ez(i,j)], b_D)
 
         Ux(i,j) = Vp_D(1)
         Uy(i,j) = Vp_D(2)
         Uz(i,j) = Vp_D(3)
 
-     end do  
+     end do
   end do
 
 end subroutine ionosphere_currents
+!==============================================================================

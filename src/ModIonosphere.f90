@@ -1,24 +1,20 @@
-! Copyright (C) 2002 Regents of the University of Michigan, 
-! portions used with permission 
+! Copyright (C) 2002 Regents of the University of Michigan,
+! portions used with permission
 ! For more information, see http://csem.engin.umich.edu/tools/swmf
-!======================================
 !                                     |
 !    Module for Ionosphere Model      |
 !                                     |
-!======================================
 
 module ModIonosphere
 
   use ModNumConst
   use IE_ModSize
   use ModUtilities, ONLY: CON_stop, CON_set_do_test
-  
+
   implicit none
   save
 
-  !\
   ! Ionosphere solution parameters
-  !/
   real, parameter ::                            &
        IONO_TOLER = 5.0e-05,                    &
        IONO_MU = 1.256637e-06,                  &
@@ -62,10 +58,7 @@ module ModIonosphere
   real, allocatable :: cond_mlts(:)
   real, allocatable :: cond_lats(:)
 
-
-  !\
   ! Ionosphere Solution on the whole grid
-  !/
   real, allocatable :: IONO_Phi(:,:)
   real, allocatable :: IONO_IonNumFlux(:,:)
   real, allocatable :: IONO_Joule(:,:)
@@ -75,9 +68,7 @@ module ModIonosphere
   real, allocatable :: IONO_SigmaP(:,:)
   real, allocatable :: IONO_SigmaH(:,:)
 
-  !\
   ! Ionosphere solution array definitions
-  !/
   real, allocatable :: IONO_NORTH_Phi(:,:)
   real, allocatable :: IONO_SOUTH_Phi(:,:)
   real, allocatable :: IONO_NORTH_X(:,:)
@@ -192,13 +183,13 @@ module ModIonosphere
   real, allocatable :: IONO_SOUTH_dLat(:,:)
   real, allocatable :: IONO_NORTH_dLon(:,:)
   real, allocatable :: IONO_SOUTH_dLon(:,:)
-  
-  ! Save (X,Y,Z) in different coordinate systems.                               
+
+  ! Save (X,Y,Z) in different coordinate systems.
   real, allocatable :: IONO_NORTH_GEO_XyzD(:, :, :)
   real, allocatable :: IONO_SOUTH_GEO_XyzD(:, :, :)
   real, allocatable :: IONO_NORTH_GSE_XyzD(:, :, :)
   real, allocatable :: IONO_SOUTH_GSE_XyzD(:, :, :)
-    
+
   ! Pentadiagonal matrix for the Poisson equation
   real, allocatable :: C_A(:,:)
   real, allocatable :: C_B(:,:)
@@ -213,7 +204,7 @@ module ModIonosphere
   real, dimension(IONO_nPsi)   :: dPsi_North, dPsi_South
 
 contains
-  !===========================================================================
+  !============================================================================
   subroutine load_conductances()
 
     use ModIoUnit, ONLY: UnitTmp_
@@ -222,12 +213,12 @@ contains
     ! Local variables:
     character (len=100) :: Line
     integer :: i, j, iError, nMltTemp=-1, nLatTemp=-1
-    
+
     ! Testing variables:
-    character(len=*), parameter :: NameSub='load_conductances'
     logical :: DoTest, DoTestMe
 
-    !-------------------------------------------------------------------------
+    character(len=*), parameter:: NameSub = 'load_conductances'
+    !--------------------------------------------------------------------------
     call CON_set_do_test(NameSub, DoTest, DoTestMe)
 
     if (DoTest)then
@@ -249,7 +240,7 @@ contains
        if(index(Line,'#DIMENSIONS')>0) then
           read(UnitTmp_, *, iostat=iError) i_cond_nmlts
           read(UnitTmp_, *, iostat=iError) i_cond_nlats
-          exit
+          EXIT
        end if
     end do
 
@@ -259,7 +250,7 @@ contains
 
     if(DoTest)write(*,*) NameSub//': Size of conductance files (mlt, lat): ', &
          i_cond_nmlts, i_cond_nlats
-    
+
     ! Allocate conductance arrays.  Include MLT ghost cell.
     ! Hall coefficients:
     allocate( hal_a0_up(i_cond_nmlts+1, i_cond_nlats) )
@@ -284,7 +275,7 @@ contains
        if (iError /= 0)           EXIT
        if(index(Line,'#START')>0) EXIT
     end do
-    
+
     ! Read and load conductance coefficients & grid:
     do i=1, i_cond_nlats
        do j=1, i_cond_nmlts
@@ -300,10 +291,10 @@ contains
           end if
        end do
     end do
-    
+
     ! Close Hall conductance file:
     call close_file
-    
+
     if(DoTest)then
        ! Write out first and last conductances to screen for visual checking:
        write(*,*)NameSub//': Visual check for conductance coeff reading'
@@ -324,12 +315,10 @@ contains
             hal_a0_do(j,i), hal_a1_do(j,i), hal_a2_do(j,i)
     end if
 
-
-    
     ! Load Pedersen Conductance:
     if(DoTest) write(*,*)NameSub//': Opening Pedersen cond. file '//NamePedFile
     call open_file(file='IE/'//NamePedFile, status="old")
-    
+
     ! Skip until DIMENSIONS are found
     do
        ! Read line; break at EOF.
@@ -339,13 +328,13 @@ contains
        if(index(Line,'#DIMENSIONS')>0) then
           read(UnitTmp_, *, iostat=iError) nMltTemp
           read(UnitTmp_, *, iostat=iError) nLatTemp
-          exit
+          EXIT
        end if
     end do
     ! Check if dimensions found.  If not, stop program.
     if( (nLatTemp==-1) .or. (nMltTemp==-1) ) call CON_stop(&
          NameSub//' Cannot find #DIMENSION in Pedersen conductance file.')
-    ! Check if match Hall file.  
+    ! Check if match Hall file.
     if( (nLatTemp/=i_cond_nlats) .or. (nMltTemp/=i_cond_nmlts) ) call CON_stop(&
          NameSub//' Hall & Pedersen input file dimensions do not match.')
 
@@ -355,7 +344,7 @@ contains
        if(iError /= 0)            EXIT
        if(index(Line,'#START')>0) EXIT
     end do
-    
+
     ! Read and load conductance coefficients & grid:
     do i=1, i_cond_nlats
        do j=1, i_cond_nmlts
@@ -371,10 +360,10 @@ contains
           end if
        end do
     end do
-    
+
     ! Close Pedersen conductance file:
     call close_file
-    
+
     ! Wrap values around MLT 00 == 24:
     cond_mlts(i_cond_nmlts+1)   = cond_mlts(1)+24.0
     hal_a0_up(i_cond_nmlts+1,:) = hal_a0_up(1,:)
@@ -389,7 +378,7 @@ contains
     ped_a2_up(i_cond_nmlts+1,:) = ped_a2_up(1,:)
     hal_a2_do(i_cond_nmlts+1,:) = hal_a2_do(1,:)
     ped_a2_do(i_cond_nmlts+1,:) = ped_a2_do(1,:)
-    
+
     if(DoTest)then
        ! Write out first and last conductances to screen for visual checking:
        write(*,*)NameSub//': Visual check for conductance coeff reading'
@@ -409,12 +398,13 @@ contains
        write(*,'(a, 3(1x,E12.4))') '     PEDER_DO A0, A1, A2 = ', &
             ped_a0_do(j,i), ped_a1_do(j,i), ped_a2_do(j,i)
     end if
-    
+
   end subroutine load_conductances
-  !===========================================================================  
-  
+  !============================================================================
+
   subroutine init_mod_ionosphere
 
+    !--------------------------------------------------------------------------
     if(allocated(IONO_Phi)) RETURN
 
     ! Initialize these global grid arrays to 0 (for output before solve)
@@ -549,22 +539,23 @@ contains
     IONO_SOUTH_DIFF_Ave_E = 0.; IONO_SOUTH_DIFF_EFlux = 0.
     IONO_NORTH_MONO_Ave_E = 0.; IONO_NORTH_MONO_EFlux = 0.
     IONO_SOUTH_MONO_Ave_E = 0.; IONO_SOUTH_MONO_EFlux = 0.
-    
+
     allocate(IONO_NORTH_GEO_XyzD(3, IONO_nTheta, IONO_nPsi))
     allocate(IONO_NORTH_GSE_XyzD(3, IONO_nTheta, IONO_nPsi))
     allocate(IONO_SOUTH_GEO_XyzD(3, IONO_nTheta, IONO_nPsi))
     allocate(IONO_SOUTH_GSE_XyzD(3, IONO_nTheta, IONO_nPsi))
-    
+
     IONO_NORTH_GEO_XyzD = 0.; IONO_NORTH_GSE_XyzD = 0
     IONO_SOUTH_GEO_XyzD = 0.; IONO_SOUTH_GSE_XyzD = 0
 
     ! Read empirical conductance values from files:
     call load_conductances()
-    
+
   end subroutine init_mod_ionosphere
-  !===========================================================================
+  !============================================================================
   subroutine clean_mod_ionosphere
 
+    !--------------------------------------------------------------------------
     if(.not.allocated(IONO_Phi)) RETURN
 
     deallocate(IONO_Phi)
@@ -683,12 +674,11 @@ contains
     deallocate(C_C)
     deallocate(C_D)
     deallocate(C_E)
-    
+
     deallocate(IONO_NORTH_GEO_XyzD)
     deallocate(IONO_NORTH_GSE_XyzD)
     deallocate(IONO_SOUTH_GEO_XyzD)
     deallocate(IONO_SOUTH_GSE_XyzD)
-    
 
     ! Sources of Conductances
     deallocate(IONO_NORTH_DIFF_Ave_E)
@@ -717,7 +707,9 @@ contains
     deallocate( ped_a2_do )
     ! Coefficient grids:
     deallocate(cond_mlts, cond_lats)
-    
+
   end subroutine clean_mod_ionosphere
+  !============================================================================
 
 end module ModIonosphere
+!==============================================================================

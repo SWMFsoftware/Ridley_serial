@@ -1,5 +1,5 @@
-!  Copyright (C) 2002 Regents of the University of Michigan, 
-!  portions used with permission 
+!  Copyright (C) 2002 Regents of the University of Michigan,
+!  portions used with permission
 !  For more information, see http://csem.engin.umich.edu/tools/swmf
 
 subroutine IE_gather
@@ -11,7 +11,7 @@ subroutine IE_gather
   implicit none
 
   integer :: iError, n
-  !--------------------------------------------------------------------------
+  !----------------------------------------------------------------------------
   IONO_phi        = -Huge(1.0)
   IONO_IonNumFlux = -Huge(1.0)
   IONO_Joule      = -Huge(1.0)
@@ -57,3 +57,4 @@ subroutine IE_gather
   endif
 
 end subroutine IE_gather
+!==============================================================================

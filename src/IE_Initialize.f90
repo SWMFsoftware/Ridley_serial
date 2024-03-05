@@ -1,4 +1,5 @@
-!  Copyright (C) 2002 Regents of the University of Michigan, portions used with permission 
+!  Copyright (C) 2002 Regents of the University of Michigan,
+!  portions used with permission
 !  For more information, see http://csem.engin.umich.edu/tools/swmf
 subroutine initialize_ie_ua_buffers(iOutputError)
 
@@ -20,12 +21,11 @@ subroutine initialize_ie_ua_buffers(iOutputError)
 
   logical :: IsInitialized = .false.
 
-  !------------------------------------------------------------------
-
+  !----------------------------------------------------------------------------
   IE_NameOfEFieldModel = 'SPS'
   UseGridBasedIE = .true.
 
-  if (IsInitialized) return
+  if (IsInitialized) RETURN
 
   IsInitialized = .true.
 
@@ -36,11 +36,9 @@ subroutine initialize_ie_ua_buffers(iOutputError)
 
   call set_error_codes
 
-  !\
   ! --------------------------------------------------------------------
   ! Electric Field Models
   ! --------------------------------------------------------------------
-  !/
 
   if (iDebugLevel > 1) &
        write(*,*) "==> Efield Model : ",IE_NameOfEFieldModel
@@ -48,11 +46,9 @@ subroutine initialize_ie_ua_buffers(iOutputError)
   if (iDebugLevel > 1) &
        write(*,*) "==> Model Directory : ",IE_NameOfModelDir
 
-  !\
   ! --------------------------------------------------------------------
   ! Conductance Models
   ! --------------------------------------------------------------------
-  !/
 
   if (iDebugLevel > 1) &
        write(*,*) "==> Conductance Model : ",IE_NameOfAuroralModel
@@ -66,9 +62,7 @@ subroutine initialize_ie_ua_buffers(iOutputError)
      IsFound_AuroralModel = .true.
   endif
 
-  !\
   ! This is for the serial potential solver
-  !/
 
   IsFound_EFieldModel = .true.
   IsFound_AuroralModel = .true.
@@ -81,12 +75,10 @@ subroutine initialize_ie_ua_buffers(iOutputError)
 
   call allocate_arrays
 
-  !\
   ! This is sort of screwed up, since other IE models are mlt,lat
   ! based, where the SPS is theta,phi based.  So, we have to convert
   ! between theta and lat and phi and mlt.  Also, we have to switch the
   ! order of the variables.
-  !/
 
   do i = 1, IEi_HavenLats
      do j = 1, IEi_HavenMlts
@@ -108,9 +100,11 @@ subroutine initialize_ie_ua_buffers(iOutputError)
   enddo
 
 contains
+  !============================================================================
 
   subroutine allocate_arrays
 
+    !--------------------------------------------------------------------------
     if (iDebugLevel > 1) then
        write(*,*) "=> IEi_HavenBLKs : ", IEi_HavenBLKs
        write(*,*) "=> IEi_HavenLats : ", IEi_HavenLats
@@ -124,5 +118,7 @@ contains
     allocate(IEr3_HaveAveE(IEi_HavenMlts,IEi_HavenLats,IEi_HavenBLKs))
 
   end subroutine allocate_arrays
+  !============================================================================
 
 end subroutine initialize_ie_ua_buffers
+!==============================================================================

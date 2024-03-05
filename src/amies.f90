@@ -1,4 +1,5 @@
-!  Copyright (C) 2002 Regents of the University of Michigan, portions used with permission 
+!  Copyright (C) 2002 Regents of the University of Michigan,
+!  portions used with permission
 !  For more information, see http://csem.engin.umich.edu/tools/swmf
 ! --------------------------------------------------------------------
 !
@@ -18,7 +19,8 @@ subroutine amiedt (ilat, ilon, ntime, etheta, ephi, potkv)
   integer, intent(in) :: ilat, ilon, ntime
   real, intent(out) :: potkv, etheta, ephi
 
-  if ((ntime.gt.1).and.(ilat.le.ithtrns)) then
+  !----------------------------------------------------------------------------
+  if ((ntime > 1).and.(ilat <= ithtrns)) then
      potkv  = Efield_Solution(ilon,ilat,potential_)/1000.0
      etheta = -1.0*Efield_Solution(ilon,ilat,efield_north_)
      ephi   = Efield_Solution(ilon,ilat,efield_east_)
@@ -29,13 +31,13 @@ subroutine amiedt (ilat, ilon, ntime, etheta, ephi, potkv)
   endif
 
 end subroutine amiedt
-
+!==============================================================================
 
 !!$! --------------------------------------------------------------------
 !!$!
 !!$!  This procedure is under development.
 !!$!
-!!$!  This takes the first potential pattern (if ntime > 1) and 
+!!$!  This takes the first potential pattern (if ntime > 1) and
 !!$!  changes it based on the statistical amie and the change in
 !!$!  IMF from the first time period.  This is then used as the back ground
 !!$!  pattern for the current inversion.
@@ -49,7 +51,7 @@ end subroutine amiedt
 !!$!
 !!$! --------------------------------------------------------------------
 !!$
-!!$subroutine amies_dt (iyear,imon,ida,ihr,imin,ilat,ilon,ntime,  &
+!!$ subroutine amies_dt (iyear,imon,ida,ihr,imin,ilat,ilon,ntime,  &
 !!$     ihsoln,ifrst,rmlat,rmlt,etheta,ephi,potkv,delta_ntime)
 !!$
 !!$      include 'param.h'
@@ -63,17 +65,17 @@ end subroutine amiedt
 !!$      real*4 by,bz,sw
 !!$
 !!$      include_back = 0
-!!$      if (ntime.eq.1) then
+!!$      if (ntime == 1) then
 !!$         include_back = 1
 !!$         by = bygsm(1)
 !!$         bz = bzgsm(1)
 !!$         sw = swv(1)
 !!$         nsave = 1
 !!$      else
-!!$         if (delta_ntime.eq.-1) then
+!!$         if (delta_ntime == -1) then
 !!$            nsave = 1
 !!$         else
-!!$            if (delta_ntime.ge.ntime) then
+!!$            if (delta_ntime >= ntime) then
 !!$               nsave = 1
 !!$            else
 !!$               nsave = ntime-delta_ntime
@@ -84,7 +86,7 @@ end subroutine amiedt
 !!$         sw = swv(ntime)-swv(nsave)
 !!$      endif
 !!$
-!!$      if (ntime.ge.2) then
+!!$      if (ntime >= 2) then
 !!$         save_efpot(ntime-1,ilon,ilat) = efpot(ilon,ilat)/1000.0
 !!$         save_ee(ntime-1,ilon,ilat) = ee(ilon,ilat)
 !!$         save_en(ntime-1,ilon,ilat) = en(ilon,ilat)
@@ -98,14 +100,14 @@ end subroutine amiedt
 !!$      alamn  = 58.
 !!$      stepa  = 2.*alte*d2r
 !!$
-!!$      if (iamie_read_flag.ne.1) then
+!!$      if (iamie_read_flag /= 1) then
 !!$         write(6,*) 'Reading AMIES parameters'
 !!$         unitin = 99
 !!$         call read_amies(unitin)
 !!$         iamie_read_flag = 1
 !!$      endif
 !!$
-!!$      if (ilat.le.ithtrns) then
+!!$      if (ilat <= ithtrns) then
 !!$
 !!$         potkv = 0.0
 !!$         call amiemodel(rmlt, rmlat, by, bz, potkv, include_back)
@@ -118,7 +120,7 @@ end subroutine amiedt
 !!$         xmlt  = rmlt
 !!$         xmlt1 = xmlt
 !!$         fmla1 = fmla + 1.
-!!$         if (fmla1 .gt. 90.) then
+!!$         if (fmla1 > 90.) then
 !!$            fmla1 = 180.  - fmla1
 !!$            xmlt1 = xmlt1 + 12.
 !!$         endif
@@ -140,7 +142,7 @@ end subroutine amiedt
 !!$         p1 = 0.0
 !!$         p2 = 0.0
 !!$
-!!$         if (fmla .lt. 89.9) then
+!!$         if (fmla < 89.9) then
 !!$            sl = sin (fmla*d2r)
 !!$            cl = sqrt (1.-sl*sl)
 !!$            sp = sin (15.*d2r)
@@ -152,22 +154,22 @@ end subroutine amiedt
 !!$         else
 !!$            step2 = stepa
 !!$            xmlt = xmlt + 6.
-!!$            if (xmlt.gt.24) xmlt = xmlt - 24.0
+!!$            if (xmlt > 24) xmlt = xmlt - 24.0
 !!$            fmla = 90.
 !!$            kpol = 1
 !!$            xmlt1 = xmlt
 !!$            fmla1 = fmla + 1.
-!!$            if (fmla1 .gt. 90.) then
+!!$            if (fmla1 > 90.) then
 !!$               fmla1 = 180.  - fmla1
 !!$               xmlt1 = xmlt1 + 12.
-!!$               if (xmlt1.gt.24) xmlt1 = xmlt1 - 24.0
+!!$               if (xmlt1 > 24) xmlt1 = xmlt1 - 24.0
 !!$            endif
 !!$            call amiemodel(xmlt1, fmla1  , by,bz, p1, include_back)
 !!$            call amiemodel(xmlt , fmla-1., by,bz, p2, include_back)
 !!$         endif
 !!$
 !!$         ephi = (p2 - p1) / step2 + save_ee(nsave,ilon,ilat)
-!!$         if (kpol .eq. 1) ephi = -ephi
+!!$         if (kpol == 1) ephi = -ephi
 !!$
 !!$!          Below model minimum lat, the potential is value at min lat
 !!$
@@ -201,6 +203,7 @@ subroutine amiespot (by,bz,rmlat,rmlt,etheta,ephi,potkv)
 
   logical :: IncludeBackground, Pole
 
+  !----------------------------------------------------------------------------
   IncludeBackground = .true.
 
   alte   = ri/1.0e3
@@ -221,7 +224,7 @@ subroutine amiespot (by,bz,rmlat,rmlt,etheta,ephi,potkv)
   call amiemodel(xmlt1, fmla1  , by,bz, p1, IncludeBackground)
   call amiemodel(xmlt , fmla-1., by,bz, p2, IncludeBackground)
   etheta = (p1 - p2) / stepa
-  
+
   !          calculate -(lon gradient).  For most latitudes, step 15 degrees
   !          in longitude (1 hr MLT = model resolution) along a great circle.
   !          However, limit minimum latitude to the model minimum, distorting
@@ -246,7 +249,7 @@ subroutine amiespot (by,bz,rmlat,rmlt,etheta,ephi,potkv)
      Pole = .true.
      xmlt1 = xmlt
      fmla1 = fmla + 1.
-     if (fmla1 .gt. 90.) then
+     if (fmla1 > 90.) then
         fmla1 = 180.  - fmla1
         xmlt1 = xmlt1 + 12.
      endif
@@ -259,6 +262,7 @@ subroutine amiespot (by,bz,rmlat,rmlt,etheta,ephi,potkv)
   if (Pole) ephi = -ephi
 
 end subroutine amiespot
+!==============================================================================
 
 !--------------------------------------------------------------------------
 
@@ -280,7 +284,8 @@ subroutine amiemodel(inmlt, inmlat, by, bz, pot, IncludeBackground)
   real :: back, potz, poty
   integer :: ilat1, ilat2, ilon1, ilon2
 
-  if (DebugLevel > 3) then 
+  !----------------------------------------------------------------------------
+  if (DebugLevel > 3) then
      write(*,*) "  ====> In subroutine amiemodel"
      write(*,*) "        inputs : ",inmlt,inmlat,by,bz,IncludeBackground
   endif
@@ -330,7 +335,7 @@ subroutine amiemodel(inmlt, inmlat, by, bz, pot, IncludeBackground)
           aspypi(ilon1,ilat2)*lowt1*lawt2+                         &
           aspypi(ilon2,ilat1)*lowt2*lawt1+                         &
           aspypi(ilon2,ilat2)*lowt2*lawt2
-         
+
      potz_back_neg =                                               &
           aspzni(ilon1,ilat1)*lowt1*lawt1+                         &
           aspzni(ilon1,ilat2)*lowt1*lawt2+                         &
@@ -383,6 +388,7 @@ subroutine amiemodel(inmlt, inmlat, by, bz, pot, IncludeBackground)
   pot = (poty + potz + back)
 
 end subroutine amiemodel
+!==============================================================================
 
 !--------------------------------------------------------------------------
 
@@ -398,6 +404,7 @@ subroutine read_amies(unitin)
   character*100 ::line, fmt
   integer :: inlon, inlat, ierr, i, k
 
+  !----------------------------------------------------------------------------
   read(unitin,'(2I8)',iostat = ierr) inlat,inlon
 
   if ((inlon /= iaslon).or.(inlat /= iaslat).or.(ierr < 0)) then
@@ -481,3 +488,4 @@ subroutine read_amies(unitin)
   endif
 
 end subroutine read_amies
+!==============================================================================

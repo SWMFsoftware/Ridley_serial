@@ -1,4 +1,3 @@
-!=============================================================================
 subroutine create_auroral_oval(currentIn, thetaIn, psiIn, &
      ColatOut, WidthOut, StrenOut)
 
@@ -18,10 +17,10 @@ subroutine create_auroral_oval(currentIn, thetaIn, psiIn, &
   use IE_ModMain,     ONLY: Time_Array, nSolve
   use ModIoUnit,      ONLY: UnitTMP_
   use ModUtilities,   ONLY: open_file, close_file
-  
+
   implicit none
 
-  ! Input/Output variables:  
+  ! Input/Output variables:
   real, intent(in),  dimension(IONO_nTheta,IONO_nPsi):: &
        CurrentIn, ThetaIn, PsiIn
   real, intent(out), dimension(IONO_nPsi) :: ColatOut, WidthOut, StrenOut
@@ -46,13 +45,13 @@ subroutine create_auroral_oval(currentIn, thetaIn, psiIn, &
   logical:: DoTest, DoTestMe
   logical:: IsFirstWrite = .true.
   character(len=100) :: NameFile, StringFormat
-  character(len=*), parameter :: NameSub = 'create_auroral_oval'
-  !--------------------------------------------------------------------------
+  character(len=*), parameter:: NameSub = 'create_auroral_oval'
+  !----------------------------------------------------------------------------
   call CON_set_do_test(NameSub, DoTest, DoTestMe)
 
   ! Initialize arrays to zero:
   FacMax=-1e99;  ColatMax=0; Width=0
-  
+
   ! Reverse arrays if in Southern hemisphere.
   if (ThetaIn(1,1) < cHalfPi) then
      Current = CurrentIn
@@ -72,7 +71,7 @@ subroutine create_auroral_oval(currentIn, thetaIn, psiIn, &
 
   ! Calculate some useful variables:
   dLat = theta(2,1) - theta(1,1)
-  
+
   ! Find the max upward FAC and the corresponding colatitude:
   do j=1, IONO_nPsi        ! Loop through longitude
      do i=4, IONO_nTheta   ! Loop through colat, start away from pole
@@ -87,11 +86,11 @@ subroutine create_auroral_oval(currentIn, thetaIn, psiIn, &
      do i = iStart, IONO_nTheta
         if(current(i,j) <= FacMax(j)/4.0) then
            Width(j) = theta(i,j) - ColatMax(j)
-           exit
+           EXIT
         endif
      end do
 
-     ! Limit width of oval: 
+     ! Limit width of oval:
      if (Width(j) < dLat) Width(j) = ColatMax(j)/5.0
   end do
 
@@ -110,7 +109,6 @@ subroutine create_auroral_oval(currentIn, thetaIn, psiIn, &
      write(*,*) "WidthDay  = ", WidthDay  * cRadToDeg
   end if
 
-
   ! Calculate a day-night shift in oval location.
   ! Set floor for oval size.
   if (ColatMean < 15.*cDegToRad) then
@@ -119,7 +117,7 @@ subroutine create_auroral_oval(currentIn, thetaIn, psiIn, &
      ColatDev  = 0.0
      ColatOut = ColatMean
   elseif (.not.DoOvalShift) then
-     ! No shift if DoOvalShift is false. 
+     ! No shift if DoOvalShift is false.
      ColatDev = 0.0
      ColatOut = ColatMean
   elseif(DoFitCircle)then
@@ -166,7 +164,7 @@ subroutine create_auroral_oval(currentIn, thetaIn, psiIn, &
         ! Step in the direction of -gradient
         ColatMean = ColatMean - dStep*GradMean
         ColatDev  = ColatDev  - dStep*GradDev
-     
+
         ! Store previous gradients
         GradMeanPrev = GradMean
         GradDevPrev  = GradDev
@@ -238,13 +236,13 @@ subroutine create_auroral_oval(currentIn, thetaIn, psiIn, &
      ColatOut = ColatMean - ColatDev*cos(Psi(1,:))  ! SIGN IS WRONG.
 
   end if
-  
+
   ! Use above values to craft auroral oval:
   WidthOut = WidthDay  + (WidthMean-WidthDay)*sin(Psi(1,:)/2.0)
   StrenOut = FacDawn   +     (FacSum-FacDawn)*sin(Psi(1,:)/2.0)
 
   ! For testing purposes, write oval info to file.
-  if(.not.DoTestMe .or. .not. IsNorth) return
+  if(.not.DoTestMe .or. .not. IsNorth) RETURN
 
   write(NameFile,'(a,i8.8,a)')trim(NameIonoDir)//'aurora_n',nSolve,'.dat'
   call open_file(FILE=NameFile, STATUS='replace', NameCaller=NameSub)
@@ -257,7 +255,7 @@ subroutine create_auroral_oval(currentIn, thetaIn, psiIn, &
           ColatOut(j)*cRadToDeg, facMax(j)/FacSum, Width(j)*cRadToDeg
   end do
   call close_file(NameCaller=NameSub)
-  
+
 !!!  if(IsFirstWrite)then
 !!!     ! Open file:
 !!!     write(NameFile,'(a,i8.8,a)')trim(NameIonoDir)//'aurora_n',nSolve,'.txt'
@@ -281,6 +279,6 @@ subroutine create_auroral_oval(currentIn, thetaIn, psiIn, &
 !!!  ! Write record & close file:
 !!!  write(UnitTmp_, StringFormat) Time_Array(1:7), ColatOut*cRadToDeg
 !!!  close(UnitTmp_)
-  
+
 end subroutine create_auroral_oval
-!=============================================================================
+!==============================================================================

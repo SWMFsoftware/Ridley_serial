@@ -1,4 +1,5 @@
-!  Copyright (C) 2002 Regents of the University of Michigan, portions used with permission 
+!  Copyright (C) 2002 Regents of the University of Michigan,
+!  portions used with permission
 !  For more information, see http://csem.engin.umich.edu/tools/swmf
 
 subroutine ionosphere_solver(iBlock, Jr, &
@@ -13,28 +14,28 @@ subroutine ionosphere_solver(iBlock, Jr, &
   ! and its various derivatives as input.
   !
   ! The idea is that the Jr current is balanced by the divergence of the
-  ! horizontal currents. The horizontal currents are Sigma . E, 
+  ! horizontal currents. The horizontal currents are Sigma . E,
   ! the height integrated conductivity Sigma is 2x2 antisymmetric matrix
   ! acting on the Theta and Phi components of the electric field.
   ! The electric field is assumed to be a potential field: E = Grad Phi.
   !
-  ! We are solving 
+  ! We are solving
   !
   !    Div( Sigma . Grad Phi ) = - Jr
-  ! 
-  ! in spherical coordinates. 
+  !
+  ! in spherical coordinates.
   !
   ! This leads to a penta-diagonal linear equation:
-  !  
+  !
   !  C_A*Phi(i,j) + C_B*Phi(i-1,j) + C_C*Phi(i+1,j) +
   !                 C_D*Phi(i,j-1) + C_E*Phi(i,j+1) = RHS
   !
-  ! To avoid division by zero at the poles, the equation is 
-  ! multiplied by (sin(Theta)*Radius)**2, thus the 
+  ! To avoid division by zero at the poles, the equation is
+  ! multiplied by (sin(Theta)*Radius)**2, thus the
   ! RHS = Jr * (sin(Theta)*Radius)**2
   !
   ! The linear elliptic PDE for the
-  ! electric field potential PHI is defined on the domain 
+  ! electric field potential PHI is defined on the domain
   ! 0 < Theta < ThetaMax  for the northern hemisphere, and
   ! ThetaMin < Theta < PI for the southern hemisphere), and
   ! 0 < Psi < 2 PI.
@@ -44,9 +45,9 @@ subroutine ionosphere_solver(iBlock, Jr, &
   !      PHI(ThetaMax,Psi) = PHI(ThetaMin,Psi) = 0,
   !
   !      PHI(Theta,0) = PHI(Theta,2*PI).
-  ! 
-  ! There is no boundary at the poles, but to avoid numerical 
-  ! difficulties, the cell value at the pole is replaced with the 
+  !
+  ! There is no boundary at the poles, but to avoid numerical
+  ! difficulties, the cell value at the pole is replaced with the
   ! average of the first neighbors:
   !
   !      PHI(0,Psi)  = average( PHI(dTheta, Psi) )
@@ -54,7 +55,6 @@ subroutine ionosphere_solver(iBlock, Jr, &
   !      PHI(PI,Psi) = average( PHI(PI-dTheta, Psi) )
   !
   ! where dTheta is the grid resolution at the poles.
-  !/
 
   use ModIonosphere
   use IE_ModMain, ONLY: &
@@ -67,7 +67,6 @@ subroutine ionosphere_solver(iBlock, Jr, &
 
   integer, parameter :: nTheta = IONO_nTheta, nPsi = IONO_nPsi, nPsiUsed=nPsi-1
 
-  ! INPUT ARGUMENTS:
   integer, intent(in) :: iBlock
   real, intent(in), dimension(nTheta,nPsi) ::  &
        Jr, &
@@ -77,7 +76,6 @@ subroutine ionosphere_solver(iBlock, Jr, &
        Theta, Psi
   real, intent(in) :: dTheta(nTheta), dPsi(nPsi)
 
-  ! OUTPUT ARGUMENTS:
   real, intent(out) :: Phi_C(nTheta,nPsi) ! Potential
 
   ! Local variables
@@ -102,6 +100,7 @@ subroutine ionosphere_solver(iBlock, Jr, &
 
   external :: matvec_ionosphere
 
+  !----------------------------------------------------------------------------
   SAVE
   character(len=*), parameter:: NameSub = 'ionosphere_solver'
   !-------------------------------------------------------------------------
@@ -116,7 +115,7 @@ subroutine ionosphere_solver(iBlock, Jr, &
 
   ! The pole is a boundary point
   if(north)then
-     iMin = 2; iMax = nThetaUsed+1  
+     iMin = 2; iMax = nThetaUsed+1
   else
      iMin = nTheta - nThetaUsed; iMax = nTheta-1
   end if
@@ -241,7 +240,7 @@ subroutine ionosphere_solver(iBlock, Jr, &
           call CON_stop('IE_ERROR in iono_solve: residual did not decrease')
   end if
 
-  !Check solution:
+  ! Check solution:
   if(DoTest)then
      DoPrecond = .false.
      call check_solution(x, y, rhs, nX)
@@ -300,7 +299,7 @@ contains
     real, intent(in) :: b_I(n)        ! rhs
 
     integer :: iTheta, iPsi, i, iError(1)
-    !-------------------------------------------------------------------------
+    !--------------------------------------------------------------------------
     call matvec_ionosphere(x_I, y_I, n)
 
     if(north)then
@@ -331,10 +330,11 @@ contains
     call close_file
 
   end subroutine check_solution
+  !============================================================================
 
 end subroutine ionosphere_solver
+!==============================================================================
 
-!============================================================================
 subroutine matvec_ionosphere(x_I, y_I, n)
 
   use ModIonosphere, ONLY: IONO_nPsi, IONO_nTheta, nThetaUsed, &
@@ -353,7 +353,7 @@ subroutine matvec_ionosphere(x_I, y_I, n)
 
   integer :: iTheta, iTheta2, iPsi, i, iMin, iMax
   real :: x_G(nTheta, 0:nPsi) ! 2D array with ghost cells
-  !-------------------------------------------------------------------------
+  !----------------------------------------------------------------------------
 
   if(north)then
      iMin = 2; iMax = nThetaUsed + 1
@@ -370,7 +370,7 @@ subroutine matvec_ionosphere(x_I, y_I, n)
   if(north)then
      ! Apply pole boundary condition at the north pole
      x_G(iMin-1,:) = sum(x_G(iMin,1:IONO_nPsi-1))/(IONO_nPsi-1)
-     
+
      ! Apply 0 value below the lowest latitude
      x_G(iMax+1,:) = 0.0
   else
@@ -402,4 +402,5 @@ subroutine matvec_ionosphere(x_I, y_I, n)
   end if
 
 end subroutine matvec_ionosphere
+!==============================================================================
 

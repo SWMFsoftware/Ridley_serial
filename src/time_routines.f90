@@ -1,4 +1,5 @@
-!  Copyright (C) 2002 Regents of the University of Michigan, portions used with permission 
+!  Copyright (C) 2002 Regents of the University of Michigan,
+!  portions used with permission
 !  For more information, see http://csem.engin.umich.edu/tools/swmf
 subroutine time_int_to_real(itime, timereal)
 
@@ -9,6 +10,7 @@ subroutine time_int_to_real(itime, timereal)
   real*8 :: timereal
   integer :: nyear, nleap, nmonth, nday, nhour, nmin, nsec, i
 
+  !----------------------------------------------------------------------------
   dayofmon(1) = 31
   dayofmon(2) = 28
   dayofmon(3) = 31
@@ -22,16 +24,16 @@ subroutine time_int_to_real(itime, timereal)
   dayofmon(11) = 30
   dayofmon(12) = 31
 
-  if (mod(itime(1),4).eq.0) dayofmon(2) = 29
+  if (mod(itime(1),4) == 0) dayofmon(2) = 29
 
   timereal = 0.0;
 
   if (itime(1) > 1900) then
      nyear = itime(1) - 1965
-  else 
+  else
      if (itime(1) > 65) then
-        nyear = itime(1) - 65 
-     else 
+        nyear = itime(1) - 65
+     else
         nyear = itime(1) + 100 - 65
      endif
   endif
@@ -59,8 +61,7 @@ subroutine time_int_to_real(itime, timereal)
        itime(7)/1000.0
 
 end subroutine time_int_to_real
-
-
+!==============================================================================
 
 subroutine time_real_to_int(timereal, itime)
 
@@ -76,6 +77,7 @@ subroutine time_real_to_int(timereal, itime)
   real*8 :: spermin = 60.0
   real*8 :: timeleft
 
+  !----------------------------------------------------------------------------
   dayofmon(1) = 31
   dayofmon(2) = 28
   dayofmon(3) = 31
@@ -93,18 +95,18 @@ subroutine time_real_to_int(timereal, itime)
   nleap = nyear/4
   nday = int((timereal - (dble(nyear)*speryear))/sperday)
 
-  if (nday.le.nleap) then
+  if (nday <= nleap) then
      nyear = int((timereal - (dble(nleap)*sperday))/speryear)
      nleap = nyear/4
      nday = int((timereal - (dble(nyear)*speryear))/sperday)
-     if (nday.le.nleap) then
+     if (nday <= nleap) then
         nyear = int((timereal - (dble(nleap)*sperday))/speryear)
         nleap = nyear/4
         nday = int((timereal - (dble(nyear)*speryear))/sperday)
      endif
   endif
 
-  if (mod((nyear+65),4).eq.0) dayofmon(2) = dayofmon(2) + 1
+  if (mod((nyear+65),4) == 0) dayofmon(2) = dayofmon(2) + 1
 
   nday = nday - nleap
 
@@ -121,7 +123,7 @@ subroutine time_real_to_int(timereal, itime)
 
   nmonth = 1;
 
-  do while (nday.ge.dayofmon(nmonth))
+  do while (nday >= dayofmon(nmonth))
      nday = nday - dayofmon(nmonth)
      nmonth = nmonth + 1
   end do
@@ -135,7 +137,7 @@ subroutine time_real_to_int(timereal, itime)
   itime(7) = timeleft - nsec
 
 end subroutine time_real_to_int
-
+!==============================================================================
 
 function jday(year, mon, day) result(Julian_Day)
 
@@ -145,6 +147,7 @@ function jday(year, mon, day) result(Julian_Day)
   integer, dimension(1:12) :: dayofmon
   integer :: year, mon, day
 
+  !----------------------------------------------------------------------------
   dayofmon(1) = 31
   dayofmon(2) = 28
   dayofmon(3) = 31
@@ -158,7 +161,7 @@ function jday(year, mon, day) result(Julian_Day)
   dayofmon(11) = 30
   dayofmon(12) = 31
 
-  if (mod(year,4).eq.0) dayofmon(2) = dayofmon(1) + 1
+  if (mod(year,4) == 0) dayofmon(2) = dayofmon(1) + 1
   Julian_Day = 0
   do i = 1, mon-1
      Julian_Day = Julian_Day + dayofmon(i)
@@ -166,4 +169,5 @@ function jday(year, mon, day) result(Julian_Day)
   Julian_Day = Julian_Day + day
 
 end function jday
+!==============================================================================
 

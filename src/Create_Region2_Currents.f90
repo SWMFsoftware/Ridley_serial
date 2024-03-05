@@ -1,4 +1,5 @@
-!  Copyright (C) 2002 Regents of the University of Michigan, portions used with permission 
+!  Copyright (C) 2002 Regents of the University of Michigan,
+!  portions used with permission
 !  For more information, see http://csem.engin.umich.edu/tools/swmf
 
 subroutine Create_Region2_Currents(iBlock)
@@ -17,7 +18,7 @@ subroutine Create_Region2_Currents(iBlock)
 
   real :: total_up, total_down, factor, area
 
-  !---------------------------------------------------------------------------
+  !----------------------------------------------------------------------------
   !
   ! We have a slight problem with the currents within the MHD code.  When
   ! the IMF By component gets rather large, the current flowing into each
@@ -57,12 +58,12 @@ subroutine Create_Region2_Currents(iBlock)
      enddo
      if (total_down > total_up) then
         factor = (total_down - total_up)/total_up
-        where (IONO_NORTH_JR > 0.0) 
+        where (IONO_NORTH_JR > 0.0)
            IONO_NORTH_Fake_JR = IONO_NORTH_JR * factor
         endwhere
      else
         factor = (total_up - total_down)/total_down
-        where (IONO_NORTH_JR < 0.0) 
+        where (IONO_NORTH_JR < 0.0)
            IONO_NORTH_Fake_JR = IONO_NORTH_JR * factor
         endwhere
      endif
@@ -85,7 +86,7 @@ subroutine Create_Region2_Currents(iBlock)
      strength = -0.5*Strength_of_Oval(1)
 
      do i=1,IONO_nTheta
-        if (IONO_NORTH_JR(i,IONO_nPsi/4).ne.0.0) &
+        if (IONO_NORTH_JR(i,IONO_nPsi/4) /= 0.0) &
              center = IONO_NORTH_Theta(i,1)
      enddo
 
@@ -125,12 +126,12 @@ subroutine Create_Region2_Currents(iBlock)
      enddo
      if (total_down > total_up) then
         factor = (total_down - total_up)/total_up
-        where (IONO_SOUTH_JR > 0.0) 
+        where (IONO_SOUTH_JR > 0.0)
            IONO_SOUTH_Fake_JR = IONO_SOUTH_JR * factor
         endwhere
      else
         factor = (total_up - total_down)/total_down
-        where (IONO_SOUTH_JR < 0.0) 
+        where (IONO_SOUTH_JR < 0.0)
            IONO_SOUTH_Fake_JR = IONO_SOUTH_JR * factor
         endwhere
      endif
@@ -143,7 +144,7 @@ subroutine Create_Region2_Currents(iBlock)
      strength = -0.5*Strength_of_Oval(1)
 
      do i=IONO_nTheta,1,-1
-        if (IONO_SOUTH_JR(i,IONO_nPsi/4).ne.0.0) &
+        if (IONO_SOUTH_JR(i,IONO_nPsi/4) /= 0.0) &
              center = IONO_SOUTH_Theta(i,1)
      enddo
 
@@ -166,3 +167,4 @@ subroutine Create_Region2_Currents(iBlock)
      enddo
   end select
 end subroutine Create_Region2_Currents
+!==============================================================================

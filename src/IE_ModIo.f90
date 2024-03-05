@@ -1,5 +1,5 @@
-!  Copyright (C) 2002 Regents of the University of Michigan, 
-!  portions used with permission 
+!  Copyright (C) 2002 Regents of the University of Michigan,
+!  portions used with permission
 !  For more information, see http://csem.engin.umich.edu/tools/swmf
 module IE_ModIo
 
@@ -41,12 +41,15 @@ module IE_ModIo
   logical :: IsLogName_e = .false.
 
 contains
+  !============================================================================
 
-  !===========================================================================
   subroutine write_prefix
 
+    !--------------------------------------------------------------------------
     if(iUnitOut==STDOUT_)write(*,'(a)',ADVANCE='NO')trim(StringPrefix)
 
   end subroutine write_prefix
+  !============================================================================
 
 end module IE_ModIo
+!==============================================================================
