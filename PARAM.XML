@@ -153,26 +153,29 @@ information is written to a logfile.
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 <command name="IONOSPHERE">
-	<parameter name="iConductanceModel" type="integer"
-							input="select">
-		<option name="(0) constant Pedersen and 0 Hall"
-							value="0" />
-		<option name="(1) constant Pedersen and Hall"
-							value="1" />
-		<option name="(2) F107 flux and and constant Hall"
-							value="2" />
-		<option name="(3) Simple oval"		value="3" />
-		<option name="(4) Restricted oval"	value="4" />
-		<option name="(5) Realistic oval" 	value="5" default="T"/>
-		<option name="(8) MAGNIT"               value="8" />
-	</parameter>
-	<parameter name="UseFullCurrent" type="logical" default="F"/>
-	<parameter name="UseFakeRegion2" type="logical" default="F"/>
-	<parameter name="F107Flux" type="real" min="-1" default="150"/>
-	<parameter name="StarLightPedConductance" type="real" min="0.001" 
-						default="0.25"/>
-	<parameter name="PolarCapPedConductance" type="real" min="0" 
-						default="0.25"/>
+  <parameter name="iConductanceModel" type="integer" input="select">
+    <option value="0"  name="(0) constant Pedersen and 0 Hall"    />
+    <option value="1"  name="(1) constant Pedersen and Hall"      />
+    <option value="2"  name="(2) F107 flux and and constant Hall" />
+    <option value="3"  name="(3) Simple oval"                     />
+    <option value="4"  name="(4) Restricted oval"          	  />
+    <option value="5"  name="(5) Realistic oval"      default="T" />
+    <option value="8"  name="(8) MAGNIT"                          />
+    <option value="9"  name="(9) Linear FAC-conductance"          />
+    <option value="10" name="(10) PedConductance North-South"     />
+    <option value="11" name="(11) Bob Robinson model"             />
+  </parameter>
+  <if expr="$iConductanceModel==10">
+    <parameter name="PedConductance_North" type="real" />
+    <parameter name="PedConductance_South" type="real" />
+  </if>
+  <parameter name="UseFullCurrent" type="logical" default="F"/>
+  <parameter name="UseFakeRegion2" type="logical" default="F"/>
+  <parameter name="F107Flux" type="real" min="-1" default="150"/>
+  <parameter name="StarLightPedConductance" type="real" min="0.001" 
+	     default="0.25"/>
+  <parameter name="PolarCapPedConductance" type="real" min="0" 
+	     default="0.25"/>
 #IONOSPHERE
 5			iConductanceModel
 F			UseFullCurrent
