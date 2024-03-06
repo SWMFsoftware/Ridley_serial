@@ -202,6 +202,11 @@ contains
             call read_var('F10.7 Flux',f107_flux)
             call read_var('StarLightPedConductance',StarLightPedConductance)
             call read_var('PolarCapPedConductance',PolarCapPedConductance)
+            if (conductance_model == 9) then
+               ! Change default file names
+               NameHalFile = 'cond_hal_coeffs_power.dat'
+               NamePedFile = 'cond_ped_coeffs_power.dat'
+            end if
             if (conductance_model == 10) then
                call read_var('PedConductance_North',PedConductance_North)
                call read_var('PedConductance_South',PedConductance_South)
