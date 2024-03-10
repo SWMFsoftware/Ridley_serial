@@ -1261,7 +1261,7 @@ subroutine FACs_to_fluxes(iModel, iBlock)
            ! end do
         ! else
            ! Precipitation from both GM and IM
-           ! diffuse_ae = &!iono_north_im_avee
+           ! diffuse_ae = &! iono_north_im_avee
 
            ! diffuse_ef = iono_north_im_eflux
            ! diffuse_ae = iono_north_im_avee
@@ -1793,12 +1793,12 @@ subroutine FACs_to_fluxes(iModel, iBlock)
            ! diffuse_ef = iono_south_im_eflux
            ! diffuse_ae = iono_south_im_avee
 
-           ! diffuse_ae = &!iono_south_im_avee
+           ! diffuse_ae = &! iono_south_im_avee
            !     (iono_south_eflux + iono_south_im_eflux/1000.0)/ &
            !     (iono_south_eflux/iono_south_ave_e + &
            !     iono_south_im_eflux/(iono_south_im_avee*1000.0))
 
-           ! diffuse_ef = &!iono_south_im_eflux/1000.0
+           ! diffuse_ef = &! iono_south_im_eflux/1000.0
            !     (iono_south_eflux/iono_south_ave_e + &
            !     iono_south_im_eflux/(iono_south_im_avee*1000.0)) * diffuse_ae
         end if
