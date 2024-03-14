@@ -78,7 +78,7 @@ ${MY_LIB}:	${MF} ${MODULES} ${OBJECTS}
 #
 
 PostIONO.exe:	PostIONO.o
-	$(LINK.f90) -o ${BINDIR}/PostIONO.exe $(Lflag2) PostIONO.o
+	$(LINK.f90) -o ${BINDIR}/PostIONO.exe $(Lflag) PostIONO.o
 
 IONO: ${EXE2}
 	@echo Program IONO has been brought up to date.
