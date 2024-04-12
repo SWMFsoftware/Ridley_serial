@@ -355,10 +355,10 @@ contains
       UseFullCurrent          = .false.
       UseFakeRegion2          = .false.
       StarLightPedConductance = 0.25
-      PedConductance_North = 0.25
-      PedConductance_South = 0.25
+      PedConductance_North    = 0.25
+      PedConductance_South    = 0.25
       PolarCapPedConductance  = 0.25
-      f107_flux               = 150.0
+      f107_flux               = -1.0
 
     end subroutine set_defaults
     !==========================================================================
