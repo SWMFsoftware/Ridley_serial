@@ -1,11 +1,9 @@
-!-- The syntax is described by share/Scripts/CheckParam.pl and the manual -->
-
 <commandList name="Ridley Ionosphere Model: IE Component">
-
+!-- The syntax is described by share/Scripts/CheckParam.pl and the manual -->
 <commandgroup name="Testing">
 
 <command name="STRICT">
-	<parameter name="UseStrict" type="logical" default="T" />
+  <parameter name="UseStrict" type="logical" default="T"/>
 
 #STRICT
 T                       UseStrict
@@ -15,9 +13,9 @@ correct parameters and continue. Default is true, i.e. strict mode.
 </command>
 
 <command name="DEBUG">
-	<parameter name="iDebugLevel" type="integer" min="-1" default="-1"/>
-	<parameter name="iDebugProc"  type="integer" min="0" max="$_nProc"
-								default="0"/>
+  <parameter name="iDebugLevel" type="integer" min="-1" default="-1"/>
+  <parameter name="iDebugProc"  type="integer" min="0" max="$_nProc"
+	     default="0"/>
 
 #DEBUG
 2			iDebugLevel
@@ -36,7 +34,7 @@ Default is iDebugLevel=-1 which is no debug info on any and iDebugProc=0.
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! OUTPUT !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 <command name="RESTART">
-	<parameter name="DoRestart" type="logical" default="F"/>
+  <parameter name="DoRestart" type="logical" default="F"/>
 
 #RESTART
 T			DoRestart
@@ -47,8 +45,8 @@ Default is false.
 </command>
 
 <command name="IONODIR">
-	<parameter name="NameIonoDir" type="string" length="100" 
-						default="ionosphere"/>
+  <parameter name="NameIonoDir" type="string" length="100" 
+	     default="ionosphere"/>
 
 #IONODIR
 IE/Plots		NameIonoDir
@@ -59,27 +57,27 @@ output files. Default value is "IE/ionosphere".
 </command>
 
 <command name="SAVEPLOT" alias="IE_SAVEPLOT">
-	<parameter name="nPlotFile" type="integer" min="0" max="10"
-                default="0" />
-	<for from="1" to="$nPlotFile">
-		<parameter name="StringPlot" type="strings" min="2" max="2">
-			<part name="TypePlotForm" type="string" input="select"
-								required="T">
-	                        <option name="IDL" value="idl" default="T"/>
-				<option name="TecPlot" value="tec" />
-			</part>
-			<part name="TypePlotVar" type="string" input="select"
-                                                                required="T">
-                        	<option name="Minimum" value="min" 
-								default="T"/>
-	                        <option name="Maximum" value="max" />
-	                        <option name="UA"      value="uam" />
-        	                <option name="Aurora"  value="aur" />
-			</part>
-		</parameter>
-		<parameter name="DnSavePlot" type="integer" min="-1" />
-	        <parameter name="DtSavePlot" type="real"    min="-1" />
-	</for>
+  <parameter name="nPlotFile" type="integer" min="0" max="10"
+             default="0" />
+  <for from="1" to="$nPlotFile">
+    <parameter name="StringPlot" type="strings" min="2" max="2">
+      <part name="TypePlotForm" type="string" input="select"
+	    required="T">
+	<option name="IDL" value="idl" default="T"/>
+	<option name="TecPlot" value="tec" />
+      </part>
+      <part name="TypePlotVar" type="string" input="select"
+            required="T">
+        <option name="Minimum" value="min" 
+		default="T"/>
+	<option name="Maximum" value="max" />
+	<option name="UA"      value="uam" />
+        <option name="Aurora"  value="aur" />
+      </part>
+    </parameter>
+    <parameter name="DnSavePlot" type="integer" min="-1" />
+    <parameter name="DtSavePlot" type="real"    min="-1" />
+  </for>
 
 #SAVEPLOT
 2			nPlotFile
@@ -110,17 +108,17 @@ The 'max' variable set includes:
   RT 1/B [1/T], RT Rho [amu/$cm^3$], RT P [Pa],
   conjugate dLat [deg], conjugate dLon [deg]
 The 'uam' variable set includes:
-  Theta [deg], Psi [deg], SigmaH [mhos], SigmaP [mhos], Jr [mA/$m^2$], Jr(NW) [mA/$m^2$],
+  Theta [deg], Psi [deg], SigmaH [mho], SigmaP [mho], Jr [mA/$m^2$], Jr(NW) [mA/$m^2$],
   E-Flux [W/$m^2$], Ave-E [eV], Phi [kV]
 The 'aur' variable set includes:
-  Theta [deg], Psi [deg], SigmaH [mhos], SigmaP [mhos], Jr [mA/$m^2$], Phi [kV],
+  Theta [deg], Psi [deg], SigmaH [mho], SigmaP [mho], Jr [mA/$m^2$], Phi [kV],
   E-Flux [W/$m^2$], Ave-E [eV], RT 1/B [1/T], RT Rho [amu/$cm^3$], RT P [Pa],
   JouleHeat [mW/$m^2$], IonNumFlux [/$cm^2$/s],
   conjugate dLat [deg], conjugate dLon [deg]
 </command>
 
 <command name="SAVEPLOTNAME">
-	<parameter name="IsPlotName_e" type="logical" default="F" />
+  <parameter name="IsPlotName_e" type="logical" default="F" />
 #SAVEPLOTNAME
 F			IsPlotName_e
 
@@ -128,7 +126,7 @@ Plot files are named with the new substring including full year, ie. _e20000321-
 </command>
 
 <command name="SAVELOGNAME">
-	<parameter name="IsLogName_e" type="logical" default="F" />
+  <parameter name="IsLogName_e" type="logical" default="F" />
 #SAVELOGNAME
 F			IsLogName_e
 
@@ -136,7 +134,7 @@ Log files are named with the new substring including full year, ie. _e20000321-1
 </command>
 
 <command name="SAVELOGFILE">
-	<parameter name="DoSaveIELogfile" type="logical" default="F"/>
+  <parameter name="DoSaveIELogfile" type="logical" default="F"/>
 
 #SAVELOGFILE
 F			DoSaveIELogfile
@@ -171,7 +169,7 @@ information is written to a logfile.
   </if>
   <parameter name="UseFullCurrent" type="logical" default="F"/>
   <parameter name="UseFakeRegion2" type="logical" default="F"/>
-  <parameter name="F107Flux" type="real" min="-1" default="150"/>
+  <parameter name="F107Flux" type="real" min="-1" default="-1"/>
   <parameter name="StarLightPedConductance" type="real" min="0.001" 
 	     default="0.25"/>
   <parameter name="PolarCapPedConductance" type="real" min="0" 
@@ -180,7 +178,7 @@ information is written to a logfile.
 5			iConductanceModel
 F			UseFullCurrent
 F			UseFakeRegion2
-150.0			F107Flux
+-1.0			F107Flux
 0.25			StarLightPedConductance
 0.25			PolarCapPedConductance
 
@@ -197,19 +195,18 @@ The iConductanceModel variable determines which ionosphere model is used:\\
       since a polar cap is defined with the oval.\\
   4 - restricted oval, uses same variables as 3.\\
   5 - more realistic oval, uses same variables as 3.\\
-  8 - MAGNIT\\
+  8 - MAGNIT (requires #TRACEIE to be switched on in BATSRUS!!!)
+  9 - Powerlaw (simple powerlaw dependence of conductance on FAC)
+ 10 - Pedersen conductance North-South
+ 11 - Bob Robinson model\\
 
 Model 4 and 5 differ in the way the conductances are limited to the
 fitted oval. Model 4 is more restrictive, while model 5 is somewhat
 more relaxed.
 
-The UseFullCurrent and UseFakeRegion2 logicals were used in the past
-to test various algorithmic choices. They should have a false value now.
-The default values are shown by the example above.
-
 The time variation of the F10.7 flux can be taken into account by
 interpolating it from a lookup table. If F107Flux is set to -1.0, then
-th code is using a lookup table. This can be loaded explicitly in the
+the code is using a lookup table. This can be loaded explicitly in the
 main part of the PARAM.in file, for example
 
 #LOOKUPTABLE
@@ -221,16 +218,20 @@ log			TypeFile
 
 If there is no table loaded and F107Flux is -1.0, then the code loads
 the Param/f107.txt table automatically.
+
+The UseFullCurrent and UseFakeRegion2 logicals were used in the past
+to test various algorithmic choices. They should have a false value now.
+The default values are shown by the example above.
 </command>
 
 <command name="IM">
-	<parameter name="TypeImCouple" type="string" input="select">
-		<option name="north"    default="T"/>
-		<option name="south"               />
-		<option name="cpcpmin"             />
-		<option name="average"             />
-	</parameter>
-	<parameter name="FractionImJr" type="real" min="0" max="1" default="1"/>
+  <parameter name="TypeImCouple" type="string" input="select">
+    <option name="north"    default="T"/>
+    <option name="south"               />
+    <option name="cpcpmin"             />
+    <option name="average"             />
+  </parameter>
+  <parameter name="FractionImJr" type="real" min="0" max="1" default="1"/>
 
 #IM
 average			TypeImCouple
@@ -253,9 +254,9 @@ between the IE processors.
 </command>
 
 <command name="UA">
-	<parameter name="DoCoupleUaCurrent" type="logical" default="F"/>
-	<parameter name="LatBoundary" type="real" min="0" max="60"
-				default="45" if="$DoCoupleUaCurrent" />
+  <parameter name="DoCoupleUaCurrent" type="logical" default="F"/>
+  <parameter name="LatBoundary" type="real" min="0" max="60"
+	     default="45" if="$DoCoupleUaCurrent" />
 
 #UA
 T		DoCoupleUaCurrent
@@ -273,8 +274,8 @@ are not included.
 </command>
 
 <command name="AMIEFILES">
-	<parameter name="AMIEFileNorth" type="string" length="100" />
-	<parameter name="AMIEFileSouth" type="string" length="100" />
+  <parameter name="AMIEFileNorth" type="string" length="100" />
+  <parameter name="AMIEFileSouth" type="string" length="100" />
 
 #AMIEFILES
 IE/amie.north
@@ -286,7 +287,7 @@ Default is not reading AMIE files.
 </command>
 
 <command name="SPS">
-	<parameter name="UseSPS" type="logical" default="F"/>
+  <parameter name="UseSPS" type="logical" default="F"/>
 
 #SPS
 T			UseSPS
@@ -296,10 +297,10 @@ This is the default in the SWMF and it cannot be modified in the SWMF.
 </command>
 
 <command name="BACKGROUND" if="$_IsStandAlone">
-	<parameter name="NameOfModelDir" type="string" length="100" />
-	<parameter name="NameOfEFieldModel" type="string" length="100" />
-	<parameter name="NameOfAuroralModel" type="string" length="100" />
-	<parameter name="NameOfSolarModel" type="string" length="100" />
+  <parameter name="NameOfModelDir" type="string" length="100" />
+  <parameter name="NameOfEFieldModel" type="string" length="100" />
+  <parameter name="NameOfAuroralModel" type="string" length="100" />
+  <parameter name="NameOfSolarModel" type="string" length="100" />
 
 #BACKGROUND
 dir			NameOfModelDir
@@ -422,9 +423,9 @@ T             DoFitCircle (read if UseAdvancedOval is true)
 </command>
 
 <command name="CONDUCTANCE">
-	<parameter name="OvalWidthFactor"    type="real" min="0" default="1.0"/>
-	<parameter name="OvalStrengthFactor" type="real" min="0" default="1.0"/>
-	<parameter name="ConductanceFactor"  type="real" min="0" default="1.7"/>
+  <parameter name="OvalWidthFactor"    type="real" min="0" default="1.0"/>
+  <parameter name="OvalStrengthFactor" type="real" min="0" default="1.0"/>
+  <parameter name="ConductanceFactor"  type="real" min="0" default="1.7"/>
 
 #CONDUCTANCE
 1.0			OvalWidthFactor
@@ -455,10 +456,10 @@ Define the low latitude boundary for the potential solver. The default value is 
 <commandgroup name="Scheme parameters">
 
 <command name="SOLVER">
-	<parameter name="NameSolver" type="string" input="select" case="lower">
-		<option name="gmres"     		/>
-		<option name="bicgstab"	default="T"	/>
-	</parameter>
+  <parameter name="NameSolver" type="string" input="select" case="lower">
+    <option name="gmres"     		/>
+    <option name="bicgstab"	default="T"	/>
+  </parameter>
 #SOLVER
 bicgstab		NameSolver (gmres or bicgstab)
 
@@ -466,10 +467,10 @@ Select which solver to use. Default is bicgstab since it is faster.
 </command>
 
 <command name="KRYLOV">
-	<parameter name="UsePreconditioner" type="logical" default="T"/>
-	<parameter name="UseInitialGuess"   type="logical" default="T"/>
-	<parameter name="Tolerance" type="real" min="0" default="0.01"/>
-	<parameter name="MaxIteration" type="integer" min="1" default="100"/>
+  <parameter name="UsePreconditioner" type="logical" default="T"/>
+  <parameter name="UseInitialGuess"   type="logical" default="T"/>
+  <parameter name="Tolerance" type="real" min="0" default="0.01"/>
+  <parameter name="MaxIteration" type="integer" min="1" default="100"/>
 
 #KRYLOV
 T			UsePreconditioner
