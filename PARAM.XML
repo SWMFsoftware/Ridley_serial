@@ -457,7 +457,7 @@ MLT).
 Examples of the required format can be found in Ridley_serial/input/.
 </command>
 
-<command name="USECMEEFIT">
+<command name="CMEEFIT">
   <parameter name="UseCMEEFitting" type="logical" default="F"/>
   <if expr="$UseCMEEFitting">
     <parameter name="LatNoConductanceSI"  type="real" default="45"/>

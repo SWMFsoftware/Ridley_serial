@@ -226,7 +226,7 @@ contains
          case("#CONDUCTANCEFILES")
             call read_var('NameFileHall',     NameHalFile)
             call read_var('NameFilePedersen', NamePedFile)
-         case('#USECMEEFIT')
+         case('#CMEEFIT')
             call read_var('UseCMEEFitting', UseCMEEFitting)
             if (UseCMEEFitting) then
                call read_var('LatNoConductanceSI', LatNoConductanceSI)
