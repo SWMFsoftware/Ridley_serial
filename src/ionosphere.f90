@@ -26,7 +26,7 @@ subroutine ionosphere(iter, iAction)
   real :: f107
 
   logical :: DoTest, DoTestMe
-  character(len=*), parameter :: NameSub = 'ionosphere'
+  character(len=*), parameter:: NameSub = 'ionosphere'
   !----------------------------------------------------------------------------
   call CON_set_do_test(NameSub, DoTest, DoTestMe)
   if(DoTest)write(*,*)'Ionosphere starting with action, me=',iAction, iProc
@@ -83,7 +83,7 @@ subroutine ionosphere_fine_grid
   integer :: i,j
   real :: dTheta_l, dPsi_l
   character(len=lNamePlanet) :: NamePlanet
-  character(len=*), parameter :: NameSub = 'ionosphere_fine_grid'
+  character(len=*), parameter:: NameSub = 'ionosphere_fine_grid'
   !----------------------------------------------------------------------------
   dTheta_l = cHalfPi/(IONO_nTheta-1)
   dPsi_l   = cTwoPi/(IONO_nPsi-1)
@@ -539,7 +539,7 @@ subroutine ionosphere_write_output(iFile, iBlock)
 
   character(len=4) :: IO_ext
   character (len=23) :: textNandT
-  character(len=*), parameter :: NameSub = 'ionosphere_write_output'
+  character(len=*), parameter:: NameSub = 'ionosphere_write_output'
   !----------------------------------------------------------------------------
 
   variables = min_vars
@@ -1284,8 +1284,8 @@ subroutine iono_getpot(isize,jsize,MHD_lat,MHD_lon,MHD_pot,MHD_Jr)
   end do
 
 end subroutine iono_getpot
-
 !==============================================================================
+
 subroutine calculate_xyz_geo_gse
 
   use ModIonosphere

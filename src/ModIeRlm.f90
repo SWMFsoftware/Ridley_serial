@@ -9,7 +9,7 @@
 ! This model is outlined in Ridley et al., 2004 and detailed in
 ! Mukhopadhyay et al., 2020.
 
-Module ModIeRlm
+module ModIeRlm
 
   implicit none
   save
@@ -44,8 +44,8 @@ Module ModIeRlm
   real, allocatable :: cond_lats(:)
 
 contains
+  !============================================================================
 
-  !===========================================================================
   subroutine load_conductances()
 
     use ModIoUnit, ONLY: UnitTmp_
@@ -56,10 +56,10 @@ contains
     integer :: i, j, iError, nMltTemp=-1, nLatTemp=-1
 
     ! Testing variables:
-    character(len=*), parameter :: NameSub='load_conductances'
     logical :: DoTest, DoTestMe
 
-    !-------------------------------------------------------------------------
+    character(len=*), parameter:: NameSub = 'load_conductances'
+    !--------------------------------------------------------------------------
     call CON_set_do_test(NameSub, DoTest, DoTestMe)
 
     if (DoTest)then
@@ -81,7 +81,7 @@ contains
        if(index(Line,'#DIMENSIONS')>0) then
           read(UnitTmp_, *, iostat=iError) i_cond_nmlts
           read(UnitTmp_, *, iostat=iError) i_cond_nlats
-          exit
+          EXIT
        end if
     end do
 
@@ -156,8 +156,6 @@ contains
             hal_a0_do(j,i), hal_a1_do(j,i), hal_a2_do(j,i)
     end if
 
-
-
     ! Load Pedersen Conductance:
     if(DoTest) write(*,*)NameSub//': Opening Pedersen cond. file '//NamePedFile
     call open_file(file='IE/'//NamePedFile, status="old")
@@ -171,7 +169,7 @@ contains
        if(index(Line,'#DIMENSIONS')>0) then
           read(UnitTmp_, *, iostat=iError) nMltTemp
           read(UnitTmp_, *, iostat=iError) nLatTemp
-          exit
+          EXIT
        end if
     end do
     ! Check if dimensions found.  If not, stop program.
@@ -243,8 +241,8 @@ contains
     end if
 
   end subroutine load_conductances
+  !============================================================================
 
-  !===========================================================================
   subroutine Determine_Oval_Characteristics(Current_in, Theta_in, Psi_in, &
      Loc_of_Oval, Width_of_Oval, &
      Strength_of_Oval)
@@ -255,8 +253,6 @@ contains
     use IE_ModIo,       ONLY: NameIonoDir
     use ModIoUnit,      ONLY: UnitTMP_
     use IE_ModMain,     ONLY: Time_Array, nSolve
-
-    implicit none
 
     ! Inputs:
     real, dimension(1:IONO_nTheta, 1:IONO_nPsi), intent(in) :: &
@@ -282,11 +278,11 @@ contains
 
     ! Testing & output variables:
     character(len=100), save    :: NameFile, StringFormat
-    character(len=*), parameter :: NameSub = 'Determine_Oval_Characteristics'
     logical, save :: IsFirstWrite = .true.
     logical       :: DoTest, DoTestMe
-    !-------------------------------------------------------------------------
 
+    character(len=*), parameter:: NameSub = 'Determine_Oval_Characteristics'
+    !--------------------------------------------------------------------------
     call CON_set_do_test(NameSub, DoTest, DoTestMe)
 
     ! Reverse the Arrays for Southern Hemisphere:
@@ -338,7 +334,7 @@ contains
            endif
         enddo
 
-        if (width(n).le.(theta(2,1)-theta(1,1))) &
+        if (width(n) <= (theta(2,1)-theta(1,1))) &
              width(n) = max_fac_colat(n)/5.0
 
      enddo
@@ -397,7 +393,7 @@ contains
      enddo
 
      ! For testing purposes, write oval info to file.
-     if(.not.DoTestMe .or. .not.north) return
+     if(.not.DoTestMe .or. .not.north) RETURN
 
      if(IsFirstWrite)then
         ! Open file:
@@ -423,6 +419,7 @@ contains
      close(UnitTmp_)
 
   end subroutine Determine_Oval_Characteristics
-  !===========================================================================
+  !============================================================================
 
-end Module ModIeRlm
+end module ModIeRlm
+!==============================================================================

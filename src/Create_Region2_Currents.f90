@@ -19,7 +19,6 @@ subroutine Create_Region2_Currents(iBlock)
 
   real :: total_up, total_down, factor, area
 
-  !----------------------------------------------------------------------------
   !
   ! We have a slight problem with the currents within the MHD code.  When
   ! the IMF By component gets rather large, the current flowing into each
@@ -39,6 +38,7 @@ subroutine Create_Region2_Currents(iBlock)
   ! This is physically unjustified.
   !
 
+  !----------------------------------------------------------------------------
   select case(iBlock)
 
   case(1) ! This is for north:

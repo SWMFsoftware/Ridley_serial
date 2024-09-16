@@ -59,16 +59,16 @@ subroutine FACs_to_fluxes(NameModelIn, NameHemiIn, AveEOut_II, EFluxOut_II)
 
   ! Debugging values:
   logical :: DoTest, DoTestMe
-  character(len=*), parameter :: NameSub='facs_to_fluxes'
-  !-------------------------------------------------------------------------
+  character(len=*), parameter:: NameSub = 'FACs_to_fluxes'
+  !----------------------------------------------------------------------------
   call CON_set_do_test(NameSub, DoTest, DoTestMe)
 
   ! Handle hemisphere information to reduce duplication:
-  if(NameHemiIn.eq.'north')then
+  if(NameHemiIn == 'north')then
      IonoJrNow = IONO_NORTH_JR
      IonoTheta = IONO_NORTH_Theta
      IonoPsi   = IONO_NORTH_Psi
-  else if (NameHemiIn.eq.'south')then
+  else if (NameHemiIn == 'south')then
      IonoJrNow = IONO_SOUTH_JR
      IonoTheta = IONO_SOUTH_Theta
      IonoPsi   = IONO_SOUTH_Psi
@@ -79,7 +79,7 @@ subroutine FACs_to_fluxes(NameModelIn, NameHemiIn, AveEOut_II, EFluxOut_II)
   ! Set minimum background average energy/energy flux
   ! using PolarCapPedCond parameter set in #BACKGROUND.
   if (PolarCapPedCond > 0.0) then
-     !PolarCapHallConductance = Hall_to_Ped_Ratio * PolarCapPedCond
+     ! PolarCapHallConductance = Hall_to_Ped_Ratio * PolarCapPedCond
      PolarCap_AveE = (Hall_to_Ped_Ratio/0.45)**(1.0/0.85)
      PolarCap_EFlux = ((PolarCapPedCond*(16.0 + PolarCap_AveE**2) / &
           (40.0*PolarCap_AveE))**2)/1000.0
@@ -98,7 +98,7 @@ subroutine FACs_to_fluxes(NameModelIn, NameHemiIn, AveEOut_II, EFluxOut_II)
           Loc_of_Oval, Width_of_Oval,Strength_of_Oval)
   end if
 
-  if(NameHemiIn .eq. 'south') Loc_of_Oval = cPi - Loc_of_Oval
+  if(NameHemiIn == 'south') Loc_of_Oval = cPi - Loc_of_Oval
 
   select case(NameModelIn)
   case('RLM3')
@@ -171,7 +171,7 @@ subroutine FACs_to_fluxes(NameModelIn, NameHemiIn, AveEOut_II, EFluxOut_II)
         LAT: do i = 1, IONO_nTheta
            ! Set lon/colat index accounting for correct hemisphere
            x1 = mod((IonoPsi(i,j) + cPi), cTwoPi)/dmlt + 1.0
-           if(NameHemiIn .eq. 'north')then
+           if(NameHemiIn == 'north')then
               y1 = IonoTheta(i,j)/dlat + 1.0
            else
               y1 = (cPi - IonoTheta(i,j))/dlat + 1.0
@@ -259,7 +259,7 @@ subroutine FACs_to_fluxes(NameModelIn, NameHemiIn, AveEOut_II, EFluxOut_II)
 
            ! Use "distance" to turn oval off/on (see above comment).
            if(UseOval)then
-              if(NameHemiIn .eq. 'north')then
+              if(NameHemiIn == 'north')then
                  distance = IonoTheta(i,j) - Loc_of_Oval(j)
               else
                  distance = Loc_of_Oval(j) - IonoTheta(i,j)
@@ -276,7 +276,7 @@ subroutine FACs_to_fluxes(NameModelIn, NameHemiIn, AveEOut_II, EFluxOut_II)
               polarcap = .true.
            endif
 
-           if (NameModelIn .eq. 'RLM4') then
+           if (NameModelIn == 'RLM4') then
               ! Implemented Feb.7, 2007 as modified version of iModel 5 with
               ! new narrower fitting of the auroral oval.  DDZ
 
@@ -333,7 +333,7 @@ subroutine FACs_to_fluxes(NameModelIn, NameHemiIn, AveEOut_II, EFluxOut_II)
            end if
 
            ! Convert to energy flux & average energy via Reverse-Robinson
-           if ((hall.gt.1.0).and.(ped.gt.0.5)) then
+           if ((hall > 1.0).and.(ped > 0.5)) then
               AveEOut_II( i,j) = ((hall/ped)/0.45)**(1.0/0.85)
               EfluxOut_II(i,j) = (ped*(16.0+AveEOut_II(i,j)**2)/&
                    (40.0*AveEOut_II(i,j)))**2/1000.0
@@ -356,4 +356,4 @@ subroutine FACs_to_fluxes(NameModelIn, NameHemiIn, AveEOut_II, EFluxOut_II)
   end select
 
 end subroutine FACs_to_fluxes
-!===========================================================================
+!==============================================================================

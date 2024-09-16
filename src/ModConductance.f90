@@ -2,7 +2,7 @@
 !  portions used with permission
 !  For more information, see http://csem.engin.umich.edu/tools/swmf
 
-Module ModConductance
+module ModConductance
 
   use ModIonosphere
 
@@ -24,8 +24,8 @@ Module ModConductance
 
   ! Background & constant conductance values:
   real :: f107_flux=150, SigmaHalConst=0, SigmaPedConst=0, &
-       StarLightCond=0.25, & !replaces starlightpedconductance
-       PolarCapPedCond=0.25  !replaces PolarCapPedConductance
+       StarLightCond=0.25, & ! replaces starlightpedconductance
+       PolarCapPedCond=0.25  ! replaces PolarCapPedConductance
 
   ! Floor values for GM density and pressure, SI units:
   real, parameter :: GmRhoFloor = 1E-21, GmPFloor = 1E-13
@@ -39,13 +39,13 @@ Module ModConductance
        SigPedEuv_NORTH=0.0, SigPedEuv_SOUTH=0.0
        ! Existing variables that should be moved here
        ! Also, no reason to allocate (we think).
-       !IONO_NORTH_DIFF_Ave_E=0,0, IONO_SOUTH_DIFF_Ave_E=0.0  &
-       !IONO_NORTH_MONO_Ave_E=0.0, IONO_SOUTH_MONO_Ave_E=0.0, &
-       !IONO_NORTH_DIFF_EFlux=0.0, IONO_SOUTH_DIFF_EFlux=0.0, &
-       !IONO_NORTH_MONO_EFlux=0.0, IONO_SOUTH_MONO_EFlux=0.0
+       ! IONO_NORTH_DIFF_Ave_E=0,0, IONO_SOUTH_DIFF_Ave_E=0.0  &
+       ! IONO_NORTH_MONO_Ave_E=0.0, IONO_SOUTH_MONO_Ave_E=0.0, &
+       ! IONO_NORTH_DIFF_EFlux=0.0, IONO_SOUTH_DIFF_EFlux=0.0, &
+       ! IONO_NORTH_MONO_EFlux=0.0, IONO_SOUTH_MONO_EFlux=0.0
 
 contains
-  !===========================================================================
+  !============================================================================
   subroutine generate_conductance(NameHemiIn)
     ! Calculate conductance from all sources and sum into the IONO_*_Sigma[PH]
     ! arrays, and compute the spatial derivatives.
@@ -90,9 +90,9 @@ contains
          sn, cs, sn2, cs2, cs3, cs4, C
 
     ! Debug variables:
-    character(len=*), parameter :: NameSub='generate_conductance'
     logical :: DoTestMe, DoTest
-    !------------------------------------------------------------------------
+    character(len=*), parameter:: NameSub = 'generate_conductance'
+    !--------------------------------------------------------------------------
     call CON_set_do_test(NameSub, DoTest, DoTestMe)
     if(DoTestMe) &
          write(*,*)'IE: '//NameSub//' called for hemisphere='//NameHemiIn
@@ -102,11 +102,11 @@ contains
     nTheta = IONO_nTheta
 
     ! Configure approach to match hemisphere:
-    if(NameHemiIn .eq. 'north') then
+    if(NameHemiIn == 'north') then
        iBlockNow = 1
        dTheta = dTheta_North
        dPsi   = dPsi_North
-    else if (NameHemiIn .eq. 'south') then
+    else if (NameHemiIn == 'south') then
        iBlockNow = 2
        dTheta = dTheta_South
        dPsi   = dPsi_South
@@ -115,7 +115,7 @@ contains
     end if
 
     ! Create temporary arrays to hold colat/lon for current hemisphere:
-    if(NameHemiIn .eq. 'north')then
+    if(NameHemiIn == 'north')then
        theta = IONO_NORTH_Theta
        psi = IONO_NORTH_Psi
     else
@@ -146,7 +146,7 @@ contains
                1000.*EFluxMono_II, SigmaHalAur_II, SigmaPedAur_II)
 
        case('MAGNIT')
-          !call magnit_fluxes(NameHemiIn)
+          ! call magnit_fluxes(NameHemiIn)
 
        case default
           call CON_stop(NameSub//': Unrecognized auroral model - ' &
@@ -155,7 +155,7 @@ contains
     end if
 
     ! Sum conductance into the correct hemisphere.
-    if(NameHemiIn .eq. 'north')then
+    if(NameHemiIn == 'north')then
        IONO_NORTH_Sigma0 = SigmaPar
        IONO_NORTH_SigmaH = sqrt(SigmaHalConst**2 + SigmaHalEuv_II**2 + &
             (2.*StarLightCond)**2 + SigmaHalAur_II**2)
@@ -252,7 +252,7 @@ contains
          (SigmaPsPs(2:nTheta-1,2)-SigmaPsPs(2:nTheta-1,nPsi-1)) / dPsi(nPsi)
 
     ! Place derivative results into correct hemisphere:
-    if(NameHemiIn.eq.'north')then
+    if(NameHemiIn == 'north')then
        ! Off-diagonal terms:
        IONO_NORTH_SigmaThTh = SigmaThTh
        IONO_NORTH_SigmaThPs = SigmaThPs
@@ -280,8 +280,8 @@ contains
     end if
 
   end subroutine generate_conductance
+  !============================================================================
 
-  !===========================================================================
   subroutine calc_euv_cond(NameHemiIn, CondHalOut_II, CondPedOut_II)
 
     ! For a given hemisphere, calculate the EUV-driven conductance using
@@ -292,7 +292,7 @@ contains
     ! hemisphere at a time.
     ! Starlight conductance is included in this calculation.
 
-    !use IE_ModSize
+    ! use IE_ModSize
     use ModNumConst, ONLY: cDegToRad
     use IE_ModMain,  ONLY: CosThetaTilt, SinThetaTilt
 
@@ -308,16 +308,16 @@ contains
          SigmaH_EUV, SigmaH_SCAT, SigmaP_EUV, SigmaP_SCAT
 
     logical :: DoTest, DoTestMe
-    character(len=*), parameter :: NameSub='EUV_cond_II'
-    !------------------------------------------------------------------------
+    character(len=*), parameter:: NameSub = 'calc_euv_cond'
+    !--------------------------------------------------------------------------
     call CON_set_do_test(NameSub, DoTest, DoTestMe)
 
     ! Grab coordinates/locations based on hemisphere.
-    if(NameHemiIn .eq. 'north') then
+    if(NameHemiIn == 'north') then
        X_II = IONO_NORTH_X
        Y_II = IONO_NORTH_Y
        Z_II = IONO_NORTH_Z
-    else if (NameHemiIn .eq. 'south') then
+    else if (NameHemiIn == 'south') then
        X_II = IONO_SOUTH_X
        Y_II = IONO_SOUTH_Y
        Z_II = IONO_SOUTH_Z
@@ -364,8 +364,8 @@ contains
     CondPedOut_II = sqrt(SigmaP_EUV**2 + SigmaP_SCAT**2)
 
   end subroutine calc_euv_cond
+  !============================================================================
 
-  !===========================================================================
   subroutine smooth_lagrange_polar(a_II, iLatSize, jLonSize, tolIn)
     ! Use a simple sliding window technique to smooth a 2D array in polar
     ! coordinates such that periodicity and continuity are enforced across
@@ -384,9 +384,9 @@ contains
 
     integer                    :: i, j
     real                       :: aSmooth_II(iLatSize, jLonSize), tol
-    !------------------------------------------------------------------------
 
     ! Set default tolerance to 15% of original value:
+    !--------------------------------------------------------------------------
     if (present(tolIn)) then
        tol = tolIn
     else
@@ -415,9 +415,9 @@ contains
        ! Smooth over all non-longitude boundary points:
        lon: do j = 2, jLonSize-1
           aSmooth_II(i,j) = (             & ! For all other (i,j)
-               sum(a_II(i-1:i+1, j-1)) +  & !left of point i,j
-               sum(a_II(i-1:i+1, j+1)) +  & !right of point i,j
-               a_II(i+1,j) + a_II(i-1,j)  & !above and below
+               sum(a_II(i-1:i+1, j-1)) +  & ! left of point i,j
+               sum(a_II(i-1:i+1, j+1)) +  & ! right of point i,j
+               a_II(i+1,j) + a_II(i-1,j)  & ! above and below
                )/ 8.0
        end do lon
 
@@ -428,8 +428,8 @@ contains
     where (a_II<=ABS(aSmooth_II - a_II) /tol) a_II = aSmooth_II
 
   end subroutine smooth_lagrange_polar
+  !============================================================================
 
-  !===========================================================================
   subroutine imodel_legacy(iModelIn, f10In, StarLightIn, PolarCapIn)
     ! Create mapping between new conductance-related PARAMs and legacy
     ! #IONOSPHERE param with the "imodel" parameter.  This maintains
@@ -439,8 +439,8 @@ contains
     real, intent(in) :: f10In, StarLightIn, PolarCapIn
 
     logical :: DoTest, DoTestMe
-    character(len=*), parameter :: NameSub='imodel_legacy'
-    !------------------------------------------------------------------------
+    character(len=*), parameter:: NameSub = 'imodel_legacy'
+    !--------------------------------------------------------------------------
     call CON_set_do_test(NameSub, DoTest, DoTestMe)
 
     if(DoTestMe) then
@@ -513,8 +513,8 @@ contains
     end if
 
   end subroutine imodel_legacy
+  !============================================================================
 
-  !===========================================================================
   subroutine flux_to_sigma(nLatIn, nLonIn, AveEIn_II, eFluxIn_II, &
        SigmaHOut_II, SigmaPOut_II, NameModelIn)
 
@@ -539,9 +539,9 @@ contains
     character(len=4) :: NameModel='robi'
 
     logical :: DoTest, DoTestMe
-    character(len=*), parameter :: NameSub='imodel_legacy'
-    !------------------------------------------------------------------------
     ! Set up defaults: ions and Robinson et al. 1987
+    character(len=*), parameter:: NameSub = 'flux_to_sigma'
+    !--------------------------------------------------------------------------
     if (present(NameModelIn))    NameModel = NameModelIn
 
     select case(NameModel)
@@ -554,6 +554,7 @@ contains
     end select
 
    end subroutine flux_to_sigma
-   !===========================================================================
+  !============================================================================
 
-end Module ModConductance
+end module ModConductance
+!==============================================================================

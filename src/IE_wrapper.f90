@@ -63,7 +63,7 @@ contains
     type(CompInfoType), intent(inout) :: CompInfo   ! Information for this comp
     character(len=*), intent(in)      :: TypeAction ! What to do
 
-    character(len=*), parameter :: NameSub = 'IE_set_param'
+    character(len=*), parameter:: NameSub = 'IE_set_param'
     !--------------------------------------------------------------------------
     select case(TypeAction)
     case('VERSION')
@@ -246,7 +246,7 @@ contains
             call read_var('OvalWidthFactor',    OvalWidthFactor)
             call read_var('OvalStrengthFactor', OvalStrengthFactor)
             call read_var('ConductanceFactor',  CondFactor)
-            if (trim(NameAuroraMod).eq.'RLM3') then
+            if (trim(NameAuroraMod) == 'RLM3') then
                write(*,'(a,i4,a)')NameSub//' IE_ERROR at line ',i_line_read(),&
                     ' command '//trim(NameCommand)// &
                     ' can only be used with conductance model 4 or 5'
@@ -364,6 +364,7 @@ contains
       end do
 
     end subroutine read_param
+    !==========================================================================
 
   end subroutine IE_set_param
   !============================================================================
@@ -388,7 +389,7 @@ contains
     real :: Longitude_I(IONO_nPsi) = 0.
 
     logical :: DoTest, DoTestMe
-    character(len=*), parameter :: NameSub = 'IE_set_grid'
+    character(len=*), parameter:: NameSub = 'IE_set_grid'
     !--------------------------------------------------------------------------
     call CON_set_do_test(NameSub,DoTest, DoTestMe)
     if(DoTest)write(*,*)NameSub,' IsInitialized=',IsInitialized
@@ -485,7 +486,7 @@ contains
 
     integer :: iVar
     real    :: tSimulationTmp
-    character(len=*), parameter :: NameSub='IE_get_for_pw'
+    character(len=*), parameter:: NameSub = 'IE_get_for_pw'
     !--------------------------------------------------------------------------
     if(iSize /= 2*IONO_nTheta-1 .or. jSize /= IONO_nPsi)then
        write(*,*)NameSub//' incorrect buffer size=',iSize,jSize,&
@@ -531,7 +532,7 @@ contains
 
     integer :: iVar
     real    :: tSimulationTmp
-    character(len=*), parameter :: NameSub='IE_get_for_rb'
+    character(len=*), parameter:: NameSub = 'IE_get_for_rb'
     !--------------------------------------------------------------------------
     if(iSize /= IONO_nTheta .or. jSize /= IONO_nPsi)then
        write(*,*)NameSub//' incorrect buffer size=',iSize,jSize,&
@@ -710,7 +711,7 @@ contains
     real                         :: Buffer_IIV(iSize, jSize, nVar)
 
     logical :: DoTest, DoTestMe
-    character(len=*), parameter :: NameSub = 'IE_put_from_gm'
+    character(len=*), parameter:: NameSub = 'IE_put_from_gm'
     !--------------------------------------------------------------------------
     call CON_set_do_test(NameSub, DoTest, DoTestMe)
     if(DoTest)write(*,*)NameSub,' starting with iSize, jSize, nVar=', &
@@ -832,6 +833,7 @@ contains
     use ModConst
     use ModUtilities,   ONLY: check_allocate
 
+    !--------------------------------------------------------------------------
     save
 
     ! Arguments: returning IE variables on a MLT-Lat grid, one
@@ -1115,7 +1117,7 @@ contains
     integer :: iBlock, i, j, iSouth, iPoint
     real    :: w
 
-    character(len=*), parameter :: NameSub='IE_get_for_im'
+    character(len=*), parameter:: NameSub = 'IE_get_for_im'
     !--------------------------------------------------------------------------
     Buff_V = 0.0
 
@@ -1200,6 +1202,7 @@ contains
     use ModIonosphere
     use ModMpi
 
+    !--------------------------------------------------------------------------
     integer iError, i
    !---------------------------------------------------------------------------
     iono_north_im_eflux(:,iono_npsi) = iono_north_im_eflux(:,1)
@@ -1246,13 +1249,13 @@ contains
     logical :: IsUninitialized=.true.
 
     logical :: DoTest,DoTestMe
-    character(len=*), parameter :: NameSub = 'IE_init_session'
+    character(len=*), parameter:: NameSub = 'IE_init_session'
     !--------------------------------------------------------------------------
     call CON_set_do_test(NameSub, DoTest, DoTestMe)
 
     if(IsUninitialized)then
        ! Set configurations based on selected auroral models:
-       if (trim(NameAuroraMod).eq.'CMEE') then
+       if (trim(NameAuroraMod) == 'CMEE') then
           ! Switch coefficient input files to CMEE:
           UseCMEEFitting = .true.
           NameHalFile = 'cmee_hal_coeffs.dat'
@@ -1305,7 +1308,7 @@ contains
     integer :: iFile
     real(Real8_) :: tCurrent
 
-    character(len=*), parameter :: NameSub='IE_finalize'
+    character(len=*), parameter:: NameSub = 'IE_finalize'
     !--------------------------------------------------------------------------
     call get_time(tCurrentOut = tCurrent)
     call time_real_to_int(tCurrent, Time_Array)
@@ -1324,7 +1327,7 @@ contains
     call clean_mod_ionosphere
 
     ! If legacy conductance model used, clean associated variables.
-    if((DoUseAurora).and.(NameAuroraMod.eq.'FAC2FLUX'))then
+    if((DoUseAurora).and.(NameAuroraMod == 'FAC2FLUX'))then
        ! Hall conductance coeffs:
        deallocate(hal_a0_up, hal_a1_up, hal_a2_up, &
             hal_a0_do, hal_a1_do, hal_a2_do )
@@ -1345,8 +1348,8 @@ contains
 
     real, intent(in) :: tSimulation   ! seconds from start time
 
-    character(len=*), parameter :: NameSub='IE_save_restart'
-    !-------------------------------------------------------------------------
+    character(len=*), parameter:: NameSub = 'IE_save_restart'
+    !--------------------------------------------------------------------------
     if(NameRestartOutDirComp /= '') NameRestartOutDir = NameRestartOutDirComp
 
     call ionosphere_write_restart_file
@@ -1374,7 +1377,7 @@ contains
     integer      :: nStep
 
     logical :: DoTest, DoTestMe
-    character(len=*), parameter :: NameSub = 'IE_run'
+    character(len=*), parameter:: NameSub = 'IE_run'
     !--------------------------------------------------------------------------
     call CON_set_do_test(NameSub, DoTest, DoTestMe)
 
@@ -1491,7 +1494,7 @@ contains
     real    :: tSimulationTmp
 
     logical :: DoTest, DoTestMe
-    character (len=*), parameter :: NameSub = 'IE_get_for_ps'
+    character(len=*), parameter:: NameSub = 'IE_get_for_ps'
     !--------------------------------------------------------------------------
     if(iSize /= IONO_nTheta*2-1 .or. jSize /= IONO_nPsi)then
        write(*,*)NameSub//' incorrect buffer size=',iSize,jSize,&
