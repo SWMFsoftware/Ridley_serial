@@ -11,13 +11,13 @@ subroutine ionosphere(iter, iAction)
   !     - Changed to a GMRES solver, Sept. 99
   !   - Added f107 dependence to the conductance
   !   - Added a simple auroral oval
-  !
 
   ! ionosphere driver (main or controlling) routine.
 
   use ModIonosphere
   use IE_ModMain
   use ModProcIE
+  use ModConductance, ONLY: f107_flux
 
   implicit none
 
@@ -26,9 +26,9 @@ subroutine ionosphere(iter, iAction)
   real :: f107
 
   logical :: DoTest, DoTestMe
-
+  character(len=*), parameter :: NameSub = 'ionosphere'
   !----------------------------------------------------------------------------
-  call CON_set_do_test('ionosphere',DoTest,DoTestMe)
+  call CON_set_do_test(NameSub, DoTest, DoTestMe)
   if(DoTest)write(*,*)'Ionosphere starting with action, me=',iAction, iProc
 
   iModel = conductance_model
@@ -38,7 +38,6 @@ subroutine ionosphere(iter, iAction)
   select case (iAction)
 
   case (1)
-
      ! Create fine grids for north and south
      ! hemisphere ionospheric solutions
      call ionosphere_fine_grid
@@ -48,7 +47,6 @@ subroutine ionosphere(iter, iAction)
      call ionosphere_read_restart_file
 
   case (5)
-
      ! Create a restart solution file containing the
      ! FAC driving the ionospheric solution.
      call ionosphere_write_restart_file
@@ -76,6 +74,8 @@ subroutine ionosphere_fine_grid
   use IE_ModIO, ONLY: iUnitOut, write_prefix
   use IE_ModMain, ONLY: conductance_model
   use ModIonosphere
+  use ModConductance
+  use ModIeRlm
   use CON_planet, ONLY: get_planet, lNamePlanet
   use ModNumConst, ONLY: cHalfPi, cTwoPi
   implicit none
@@ -83,7 +83,7 @@ subroutine ionosphere_fine_grid
   integer :: i,j
   real :: dTheta_l, dPsi_l
   character(len=lNamePlanet) :: NamePlanet
-  character(len=*), parameter:: NameSub = 'ionosphere_fine_grid'
+  character(len=*), parameter :: NameSub = 'ionosphere_fine_grid'
   !----------------------------------------------------------------------------
   dTheta_l = cHalfPi/(IONO_nTheta-1)
   dPsi_l   = cTwoPi/(IONO_nPsi-1)
@@ -112,47 +112,45 @@ subroutine ionosphere_fine_grid
           ' Ionospheric grids   : ',IONO_nTheta,' x ',IONO_nPsi
      call write_prefix; write(iUnitOut,'(A,f7.1,A)') &
           ' Height of ionosphere: ',IONO_Height/1000,' km'
-     call write_prefix; write(iUnitOut,'(A)',ADVANCE='NO') &
-          ' Conductance model   : '
-     select case(conductance_model)
-     case(0)
-        write(iUnitOut,'(a)') "Constant Pedersen (no HALL)"
-     case(1)
-        write(iUnitOut,'(a)') "Constant Pedersen and Hall"
-     case(2)
-        write(iUnitOut,'(a)') "Solar EUV Only"
-     case(3)
-        write(iUnitOut,'(a)') "Supersmooth oval"
-     case(4)
-        write(iUnitOut,'(a)') "Restricted oval"
-     case(5)
-        write(iUnitOut,'(a)') "Realistic oval"
-     case(6)
-        write(iUnitOut,'(a)') "More Realistic oval"
-     case(7)
-        write(iUnitOut,'(a)') "Get aurora from IM"
-     case(8)
-        write(iUnitOut,'(a)') "MAGNIT Physics-based Aurora"
-        write(iUnitOut,'(a)') "(Beta-testing Phase)"
-        write(*,*) '################## CAUTION ##################'
-        write(*,*) '(Beta Testing) The conductance calculations from MAGNIT are unstable.'
-        write(*,*) 'Please proceed with caution. For issues, please contact developers.'
-        write(*,*) '#############################################'
-     case (9)
-        write(iUnitOut,'(a)') "Test linear relationship between FACs and conductance"
-     case (10)
-        write(iUnitOut, '(a)') "Test asymmetric conductance"
-     case (11)
-        write(iUnitOut, '(a)') "Test Bob Robinson's model"
-     case default
-        call CON_stop(NameSub//" IE_ERROR invalid conductance_model")
-     end select
-     call write_prefix; write(iUnitOut,*)'UseCMEEFitting      : ', &
-          UseCMEEFitting
-     call write_prefix; write(iUnitOut,*)'NameHalFile         : ', &
-          trim(NameHalFile)
-     call write_prefix; write(iUnitOut,*)'NamePedFile         : ', &
-          trim(NamePedFile)
+     call write_prefix; write(iUnitOut,'(A)') &
+          ' Conductance Information  : '
+     ! Uniform conductance settings:
+     write(iUnitOut,'(5x, a, f10.6)') "Uniform Hall Cond = ", SigmaHalConst
+     write(iUnitOut,'(5x, a, f10.6)') "Uniform Ped Cond  = ", SigmaPedConst
+     ! Background conductance settings:
+     write(iUnitOut,'(5x, a, f10.6)') "Background Star Light = ", StarLightCond
+     write(iUnitOut,'(5x, a, f10.6)') "Background Polar Cap Ped. = ", PolarCapPedCond
+     ! EUV conductance settings:
+     write(iUnitOut,'(5x, a,l)')      "Use EUV Cond = ", DoUseEuvCond
+     if(DoUseEuvCond) write(iUnitOut,'(5x, a,f10.6)') "F10.7 Flux = ", f107_flux
+     ! Auroral conducatnce settings:
+     write(iUnitOut,'(5x, a,l)')      "Use Auroral Conductance = ", DoUseAurora
+     if(DoUseAurora)then
+        write(iUnitOut,'(5x,a,a)') "Selected auroral model = ", NameAuroraMod
+        ! Echo empirical settings:
+        select case(trim(NameAuroraMod))
+        case('RLM3', 'RLM4', 'RLM5', 'CMEE')
+           write(iUnitOut,'(5x,a,l)')'UseCMEEFitting = ', UseCMEEFitting
+           write(iUnitOut,'(5x,a,a)')'Hall Coeff. File = ', trim(NameHalFile)
+           write(iUnitOut,'(5x,a,a)')'Ped. Coeff. File = ', trim(NamePedFile)
+           write(iUnitOut,'(5x,a,a)')'Oval fitting settings:'
+           write(iUnitOut,'(5x,a)')'---------------------------'
+           write(iUnitOut,'(10x,a,l)')'UseOval=',       UseOval
+           write(iUnitOut,'(10x,a,l)')'UseNewOval=',    UseNewOval
+           write(iUnitOut,'(10x,a,l)')'DoOvalShift=',   DoOvalShift
+           write(iUnitOut,'(10x,a,l)')'UseSubOvalCond=',UseSubOvalCond
+           write(iUnitOut,'(10x,a,l)')'DoFitCircle=',   DoFitCircle
+        case('MAGNIT')
+           write(iUnitOut,'(a)') "MAGNIT Physics-based Aurora"
+           write(iUnitOut,'(a)') "(Beta-testing Phase)"
+           write(*,*) '################## CAUTION ##################'
+           write(*,*) '(Beta Testing) The conductance calculations from MAGNIT are unstable.'
+           write(*,*) 'Please proceed with caution. For issues, please contact developers.'
+           write(*,*) '#############################################'
+        case default
+        end select
+
+     end if
      call write_prefix; write(iUnitOut,*)' ------------------------------'
      call write_prefix; write(iUnitOut,*)
   end if
@@ -244,6 +242,7 @@ subroutine ionosphere_init
   ! ionospheric solutions for the
   ! northern and southern hemispheres.
   use ModIonosphere
+
   implicit none
 
   !----------------------------------------------------------------------------
@@ -277,9 +276,6 @@ subroutine ionosphere_init
 
   IONO_NORTH_TGCM_JR = 0.00                                !^CFG IF TIEGCM
   IONO_SOUTH_TGCM_JR = 0.00                                !^CFG IF TIEGCM
-
-  SAVE_NORTH_SigmaH = 0.00
-  SAVE_SOUTH_SigmaH = 0.00
 
   IONO_NORTH_EFlux = 0.00
   IONO_SOUTH_EFlux = 0.00
@@ -329,7 +325,7 @@ subroutine write_timegcm_file(iter, phi_north, phi_south,   &
   real, dimension(1:IONO_nTheta,1:IONO_nPsi) ::             &
        phi_north, phi_south, eflux_north, eflux_south,      &
        avee_north, avee_south
-  real:: psi_offset
+  real :: psi_offset
 
   integer :: i, j
   character (len=4), Parameter :: IO_ext=".dat"
@@ -478,7 +474,6 @@ end subroutine read_timegcm_file
 !^CFG END TIEGCM
 
 subroutine IE_output
-  ! ionosphere_write_output
 
   use IE_ModIo
   use IE_ModMain
@@ -512,12 +507,14 @@ subroutine IE_output
 
 end subroutine IE_output
 !==============================================================================
+
 subroutine ionosphere_write_output(iFile, iBlock)
 
   ! This routine writes out the fine grid
   ! ionospheric solutions for the
   ! northern and southern hemispheres to
   ! a data file.
+
   use ModIonosphere
   use IE_ModIo
   use IE_ModMain, ONLY: Time_Array, nSolve, Time_Accurate, Time_Simulation,&
@@ -539,9 +536,10 @@ subroutine ionosphere_write_output(iFile, iBlock)
   integer :: output_type, variables
 
   integer :: i, j
+
   character(len=4) :: IO_ext
   character (len=23) :: textNandT
-  character(len=*), parameter:: NameSub = 'ionosphere_write_output'
+  character(len=*), parameter :: NameSub = 'ionosphere_write_output'
   !----------------------------------------------------------------------------
 
   variables = min_vars
@@ -1085,9 +1083,10 @@ subroutine IE_save_logfile
 
 end subroutine IE_save_logfile
 !==============================================================================
-subroutine ionosphere_read_restart_file
 
+subroutine ionosphere_read_restart_file
   ! This routine reads an ionospheric restart solution file.
+
   use ModProcIE
   use ModIonosphere
   use IE_ModIo
@@ -1135,6 +1134,7 @@ subroutine ionosphere_read_restart_file
 
 end subroutine ionosphere_read_restart_file
 !==============================================================================
+
 subroutine ionosphere_write_restart_file
 
   ! This routine writes out 3 files:
@@ -1199,6 +1199,7 @@ subroutine ionosphere_write_restart_file
 
 end subroutine ionosphere_write_restart_file
 !==============================================================================
+
 subroutine iono_getpot(isize,jsize,MHD_lat,MHD_lon,MHD_pot,MHD_Jr)
   use ModIonosphere
   implicit none
@@ -1283,6 +1284,7 @@ subroutine iono_getpot(isize,jsize,MHD_lat,MHD_lon,MHD_pot,MHD_Jr)
   end do
 
 end subroutine iono_getpot
+
 !==============================================================================
 subroutine calculate_xyz_geo_gse
 
@@ -1318,4 +1320,3 @@ subroutine calculate_xyz_geo_gse
   end do
 end subroutine calculate_xyz_geo_gse
 !==============================================================================
-

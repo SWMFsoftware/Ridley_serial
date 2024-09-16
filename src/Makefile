@@ -1,4 +1,4 @@
-#  Copyright (C) 2002 Regents of the University of Michigan, portions used with permission 
+#  Copyright (C) 2002 Regents of the University of Michigan, portions used with permission
 #  For more information, see http://csem.engin.umich.edu/tools/swmf
 SHELL =/bin/sh
 
@@ -6,10 +6,10 @@ include ../Makefile.def
 include ../Makefile.conf
 -include Makefile.DEPEND
 
-#			
+#
 #	Menu of make options
 #
-help:	
+help:
 	@echo ' '
 	@echo '  You can "make" the following:'
 	@echo ' '
@@ -28,12 +28,12 @@ MODULES = \
 	ModSize.o\
 	IE_ModMain.o\
 	IE_ModIo.o\
+	ModIeRlm.o\
 	ModIonosphere.o\
 	ModProcIE.o\
 	ModIE_Interface.o\
 	ModFiles.o\
 	ModConductance.o
-
 #
 #	Object Lists
 #
@@ -45,12 +45,12 @@ OBJECTS = \
 	IE_Library.o\
 	IE_gather.o\
 	create_auroral_oval.o\
-        iono_conductances.o\
 	iono_currents.o\
 	iono_joule.o\
         iono_solver.o\
 	Create_Region2_Currents.o\
-        ionosphere.o
+        ionosphere.o\
+	facs_to_fluxes.o
 
 #
 #	Libraries
@@ -83,7 +83,7 @@ PostIONO.exe:	PostIONO.o
 IONO: ${EXE2}
 	@echo Program IONO has been brought up to date.
 
-backup:	
+backup:
 	tar -cf IONO.`date +%m_%d_%y_%H%M.tar` Make* *.f90 *.h *.sub *.script *.llscript.* *.in mpi* perf_mjp.a BATio BATioPP* IOcat*
 
 clean: cleanfiles

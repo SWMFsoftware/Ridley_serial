@@ -5,6 +5,7 @@
 subroutine Create_Region2_Currents(iBlock)
 
   use ModIonosphere
+  use ModIeRlm, ONLY: determine_oval_characteristics
   implicit none
 
   integer,intent(in) :: iBlock ! 1 for north, 2 for south !!! SWMF

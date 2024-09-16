@@ -14,9 +14,6 @@ module IE_ModMain
   ! Ionospheric Model Parameters
   logical :: UseFakeRegion2=.false.
   integer :: conductance_model
-  logical :: UseFullCurrent
-  real    :: f107_flux, PolarCapPedConductance, StarLightPedConductance, PedConductance_North, PedConductance_South
-  real    :: Hall_to_Ped_Ratio
 
   ! Conductance model 4 factors
   real :: OvalWidthFactor=1., OvalStrengthFactor=1., CondFactor=1.7

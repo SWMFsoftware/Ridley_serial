@@ -61,9 +61,9 @@ contains
 
     ! Arguments
     type(CompInfoType), intent(inout) :: CompInfo   ! Information for this comp
-    character (len=*), intent(in)     :: TypeAction ! What to do
+    character(len=*), intent(in)      :: TypeAction ! What to do
 
-    character(len=*), parameter:: NameSub = 'IE_set_param'
+    character(len=*), parameter :: NameSub = 'IE_set_param'
     !--------------------------------------------------------------------------
     select case(TypeAction)
     case('VERSION')
@@ -103,8 +103,12 @@ contains
       use ModReadParam
       use ModIE_Interface
       use ModFiles
-      use ModConductance, ONLY: UseOval, UseNewOval, DoOvalShift, &
-           UseSubOvalCond, DoFitCircle
+      use ModConductance, ONLY: DoUseEuvCond, f107_flux, &
+           PolarCapPedCond, StarLightCond, SigmaHalConst, SigmaPedConst, &
+           imodel_legacy, DoUseAurora, NameAuroraMod
+      use ModIeRlm, ONLY: UseOval, UseNewOval, DoOvalShift, &
+           UseSubOvalCond, DoFitCircle, FactorHallCMEE, FactorPedCMEE, &
+           NameHalFile, NamePedFile, LatNoConductanceSI, UseCMEEFitting
       use ModUtilities,   ONLY: fix_dir_name, check_dir, lower_case
 
       ! The name of the command
@@ -113,6 +117,11 @@ contains
       ! Read parameters
       logical :: UseStrict=.true., IsUninitialized=.true.
 
+      ! Interface variables for legacy #IONOSPHERE command
+      logical :: UseFullCurrent ! LEGACY, NOT USED, CANDIDATE FOR REMOVAL.
+      integer :: iModLegacy=5
+      real :: f10Legacy, StarLightLegacy, PolarCapLegacy
+
       ! Plot file parameters
       integer :: iFile, iDebugProc
       character (len=50) :: plot_string
@@ -120,7 +129,6 @@ contains
       !------------------------------------------------------------------------
       select case(TypeAction)
       case('CHECK')
-         if(IsUninitialized)call set_defaults
          IsUninitialized=.false.
 
          ! We should check and correct parameters here
@@ -131,7 +139,6 @@ contains
          if(iProc==0)write(*,*) NameSub,': READ iSession =',i_session_read(),&
               ' iLine=',i_line_read(),' nLine =',n_line_read()
 
-         if(IsUninitialized)call set_defaults
          IsUninitialized=.false.
       end select
 
@@ -143,6 +150,8 @@ contains
          select case(NameCommand)
          case("#STRICT")
             call read_var('UseStrict',UseStrict)
+
+         ! I/O-related params
          case("#IONODIR")
             call read_var("NameIonoDir",NameIonoDir)
             call fix_dir_name(NameIonoDIr)
@@ -195,32 +204,56 @@ contains
             call read_var('IsPlotName_e',IsPlotName_e)
          case("#SAVELOGNAME")
             call read_var('IsLogName_e',IsLogName_e)
-         case("#IONOSPHERE")
-            call read_var('iConductanceModel',conductance_model)
-            call read_var('UseFullCurrent' ,UseFullCurrent)
-            call read_var('UseFakeRegion2' ,UseFakeRegion2)
-            call read_var('F10.7 Flux',f107_flux)
-            call read_var('StarLightPedConductance',StarLightPedConductance)
-            call read_var('PolarCapPedConductance',PolarCapPedConductance)
-            if (conductance_model == 9) then
-               ! Change default file names
-               NameHalFile = 'cond_hal_coeffs_power.dat'
-               NamePedFile = 'cond_ped_coeffs_power.dat'
-            end if
-            if (conductance_model == 10) then
-               call read_var('PedConductance_North',PedConductance_North)
-               call read_var('PedConductance_South',PedConductance_South)
+         case("#SAVELOGFILE")
+            call read_var('DoSaveLogfile',DoSaveLogfile)
+            if(DoSaveLogfile)then
+               if(iProc==0)call check_dir(NameIonoDir)
             endif
-         case('#USECMEE')
+
+         ! Conductance related params:
+         case('#SOLAREUV')
+            call read_var('DoUseEuvCond', DoUseEuvCond)
+            if(DoUseEuvCond) call read_var('F10.7 Flux', f107_flux)
+         case('#UNIFORMCONDUCTANCE')
+            call read_var('SigmaPedConst', SigmaPedConst)
+            call read_var('SigmaHalConst', SigmaHalConst)
+         case('#BACKGROUNDCOND')
+            call read_var('StarLightCond', StarLightCond)
+            call read_var('PolarCapPedCond', PolarCapPedCond)
+         case('#AURORA')
+            call read_var('DoUseAurora', DoUseAurora)
+            if(DoUseAurora) call read_var('NameAuroraMod', NameAuroraMod)
+         case("#CONDUCTANCEFILES")
+            call read_var('NameFileHall',     NameHalFile)
+            call read_var('NameFilePedersen', NamePedFile)
+         case('#USECMEEFIT')
             call read_var('UseCMEEFitting', UseCMEEFitting)
             if (UseCMEEFitting) then
                call read_var('LatNoConductanceSI', LatNoConductanceSI)
                call read_var('FactorHallCMEE',     FactorHallCMEE)
                call read_var('FactorPedCMEE',      FactorPedCMEE)
             endif
-         case("#CONDUCTANCEFILES")
-            call read_var('NameFileHall',     NameHalFile)
-            call read_var('NameFilePedersen', NamePedFile)
+         case("#AURORALOVAL")
+            call read_var('UseOval', UseOval)
+            if(UseOval)then
+               call read_var('UseOvalShift',          DoOvalShift)
+               call read_var('UseSubOvalConductance', UseSubOvalCond)
+               call read_var('UseAdvancedOval',       UseNewOval)
+               if(UseNewOval) call read_var('DoFitCircle', DoFitCircle)
+            end if
+         case("#RLMCONDUCTANCE")
+            call read_var('LatNoConductanceSI', LatNoConductanceSI)
+            call read_var('OvalWidthFactor',    OvalWidthFactor)
+            call read_var('OvalStrengthFactor', OvalStrengthFactor)
+            call read_var('ConductanceFactor',  CondFactor)
+            if (trim(NameAuroraMod).eq.'RLM3') then
+               write(*,'(a,i4,a)')NameSub//' IE_ERROR at line ',i_line_read(),&
+                    ' command '//trim(NameCommand)// &
+                    ' can only be used with conductance model 4 or 5'
+               if(UseStrict)call CON_stop('Correct PARAM.in!')
+            end if
+
+         ! Physics & solver related params
          case("#IM")
             call read_var('TypeImCouple',TypeImCouple)
             call lower_case(TypeImCouple)
@@ -301,40 +334,25 @@ contains
 
             UseGridBasedIE = .false.
 
-         case("#SAVELOGFILE")
-            call read_var('DoSaveLogfile',DoSaveLogfile)
-            if(DoSaveLogfile)then
-               if(iProc==0)call check_dir(NameIonoDir)
-            endif
-
-         case("#AURORALOVAL")
-            call read_var('UseOval', UseOval)
-            if(UseOval)then
-               call read_var('UseOvalShift',          DoOvalShift)
-               call read_var('UseSubOvalConductance', UseSubOvalCond)
-               call read_var('UseAdvancedOval',       UseNewOval)
-               if(UseNewOval) call read_var('DoFitCircle', DoFitCircle)
-            end if
-
-         case("#CONDUCTANCE")
-            call read_var('OvalWidthFactor',   OvalWidthFactor)
-            call read_var('OvalStrengthFactor',OvalStrengthFactor)
-            call read_var('ConductanceFactor', CondFactor)
-            if ( (conductance_model/=4).and.(conductance_model/=5) ) then
-               write(*,'(a,i4,a)')NameSub//' IE_ERROR at line ',i_line_read(),&
-                    ' command '//trim(NameCommand)// &
-                    ' can only be used with conductance model 4 or 5'
-               if(UseStrict)call CON_stop('Correct PARAM.in!')
-            end if
-
-         case("#MAGNETOMETER")
-            write(*,*)'IE_WARNING: #MAGNETOMETER COMMAND NOW GM-ONLY.'
-
-         case("#GEOMAGINDICES")
-            write(*,*)'IE_WARNING: #GEOMAGINDICES COMMAND NOW GM-ONLY.'
-
          case("#RESTART")
             call read_var('DoRestart', DoRestart)
+
+         ! The following are LEGACY PARAMS and CANDIDATES FOR REMOVAL.
+         case("#IONOSPHERE")
+            ! Read LEGACY variables and store locally.
+            call read_var('iConductanceModel', iModLegacy)
+            call read_var('UseFullCurrent' ,   UseFullCurrent)
+            call read_var('UseFakeRegion2' ,   UseFakeRegion2)
+            call read_var('F10.7 Flux',        f10Legacy)
+            call read_var('StarLightPedConductance', StarLightLegacy)
+            call read_var('PolarCapPedConductance',  PolarCapLegacy)
+            ! Set options as a function of iModel:
+            call imodel_legacy(iModLegacy, f10Legacy, &
+                 StarLightLegacy, PolarCapLegacy)
+         case("#MAGNETOMETER")
+            write(*,*)'IE_WARNING: #MAGNETOMETER COMMAND NOW GM-ONLY.'
+         case("#GEOMAGINDICES")
+            write(*,*)'IE_WARNING: #GEOMAGINDICES COMMAND NOW GM-ONLY.'
 
          case default
             if(iProc==0) then
@@ -346,22 +364,6 @@ contains
       end do
 
     end subroutine read_param
-    !==========================================================================
-
-    subroutine set_defaults
-
-      !------------------------------------------------------------------------
-      conductance_model       = 5
-      UseFullCurrent          = .false.
-      UseFakeRegion2          = .false.
-      StarLightPedConductance = 0.25
-      PedConductance_North    = 0.25
-      PedConductance_South    = 0.25
-      PolarCapPedConductance  = 0.25
-      f107_flux               = -1.0
-
-    end subroutine set_defaults
-    !==========================================================================
 
   end subroutine IE_set_param
   !============================================================================
@@ -386,7 +388,7 @@ contains
     real :: Longitude_I(IONO_nPsi) = 0.
 
     logical :: DoTest, DoTestMe
-    character(len=*), parameter:: NameSub = 'IE_set_grid'
+    character(len=*), parameter :: NameSub = 'IE_set_grid'
     !--------------------------------------------------------------------------
     call CON_set_do_test(NameSub,DoTest, DoTestMe)
     if(DoTest)write(*,*)NameSub,' IsInitialized=',IsInitialized
@@ -409,15 +411,15 @@ contains
     call set_grid_descriptor(                        &
          IE_,                                        &! component index
          nDim=2,                                     &! dimensionality
-         nRootBlock_D=[2,1],                       &! north+south hemispheres
-         nCell_D =[IONO_nTheta - 1,IONO_nPsi - 1], &! size of node based grid
-         XyzMin_D=[1.0, 1.0],                    &! minimum indexes
-         XyzMax_D=[real(2*IONO_nTheta-1.0),         &! maximum indexes
-         real(IONO_nPsi)],                          &
+         nRootBlock_D=[2,1],                         &! north+south hemispheres
+         nCell_D =[IONO_nTheta - 1,IONO_nPsi - 1],   &! size of node based grid
+         XyzMin_D=[1.0, 1.0],                        &! minimum indexes
+         XyzMax_D=[real(2*IONO_nTheta-1.0),          &! maximum indexes
+         real(IONO_nPsi)],                           &
          TypeCoord='SMG',                            &! solar magnetic coord.
          Coord1_I=Colat_I,                           &! colatitudes
          Coord2_I=Longitude_I,                       &! longitudes
-         Coord3_I=[IONO_Radius + IONO_Height],     &! radial size in meters
+         Coord3_I=[IONO_Radius + IONO_Height],       &! radial size in meters
          iProc_A = iProc_A)                           ! processor assigment
 
   end subroutine IE_set_grid
@@ -483,7 +485,7 @@ contains
 
     integer :: iVar
     real    :: tSimulationTmp
-    character(len=*), parameter:: NameSub = 'IE_get_for_pw'
+    character(len=*), parameter :: NameSub='IE_get_for_pw'
     !--------------------------------------------------------------------------
     if(iSize /= 2*IONO_nTheta-1 .or. jSize /= IONO_nPsi)then
        write(*,*)NameSub//' incorrect buffer size=',iSize,jSize,&
@@ -529,7 +531,7 @@ contains
 
     integer :: iVar
     real    :: tSimulationTmp
-    character(len=*), parameter:: NameSub = 'IE_get_for_rb'
+    character(len=*), parameter :: NameSub='IE_get_for_rb'
     !--------------------------------------------------------------------------
     if(iSize /= IONO_nTheta .or. jSize /= IONO_nPsi)then
        write(*,*)NameSub//' incorrect buffer size=',iSize,jSize,&
@@ -708,7 +710,7 @@ contains
     real                         :: Buffer_IIV(iSize, jSize, nVar)
 
     logical :: DoTest, DoTestMe
-    character(len=*), parameter:: NameSub = 'IE_put_from_gm'
+    character(len=*), parameter :: NameSub = 'IE_put_from_gm'
     !--------------------------------------------------------------------------
     call CON_set_do_test(NameSub, DoTest, DoTestMe)
     if(DoTest)write(*,*)NameSub,' starting with iSize, jSize, nVar=', &
@@ -824,14 +826,12 @@ contains
   !============================================================================
   subroutine IE_put_from_ua(Buffer_IIBV, nMLTs, nLats, nVarIn, NameVarUaIn_V)
 
-    use IE_ModMain, ONLY: &
-         IsNewInput, DoCoupleUaCurrent, StarLightPedConductance
-
+    use IE_ModMain,     ONLY: IsNewInput, DoCoupleUaCurrent
+    use ModConductance, ONLY: StarLightCond
     use ModIonosphere
     use ModConst
-    use ModUtilities, ONLY: check_allocate
+    use ModUtilities,   ONLY: check_allocate
 
-    !--------------------------------------------------------------------------
     save
 
     ! Arguments: returning IE variables on a MLT-Lat grid, one
@@ -1021,15 +1021,15 @@ contains
           select case (NameVarUaIn_V(iVar))
           case('hal') ! Hall conductance
              if(iBlock==1)then
-                IONO_NORTH_SigmaH = max(TmpVar_II, 2*StarLightPedConductance)
+                IONO_NORTH_SigmaH = max(TmpVar_II, 2*StarLightCond)
              else
-                IONO_SOUTH_SigmaH = max(TmpVar_II, 2*StarLightPedConductance)
+                IONO_SOUTH_SigmaH = max(TmpVar_II, 2*StarLightCond)
              end if
           case('ped') ! Pedersen conductance
              if(iBlock==1)then
-                IONO_NORTH_SigmaP = max(TmpVar_II, StarLightPedConductance)
+                IONO_NORTH_SigmaP = max(TmpVar_II, StarLightCond)
              else
-                IONO_SOUTH_SigmaP = max(TmpVar_II, StarLightPedConductance)
+                IONO_SOUTH_SigmaP = max(TmpVar_II, StarLightCond)
              end if
           case('fac') ! Neutral wind FACs
              if(iBlock==1)then
@@ -1060,7 +1060,7 @@ contains
     type(IndexPtrType),intent(in) :: Index
     type(WeightPtrType),intent(in):: Weight
     logical,intent(in)            :: DoAdd
-    integer ::iLat,iLon
+    integer:: iLat,iLon
     character(len=*), parameter:: NameSub = 'IE_put_from_im'
     !--------------------------------------------------------------------------
     if(nPoint>1)then
@@ -1115,7 +1115,7 @@ contains
     integer :: iBlock, i, j, iSouth, iPoint
     real    :: w
 
-    character(len=*), parameter:: NameSub = 'IE_get_for_im'
+    character(len=*), parameter :: NameSub='IE_get_for_im'
     !--------------------------------------------------------------------------
     Buff_V = 0.0
 
@@ -1200,9 +1200,8 @@ contains
     use ModIonosphere
     use ModMpi
 
-    !--------------------------------------------------------------------------
     integer iError, i
-
+   !---------------------------------------------------------------------------
     iono_north_im_eflux(:,iono_npsi) = iono_north_im_eflux(:,1)
     iono_north_im_avee(:,iono_npsi)  = iono_north_im_avee(:,1)
     iono_north_im_jr(:,iono_npsi)  = iono_north_im_jr(:,1)
@@ -1234,6 +1233,9 @@ contains
     use ModIonosphere,  ONLY: IONO_Bdp, init_mod_ionosphere
     use IE_ModMain,     ONLY: time_accurate, time_simulation, ThetaTilt
     use IE_ModIo,       ONLY: dt_output, t_output_last
+    use ModConductance, ONLY: NameAuroraMod
+    use ModIeRlm,       ONLY: load_conductances, UseCMEEFitting, &
+         NameHalFile, NamePedFile
     use ModProcIE
 
     integer,  intent(in) :: iSession      ! session number (starting from 1)
@@ -1243,13 +1245,24 @@ contains
 
     logical :: IsUninitialized=.true.
 
-    logical :: DoTest, DoTestMe
-    character(len=*), parameter:: NameSub = 'IE_init_session'
+    logical :: DoTest,DoTestMe
+    character(len=*), parameter :: NameSub = 'IE_init_session'
     !--------------------------------------------------------------------------
     call CON_set_do_test(NameSub, DoTest, DoTestMe)
 
     if(IsUninitialized)then
+       ! Set configurations based on selected auroral models:
+       if (trim(NameAuroraMod).eq.'CMEE') then
+          ! Switch coefficient input files to CMEE:
+          UseCMEEFitting = .true.
+          NameHalFile = 'cmee_hal_coeffs.dat'
+          NamePedFile = 'cmee_ped_coeffs.dat'
+       end if
+
        call init_mod_ionosphere
+       ! Read empirical conductance values from files as necessary
+       if((index(NameAuroraMod,'RLM')>0).or.(index(NameAuroraMod,'CMEE')>0)) &
+            call load_conductances()
        call ionosphere_fine_grid
        call ionosphere_init
 
@@ -1262,7 +1275,7 @@ contains
     call get_planet(DipoleStrengthOut = IONO_Bdp)
     call get_axes(tSimulation, MagAxisTiltGsmOut = ThetaTilt)
 
-    IONO_Bdp = IONO_Bdp*1e9 ! Tesla -> nT
+    IONO_Bdp = IONO_Bdp*1.0e9 ! Tesla -> nT
 
     if(DoTest)write(*,*)NameSub,': IONO_Bdp, ThetaTilt =',IONO_Bdp,ThetaTilt
 
@@ -1274,6 +1287,7 @@ contains
 
   end subroutine IE_init_session
   !============================================================================
+
   subroutine IE_finalize(tSimulation)
 
     use ModProcIE
@@ -1283,13 +1297,15 @@ contains
     use ModTimeConvert, ONLY: time_real_to_int
     use ModKind, ONLY: Real8_
     use ModIonosphere, ONLY: clean_mod_ionosphere
+    use ModConductance, ONLY: DoUseAurora, NameAuroraMod
+    use ModIeRLM
 
     real,     intent(in) :: tSimulation   ! seconds from start time
 
     integer :: iFile
     real(Real8_) :: tCurrent
 
-    character(len=*), parameter:: NameSub = 'IE_finalize'
+    character(len=*), parameter :: NameSub='IE_finalize'
     !--------------------------------------------------------------------------
     call get_time(tCurrentOut = tCurrent)
     call time_real_to_int(tCurrent, Time_Array)
@@ -1307,31 +1323,46 @@ contains
 
     call clean_mod_ionosphere
 
+    ! If legacy conductance model used, clean associated variables.
+    if((DoUseAurora).and.(NameAuroraMod.eq.'FAC2FLUX'))then
+       ! Hall conductance coeffs:
+       deallocate(hal_a0_up, hal_a1_up, hal_a2_up, &
+            hal_a0_do, hal_a1_do, hal_a2_do )
+       ! Pedersen conductance coeffs:
+       deallocate(ped_a0_up, ped_a1_up, ped_a2_up, &
+            ped_a0_do, ped_a1_do, ped_a2_do )
+       ! Coefficient grids:
+       deallocate(cond_mlts, cond_lats)
+    end if
+
   end subroutine IE_finalize
   !============================================================================
+
   subroutine IE_save_restart(tSimulation)
 
     use CON_coupler, ONLY: NameRestartOutDirComp
     use IE_ModIo,   ONLY: NameRestartOutDir
 
-    real,     intent(in) :: tSimulation   ! seconds from start time
+    real, intent(in) :: tSimulation   ! seconds from start time
 
-    character(len=*), parameter:: NameSub = 'IE_save_restart'
-    !--------------------------------------------------------------------------
+    character(len=*), parameter :: NameSub='IE_save_restart'
+    !-------------------------------------------------------------------------
     if(NameRestartOutDirComp /= '') NameRestartOutDir = NameRestartOutDirComp
 
     call ionosphere_write_restart_file
 
   end subroutine IE_save_restart
   !============================================================================
+
   subroutine IE_run(tSimulation, tSimulationLimit)
 
     use ModProcIE
     use IE_ModMain
-    use IE_ModIo, ONLY: DoRestart, iUnitOut, StringPrefix
-    use CON_physics, ONLY: get_time, get_axes, time_real_to_int
+    use IE_ModIo,       ONLY: DoRestart, iUnitOut, StringPrefix
+    use CON_physics,    ONLY: get_time, get_axes, time_real_to_int
     use ModLookupTable, ONLY: i_lookup_table, init_lookup_table, &
          interpolate_lookup_table
+    use ModConductance, ONLY: f107_flux
     use ModKind
 
     real, intent(inout) :: tSimulation   ! current time of component
@@ -1343,7 +1374,7 @@ contains
     integer      :: nStep
 
     logical :: DoTest, DoTestMe
-    character(len=*), parameter:: NameSub = 'IE_run'
+    character(len=*), parameter :: NameSub = 'IE_run'
     !--------------------------------------------------------------------------
     call CON_set_do_test(NameSub, DoTest, DoTestMe)
 
@@ -1460,7 +1491,7 @@ contains
     real    :: tSimulationTmp
 
     logical :: DoTest, DoTestMe
-    character(len=*), parameter:: NameSub = 'IE_get_for_ps'
+    character (len=*), parameter :: NameSub = 'IE_get_for_ps'
     !--------------------------------------------------------------------------
     if(iSize /= IONO_nTheta*2-1 .or. jSize /= IONO_nPsi)then
        write(*,*)NameSub//' incorrect buffer size=',iSize,jSize,&
