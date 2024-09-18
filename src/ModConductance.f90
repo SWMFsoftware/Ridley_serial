@@ -23,8 +23,8 @@ module ModConductance
   character(len=8) :: NameAuroraMod = 'RLM5'
 
   ! Background & constant conductance values:
-  real :: f107_flux=150, SigmaHalConst=0, SigmaPedConst=0, &
-       StarLightCond=0.25, & ! replaces starlightpedconductance
+  real :: f107_flux=-1, SigmaHalConst=0, SigmaPedConst=0, &
+       StarLightCond=1.0,  & ! replaces starlightpedconductance
        PolarCapPedCond=0.25  ! replaces PolarCapPedConductance
 
   ! Floor values for GM density and pressure, SI units:

@@ -217,11 +217,11 @@ RLM5 but with an empirical fitting based on extreme events.
 
 </command>
 
-<command name="BACKGROUNDCOND">
+<command name="BACKGROUNDCONDUCTANCE" alias="BACKGROUNDCOND">
   <parameter name="StarLightCond" type="real" min="0" default="0.25"/>
   <parameter name="PolarCapPedCond" type="real" min="0" default="0.25"/>
 #BACKGROUNDCOND
-0.25            StarLightPedCond
+1.00            StarLightPedCond
 0.25            PolarCapPedCond
 
 Set the background Pedersen conductance due to starlight and polar cap sources.
@@ -230,7 +230,7 @@ Units are Siemens.
 Default values are shown.
 </command>
 
-<command name="UNIFORMCOND">
+<command name="UNIFORMCONDUCTANCE" alias="UNIFORMCOND">
   <parameter name="SigmaPedConst" type="real" min="0" default="0"/>
   <parameter name="SigmaHalConst" type="real" min="0" default="0"/>
 #UNIFORMCONDUCTANCE
