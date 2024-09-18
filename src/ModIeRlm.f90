@@ -14,11 +14,10 @@ module ModIeRlm
   implicit none
   save
 
-  ! Parameters to control FAC2FLUX conductance model:
-  character(len=100) :: &                 ! Location of conductance coeffs
-       NameHalFile = 'cond_hal_coeffs.dat', &
-       NamePedFile = 'cond_ped_coeffs.dat'
-  logical :: UseCMEEFitting  = .false.
+  ! Parameters to control Ridley Legacy conductance Model and derivatives:
+  character(len=100) ::         & ! Location of conductance coeffs
+       NameHalFile = 'default', &
+       NamePedFile = 'default'
   real :: LatNoConductanceSI = 45.0, FactorHallCMEE = 7.5, FactorPedCMEE = 5.0
 
   ! Auroral oval options:
@@ -48,6 +47,7 @@ contains
 
   subroutine load_conductances()
 
+    use ModConductance, ONLY: NameAuroraMod
     use ModIoUnit, ONLY: UnitTmp_
     use ModUtilities, ONLY: open_file, close_file, CON_set_do_test, CON_stop
 
@@ -62,10 +62,33 @@ contains
     !--------------------------------------------------------------------------
     call CON_set_do_test(NameSub, DoTest, DoTestMe)
 
-    if (DoTest)then
-       write(*,*)'IE DEBUG: reading conductance files at'
-       write(*,*) NameHalFile
-       write(*,*) NamePedFile
+    ! Check if defaults have changed. If not, select appropriate input file.
+    if (NameHalFile == 'default') then
+        select case(trim(NameAuroraMod))
+        case('RLM3', 'RLM4', 'RLM5')
+            NameHalFile = 'cond_hal_coeffs.dat'
+        case('CMEE')
+            NameHalFile = 'cmee_hal_coeffs.dat'
+        case('POWER')
+            NameHalFile = 'cond_hal_coeffs_power.dat'
+        end select
+    end if
+    ! Repeat for Pedersen conductance.
+    if (NamePedFile == 'default') then
+      select case(trim(NameAuroraMod))
+      case('RLM3', 'RLM4', 'RLM5')
+          NamePedFile = 'cond_ped_coeffs.dat'
+      case('CMEE')
+          NamePedFile = 'cmee_ped_coeffs.dat'
+      case('POWER')
+          NamePedFile = 'cond_ped_coeffs_power.dat'
+      end select
+    end if
+
+    if(DoTest) then
+        write(*,*)'IE: Empirical conductance coefficient files used:'
+        write(*,*) NameHalFile
+        write(*,*) NamePedFile
     end if
 
     ! Start with Hall Conductance:

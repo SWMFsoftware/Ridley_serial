@@ -414,9 +414,9 @@ This command cannot be used in the SWMF.
 
 
 <command name="CONDUCTANCEFILES">
-  <parameter name="NameHalFile" type="string" default="cond_hal_coeffs.dat"
+  <parameter name="NameHalFile" type="string" default="default"
 	     length="100"/>
-  <parameter name="NamePedFile" type="string" default="cond_ped_coeffs.dat"
+  <parameter name="NamePedFile" type="string" default="default"
 	     length="100"/>
 
 #CONDUCTANCEFILES
@@ -424,12 +424,15 @@ cond_hal_coeffs.dat	NameHalFile
 cond_ped_coeffs.dat	NamePedFile
 
 Set the file names for the coefficients used in the empirical conductance
-model.  Default values are shown for iConductanceModel set to 4 or 5
-in the #IONOSPHERE command. For iConductanceModel=9 the defaults are
-cond_hal_coeffs_power.dat and cond_ped_coeffs_power.dat. Any files read
-with this command are expected to be placed into the IE folder of the
-run directory. The defaults files are automatically copied from
+model. Any files read with this command are expected to be placed into the IE
+folder of the run directory. The defaults files are automatically copied from
 IE/Ridley_serial/input/ directory.
+
+Default behavior is to set the file names to "default", causing the model to
+auto-select input files based on the status of #AURORA. For any of the RLM
+models, the files are cond_hal_coeffs.dat and cond_ped_coeffs.dat. For the
+CMEE model, files are cmee_hal/ped_coeffs.dat; for the POWER model, the files
+are cond_hal/ped_coeffs_power.dat.
 
 The empirical conductance model estimates the auroral conductance between
 latitudes 60 degs and 90 degs using an empirical function of the form

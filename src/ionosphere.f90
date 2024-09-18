@@ -130,7 +130,6 @@ subroutine ionosphere_fine_grid
         ! Echo empirical settings:
         select case(trim(NameAuroraMod))
         case('RLM3', 'RLM4', 'RLM5', 'CMEE')
-           write(iUnitOut,'(5x,a,l1)')'UseCMEEFitting = ', UseCMEEFitting
            write(iUnitOut,'(5x,a,a)')'Hall Coeff. File = ', trim(NameHalFile)
            write(iUnitOut,'(5x,a,a)')'Ped. Coeff. File = ', trim(NamePedFile)
            write(iUnitOut,'(5x,a,a)')'Oval fitting settings:'

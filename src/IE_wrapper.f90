@@ -108,7 +108,7 @@ contains
            imodel_legacy, DoUseAurora, NameAuroraMod
       use ModIeRlm, ONLY: UseOval, UseNewOval, DoOvalShift, &
            UseSubOvalCond, DoFitCircle, FactorHallCMEE, FactorPedCMEE, &
-           NameHalFile, NamePedFile, LatNoConductanceSI, UseCMEEFitting
+           NameHalFile, NamePedFile, LatNoConductanceSI
       use ModUtilities,   ONLY: fix_dir_name, check_dir, lower_case
 
       ! The name of the command
@@ -227,12 +227,9 @@ contains
             call read_var('NameFileHall',     NameHalFile)
             call read_var('NameFilePedersen', NamePedFile)
          case('#CMEEFIT')
-            call read_var('UseCMEEFitting', UseCMEEFitting)
-            if (UseCMEEFitting) then
-               call read_var('LatNoConductanceSI', LatNoConductanceSI)
-               call read_var('FactorHallCMEE',     FactorHallCMEE)
-               call read_var('FactorPedCMEE',      FactorPedCMEE)
-            endif
+            call read_var('LatNoConductanceSI', LatNoConductanceSI)
+            call read_var('FactorHallCMEE',     FactorHallCMEE)
+            call read_var('FactorPedCMEE',      FactorPedCMEE)
          case("#AURORALOVAL")
             call read_var('UseOval', UseOval)
             if(UseOval)then
@@ -1237,8 +1234,7 @@ contains
     use IE_ModMain,     ONLY: time_accurate, time_simulation, ThetaTilt
     use IE_ModIo,       ONLY: dt_output, t_output_last
     use ModConductance, ONLY: NameAuroraMod
-    use ModIeRlm,       ONLY: load_conductances, UseCMEEFitting, &
-         NameHalFile, NamePedFile
+    use ModIeRlm,       ONLY: load_conductances, NameHalFile, NamePedFile
     use ModProcIE
 
     integer,  intent(in) :: iSession      ! session number (starting from 1)
@@ -1254,14 +1250,6 @@ contains
     call CON_set_do_test(NameSub, DoTest, DoTestMe)
 
     if(IsUninitialized)then
-       ! Set configurations based on selected auroral models:
-       if (trim(NameAuroraMod) == 'CMEE') then
-          ! Switch coefficient input files to CMEE:
-          UseCMEEFitting = .true.
-          NameHalFile = 'cmee_hal_coeffs.dat'
-          NamePedFile = 'cmee_ped_coeffs.dat'
-       end if
-
        call init_mod_ionosphere
        ! Read empirical conductance values from files as necessary
        if((index(NameAuroraMod,'RLM')>0).or.(index(NameAuroraMod,'CMEE')>0)) &

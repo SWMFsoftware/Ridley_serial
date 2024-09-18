@@ -295,7 +295,7 @@ subroutine FACs_to_fluxes(NameModelIn, NameHemiIn, AveEOut_II, EFluxOut_II)
               endif
 
               ! No Conductance Below 45 degrees
-              if (UseCMEEFitting) then
+              if (NameModelIn == 'CMEE') then
                  ! Switch colat->lat, check against boundary latitude:
                  if (abs(90-IonoTheta(i,j)*cRadToDeg) <= LatNoConductanceSI) then
                     hal_a1 = hal_a0
@@ -310,7 +310,7 @@ subroutine FACs_to_fluxes(NameModelIn, NameHemiIn, AveEOut_II, EFluxOut_II)
                    exp(-1.0*(distance/(OvalWidthFactor*Width_of_Oval(j)))**2)
 
               ! Enforce A1 < A0 (otherwise, negative conductance)
-              if (UseCMEEFitting) then
+              if (NameModelIn == 'CMEE') then
                  hal_a1 = min(hal_a0, hal_a1)
                  ped_a1 = min(ped_a0, ped_a1)
               end if
@@ -322,7 +322,7 @@ subroutine FACs_to_fluxes(NameModelIn, NameHemiIn, AveEOut_II, EFluxOut_II)
                    ped_a0-ped_a1*exp(-abs(IonoJrNow(i,j)*1.0e9)*ped_a2**2))
 
               ! CMEE enhances auroral oval conductance further:
-              if (UseCMEEFitting) then
+              if (NameModelIn == 'CMEE') then
                  hall=hall + CondFactor*( &
                       FactorHallCMEE*exp(-(distance/(OvalWidthFactor &
                       * Width_of_Oval(j)))**2))
