@@ -654,6 +654,7 @@ contains
     tSimulationTmp = tSimulation
     call IE_run(tSimulationTmp,tSimulation)
 
+    Buffer_IIV = 0.0
     select case(NameHem)
 
     case('North')
