@@ -5,6 +5,7 @@
 module ModConductance
 
   use ModIonosphere
+  use ModMagnit, ONLY: magnit_gen_fluxes
 
   implicit none
   save
@@ -17,7 +18,7 @@ module ModConductance
        SigmaPar       = 1000.0      ! Parallel conductance, Siemens
 
   ! Logicals to control what conductance sources are used.
-  logical :: DoUseEuvCond=.false., DoUseAurora=.false.
+  logical :: DoUseEuvCond=.true., DoUseAurora=.true.
 
   ! Name of auroral model to use, defaults to 'RLM5'
   character(len=8) :: NameAuroraMod = 'RLM5'
@@ -130,7 +131,8 @@ contains
 
     ! Add aurora conductances.  Aurora models obtain/calculate average energy
     ! and energy flux for diffuse, discrete, and broadband precipitation
-    ! (all default to zero).
+    ! (all default to zero). Each "case" clause should fill the appropriate
+    ! conductance and precipitation arrays (either here or in subroutine calls)
     if (DoUseAurora) then
        ! Obtain average energy and energy flux values based on
        ! selected aurora model:
@@ -142,11 +144,17 @@ contains
           call facs_to_fluxes(trim(NameAuroraMod), NameHemiIn, &
                AvgEMono_II, EfluxMono_II)
           ! Convert average energy/energy flux into conductance:
-          call flux_to_sigma(IONO_nTheta,IONO_nPsi, AvgEMono_II, &
+          call flux_to_sigma(IONO_nTheta, IONO_nPsi, AvgEMono_II, &
                1000.*EFluxMono_II, SigmaHalAur_II, SigmaPedAur_II)
 
        case('MAGNIT')
-          ! call magnit_fluxes(NameHemiIn)
+          ! MAGNIT sets precipitating fluxes.
+          call magnit_gen_fluxes(NameHemiIn, &
+               AvgEDiffe_II, AvgEDiffi_II, AvgEMono_II, AvgEBbnd_II, &
+               EfluxDiffe_II, EfluxDiffi_II, EfluxMono_II, EfluxBbnd_II)
+          ! Convert fluxes to conductances:
+          call flux_to_sigma(IONO_nTheta, IONO_nPsi, AvgEMono_II, &
+               1000.*EFluxMono_II, SigmaHalAur_II, SigmaPedAur_II)
 
        case default
           call CON_stop(NameSub//': Unrecognized auroral model - ' &
