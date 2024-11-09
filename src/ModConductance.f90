@@ -5,7 +5,7 @@
 module ModConductance
 
   use ModIonosphere
-  use ModMagnit, ONLY: magnit_gen_fluxes
+!!!  use ModMagnit, ONLY: magnit_gen_fluxes
 
   implicit none
   save
@@ -149,9 +149,9 @@ contains
 
        case('MAGNIT')
           ! MAGNIT sets precipitating fluxes.
-          call magnit_gen_fluxes(NameHemiIn, &
-               AvgEDiffe_II, AvgEDiffi_II, AvgEMono_II, AvgEBbnd_II, &
-               EfluxDiffe_II, EfluxDiffi_II, EfluxMono_II, EfluxBbnd_II)
+!!!          call magnit_gen_fluxes(NameHemiIn, &
+!!!               AvgEDiffe_II, AvgEDiffi_II, AvgEMono_II, AvgEBbnd_II, &
+!!!               EfluxDiffe_II, EfluxDiffi_II, EfluxMono_II, EfluxBbnd_II)
           ! Convert fluxes to conductances:
           call flux_to_sigma(IONO_nTheta, IONO_nPsi, AvgEMono_II, &
                1000.*EFluxMono_II, SigmaHalAur_II, SigmaPedAur_II)

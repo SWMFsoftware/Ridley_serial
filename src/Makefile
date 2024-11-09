@@ -33,8 +33,9 @@ MODULES = \
 	ModProcIE.o\
 	ModIE_Interface.o\
 	ModFiles.o\
-	ModConductance.o \
-	ModMagnit.o
+	ModConductance.o
+###	ModMagnit.o
+
 #
 #	Object Lists
 #
