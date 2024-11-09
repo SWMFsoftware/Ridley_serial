@@ -1,1 +1,0 @@
-/home/dwelling/swmf_stuff/conddev/srcMagnit/ModMagnit.f90
