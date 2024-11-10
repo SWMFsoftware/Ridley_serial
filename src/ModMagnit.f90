@@ -63,8 +63,8 @@ module ModMagnit
     end if
 
   end subroutine print_magnit_config
-
   !============================================================================
+
   subroutine magnit_gen_fluxes(NameHemiIn, &
       AvgEDiffe_II, AvgEDiffi_II, AvgEMono_II, AvgEBbnd_II, &
       EfluxDiffe_II, EfluxDiffi_II, EfluxMono_II, EfluxBbnd_II)
@@ -104,7 +104,7 @@ module ModMagnit
     if(NameHemiIn == 'north')then
         MagP_II = iono_north_p
         MagNp_II = iono_north_rho / cProtonMass
-    else if (NameHemiIn.eq.'south')then
+    else if (NameHemiIn == 'south')then
         MagP_II = iono_south_p
         MagRho_II = iono_south_rho / cProtonMass
     else
@@ -148,4 +148,4 @@ module ModMagnit
   end subroutine magnit_gen_fluxes
   !============================================================================
 
-end module ModMagnit
+end module ModMagnit!==============================================================================
