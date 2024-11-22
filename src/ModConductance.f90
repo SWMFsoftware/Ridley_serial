@@ -464,12 +464,14 @@ contains
           StarLightCond  = 0.0
           PolarCapPedCond= 0.0
           DoUseEuvCond = .false.
+          DoUseAurora  = .false.
        case(1) ! Constant conductance; no background
           SigmaHalConst  = PolarCapIn
           SigmaPedConst  = StarLightIn
           StarLightCond  = 0.0
           PolarCapPedCond= 0.0
           DoUseEuvCond = .false.
+          DoUseAurora  = .false.
        case(2) ! Constant conductance + dayside conductance:
           ! Note that in the legacy model, StarLightPedConductance is
           ! used to set constant hall and ped; hall is multiplied by 2.
