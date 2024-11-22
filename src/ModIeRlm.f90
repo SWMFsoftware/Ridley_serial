@@ -23,10 +23,10 @@ module ModIeRlm
   ! Auroral oval options:
   logical :: &
        UseOval=.true.,         &  ! Apply oval?  CAUTION: Doesn't turn off oval!
-       UseNewOval = .false.,   &  ! Use new oval calculation?
+       UseNewOval = .true.,    &  ! Use new oval calculation?
        DoOvalShift=.true.,     &  ! Shift oval along noon-midnight meridian?
        UseSubOvalCond=.false., &  ! Apply conductance at sub-aurora latitudes?
-       DoFitCircle=.true.         ! Set shape of new oval to pure circle?
+       DoFitCircle=.false.        ! Set shape of new oval to pure circle?
 
   ! RLM & CMEE conductance coefficient information:
   ! Coefficients for conductance based on FAC:
