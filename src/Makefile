@@ -33,8 +33,8 @@ MODULES = \
 	ModProcIE.o\
 	ModIE_Interface.o\
 	ModFiles.o\
+	ModMagnit.o\
 	ModConductance.o
-###	ModMagnit.o
 
 #
 #	Object Lists
@@ -49,9 +49,9 @@ OBJECTS = \
 	create_auroral_oval.o\
 	iono_currents.o\
 	iono_joule.o\
-        iono_solver.o\
+	iono_solver.o\
 	Create_Region2_Currents.o\
-        ionosphere.o\
+	ionosphere.o\
 	facs_to_fluxes.o
 
 #
