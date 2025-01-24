@@ -130,14 +130,23 @@ module ModIonosphere
   real, allocatable :: iono_north_im_eflux(:,:)
   real, allocatable :: iono_south_im_eflux(:,:)
   ! Sources of Conductances
-  real, allocatable :: IONO_NORTH_DIFF_Ave_E(:,:)
-  real, allocatable :: IONO_SOUTH_DIFF_Ave_E(:,:)
+  real, allocatable :: IONO_NORTH_DIFFI_Ave_E(:,:)
+  real, allocatable :: IONO_SOUTH_DIFFI_Ave_E(:,:)
+  real, allocatable :: IONO_NORTH_DIFFE_Ave_E(:,:)
+  real, allocatable :: IONO_SOUTH_DIFFE_Ave_E(:,:)
   real, allocatable :: IONO_NORTH_MONO_Ave_E(:,:)
   real, allocatable :: IONO_SOUTH_MONO_Ave_E(:,:)
-  real, allocatable :: IONO_NORTH_DIFF_EFlux(:,:)
-  real, allocatable :: IONO_SOUTH_DIFF_EFlux(:,:)
+  real, allocatable :: IONO_NORTH_BBND_Ave_E(:,:)
+  real, allocatable :: IONO_SOUTH_BBND_Ave_E(:,:)
+
+  real, allocatable :: IONO_NORTH_DIFFI_EFlux(:,:)
+  real, allocatable :: IONO_SOUTH_DIFFI_EFlux(:,:)
+  real, allocatable :: IONO_NORTH_DIFFE_EFlux(:,:)
+  real, allocatable :: IONO_SOUTH_DIFFE_EFlux(:,:)
   real, allocatable :: IONO_NORTH_MONO_EFlux(:,:)
   real, allocatable :: IONO_SOUTH_MONO_EFlux(:,:)
+  real, allocatable :: IONO_NORTH_BBND_EFlux(:,:)
+  real, allocatable :: IONO_SOUTH_BBND_EFlux(:,:)
 
   logical, allocatable :: IsFilledWithIm(:,:)
 
@@ -296,19 +305,31 @@ contains
     allocate(C_D(IONO_nTheta,IONO_nPsi))
     allocate(C_E(IONO_nTheta,IONO_nPsi))
     ! Sources of Conductances
-    allocate(IONO_NORTH_DIFF_Ave_E(IONO_nTheta,IONO_nPsi))
-    allocate(IONO_SOUTH_DIFF_Ave_E(IONO_nTheta,IONO_nPsi))
+    allocate(IONO_NORTH_DIFFI_Ave_E(IONO_nTheta,IONO_nPsi))
+    allocate(IONO_SOUTH_DIFFI_Ave_E(IONO_nTheta,IONO_nPsi))
+    allocate(IONO_NORTH_DIFFE_Ave_E(IONO_nTheta,IONO_nPsi))
+    allocate(IONO_SOUTH_DIFFE_Ave_E(IONO_nTheta,IONO_nPsi))
     allocate(IONO_NORTH_MONO_Ave_E(IONO_nTheta,IONO_nPsi))
     allocate(IONO_SOUTH_MONO_Ave_E(IONO_nTheta,IONO_nPsi))
-    allocate(IONO_NORTH_DIFF_EFlux(IONO_nTheta,IONO_nPsi))
-    allocate(IONO_SOUTH_DIFF_EFlux(IONO_nTheta,IONO_nPsi))
+    allocate(IONO_NORTH_BBND_Ave_E(IONO_nTheta,IONO_nPsi))
+    allocate(IONO_SOUTH_BBND_Ave_E(IONO_nTheta,IONO_nPsi))
+    allocate(IONO_NORTH_DIFFI_EFlux(IONO_nTheta,IONO_nPsi))
+    allocate(IONO_SOUTH_DIFFI_EFlux(IONO_nTheta,IONO_nPsi))
+    allocate(IONO_NORTH_DIFFE_EFlux(IONO_nTheta,IONO_nPsi))
+    allocate(IONO_SOUTH_DIFFE_EFlux(IONO_nTheta,IONO_nPsi))
     allocate(IONO_NORTH_MONO_EFlux(IONO_nTheta,IONO_nPsi))
     allocate(IONO_SOUTH_MONO_EFlux(IONO_nTheta,IONO_nPsi))
+    allocate(IONO_NORTH_BBND_EFlux(IONO_nTheta,IONO_nPsi))
+    allocate(IONO_SOUTH_BBND_EFlux(IONO_nTheta,IONO_nPsi))
 
-    IONO_NORTH_DIFF_Ave_E = 0.; IONO_NORTH_DIFF_EFlux = 0.
-    IONO_SOUTH_DIFF_Ave_E = 0.; IONO_SOUTH_DIFF_EFlux = 0.
+    IONO_NORTH_DIFFI_Ave_E = 0.; IONO_NORTH_DIFFI_EFlux = 0.
+    IONO_SOUTH_DIFFI_Ave_E = 0.; IONO_SOUTH_DIFFI_EFlux = 0.
+    IONO_NORTH_DIFFE_Ave_E = 0.; IONO_NORTH_DIFFE_EFlux = 0.
+    IONO_SOUTH_DIFFE_Ave_E = 0.; IONO_SOUTH_DIFFE_EFlux = 0.
     IONO_NORTH_MONO_Ave_E = 0.; IONO_NORTH_MONO_EFlux = 0.
     IONO_SOUTH_MONO_Ave_E = 0.; IONO_SOUTH_MONO_EFlux = 0.
+    IONO_NORTH_BBND_Ave_E = 0.; IONO_NORTH_BBND_EFlux = 0.
+    IONO_SOUTH_BBND_Ave_E = 0.; IONO_SOUTH_BBND_EFlux = 0.
 
     allocate(IONO_NORTH_GEO_XyzD(3, IONO_nTheta, IONO_nPsi))
     allocate(IONO_NORTH_GSE_XyzD(3, IONO_nTheta, IONO_nPsi))
@@ -317,6 +338,7 @@ contains
 
     IONO_NORTH_GEO_XyzD = 0.; IONO_NORTH_GSE_XyzD = 0
     IONO_SOUTH_GEO_XyzD = 0.; IONO_SOUTH_GSE_XyzD = 0
+
 
   end subroutine init_mod_ionosphere
   !============================================================================
@@ -444,15 +466,24 @@ contains
     deallocate(IONO_SOUTH_GEO_XyzD)
     deallocate(IONO_SOUTH_GSE_XyzD)
 
+
     ! Sources of Conductances
-    deallocate(IONO_NORTH_DIFF_Ave_E)
-    deallocate(IONO_SOUTH_DIFF_Ave_E)
+    deallocate(IONO_NORTH_DIFFI_Ave_E)
+    deallocate(IONO_SOUTH_DIFFI_Ave_E)
+    deallocate(IONO_NORTH_DIFFE_Ave_E)
+    deallocate(IONO_SOUTH_DIFFE_Ave_E)
     deallocate(IONO_NORTH_MONO_Ave_E)
     deallocate(IONO_SOUTH_MONO_Ave_E)
-    deallocate(IONO_NORTH_DIFF_EFlux)
-    deallocate(IONO_SOUTH_DIFF_EFlux)
+    deallocate(IONO_NORTH_BBND_Ave_E)
+    deallocate(IONO_SOUTH_BBND_Ave_E)
+    deallocate(IONO_NORTH_DIFFI_EFlux)
+    deallocate(IONO_SOUTH_DIFFI_EFlux)
+    deallocate(IONO_NORTH_DIFFE_EFlux)
+    deallocate(IONO_SOUTH_DIFFE_Eflux)
     deallocate(IONO_NORTH_MONO_EFlux)
     deallocate(IONO_SOUTH_MONO_EFlux)
+    deallocate(IONO_NORTH_BBND_EFlux)
+    deallocate(IONO_SOUTH_BBND_EFlux)
 
   end subroutine clean_mod_ionosphere
   !============================================================================
