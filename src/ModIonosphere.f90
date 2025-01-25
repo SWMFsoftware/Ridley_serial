@@ -339,7 +339,6 @@ contains
     IONO_NORTH_GEO_XyzD = 0.; IONO_NORTH_GSE_XyzD = 0
     IONO_SOUTH_GEO_XyzD = 0.; IONO_SOUTH_GSE_XyzD = 0
 
-
   end subroutine init_mod_ionosphere
   !============================================================================
 
@@ -465,7 +464,6 @@ contains
     deallocate(IONO_NORTH_GSE_XyzD)
     deallocate(IONO_SOUTH_GEO_XyzD)
     deallocate(IONO_SOUTH_GSE_XyzD)
-
 
     ! Sources of Conductances
     deallocate(IONO_NORTH_DIFFI_Ave_E)
