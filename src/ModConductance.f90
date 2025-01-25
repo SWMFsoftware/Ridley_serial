@@ -623,9 +623,9 @@ contains
                      (rPlanet_I(Earth_)/(rPlanet_I(Earth_) + &
                      IonoHeightPlanet_I(Earth_)))**3 * &
                      sqrt(1 + 3*(sin(LatIn_II)**2))
-        SigmaPOut_II = 5.7 * sqrt(eFluxIn_II) * (BDipole_II / 54e-6)**-1.45
+        SigmaPOut_II = 5.7 * sqrt(eFluxIn_II) * (BDipole_II / 54e-6)**(-1.45)
         SigmaHOut_II = 2.6 * AveEIn_II**0.3 * sqrt(eFluxIn_II) &
-            * (BDipole_II / 54e-6)**-1.90
+            * (BDipole_II / 54e-6)**(-1.90)
     case('kaep')
     end select
 
