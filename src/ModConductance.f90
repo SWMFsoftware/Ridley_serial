@@ -170,6 +170,8 @@ contains
 !          ! Convert fluxes to conductances:
           call flux_to_sigma(IONO_nTheta, IONO_nPsi, AvgEMono_II, &
                1000.*EFluxMono_II, SigmaHalMono_II, SigmaPedMono_II)
+          call flux_to_sigma(IONO_nTheta, IONO_nPsi, AvgEBbnd_II, &
+               1000.*EfluxBbnd_II, SigmaHalBbnd_II, SigmaPedBbnd_II)
           call flux_to_sigma(IONO_nTheta, IONO_nPsi, AvgEDiffe_II, &
                1000.*EFluxDiffe_II, SigmaHalDiffe_II, SigmaPedDiffe_II)
           call flux_to_sigma(IONO_nTheta, IONO_nPsi, AvgEDiffi_II, &
@@ -204,13 +206,13 @@ contains
        IONO_NORTH_SigmaP = sqrt(SigmaPedConst**2 + SigmaPedEuv_II**2 + &
             StarLightCond**2 + SigmaPedMono_II**2 + SigmaPedDiffe_II**2 + &
             SigmaPedDiffi_II**2)
+       ! Add broadband conductance:
+       IONO_NORTH_SigmaH = IONO_NORTH_SigmaH + SigmaHalBbnd_II
+       IONO_NORTH_SigmaP = IONO_NORTH_SigmaP + SigmaPedBbnd_II
        write(*,*)'Total Hall Conductance'
        write(*,'(f0.30)')MAXVAL(IONO_NORTH_SigmaH),MINVAL(IONO_NORTH_SigmaH)
        write(*,*)'Total Pedersen Conductance'
        write(*,'(f0.30)')MAXVAL(IONO_NORTH_SigmaP),MINVAL(IONO_NORTH_SigmaP)
-       ! Add broadband conductance:
-       IONO_NORTH_SigmaH = IONO_NORTH_SigmaH + SigmaHalBbnd_II
-       IONO_NORTH_SigmaP = IONO_NORTH_SigmaP + SigmaPedBbnd_II
        ! Store Average energy and energy flux:
        IONO_NORTH_EFlux = EfluxMono_II
        IONO_NORTH_Ave_E = AvgEMono_II
