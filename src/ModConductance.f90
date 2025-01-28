@@ -153,7 +153,8 @@ contains
           ! MAGNIT sets precipitating fluxes.
           call magnit_gen_fluxes(NameHemiIn, &
                AvgEDiffe_II, AvgEDiffi_II, AvgEMono_II, AvgEBbnd_II, &
-               EfluxDiffe_II, EfluxDiffi_II, EfluxMono_II, EfluxBbnd_II)
+               EfluxDiffe_II, EfluxDiffi_II, EfluxMono_II, EfluxBbnd_II, &
+               theta)
 
           if(DoTest) then
               write(*,*)'Ion Energy Flux'
@@ -166,14 +167,17 @@ contains
               write(*,'(f0.30)')MAXVAL(AvgEDiffe_II),MINVAL(AvgEDiffe_II)
           end if
 
-          ! Convert fluxes to conductances:
+!          ! Convert fluxes to conductances:
           call flux_to_sigma(IONO_nTheta, IONO_nPsi, AvgEMono_II, &
                1000.*EFluxMono_II, SigmaHalMono_II, SigmaPedMono_II)
           call flux_to_sigma(IONO_nTheta, IONO_nPsi, AvgEDiffe_II, &
                1000.*EFluxDiffe_II, SigmaHalDiffe_II, SigmaPedDiffe_II)
           call flux_to_sigma(IONO_nTheta, IONO_nPsi, AvgEDiffi_II, &
                1000.*EFluxDiffi_II, SigmaHalDiffi_II, SigmaPedDiffi_II, 'gala', theta)
-
+          write(*,*)'Discrete Hall Conductance'
+          write(*,'(f0.30)')MAXVAL(SigmaHalMono_II),MINVAL(SigmaHalMono_II)
+          write(*,*)'Discrete Pedersen Conductance'
+          write(*,'(f0.30)')MAXVAL(SigmaPedMono_II),MINVAL(SigmaPedMono_II)
           if(DoTest) then
               write(*,*)'Ion Hall Conductance'
               write(*,'(f0.30)')MAXVAL(SigmaHalDiffi_II),MINVAL(SigmaHalDiffi_II)
@@ -200,6 +204,10 @@ contains
        IONO_NORTH_SigmaP = sqrt(SigmaPedConst**2 + SigmaPedEuv_II**2 + &
             StarLightCond**2 + SigmaPedMono_II**2 + SigmaPedDiffe_II**2 + &
             SigmaPedDiffi_II**2)
+       write(*,*)'Total Hall Conductance'
+       write(*,'(f0.30)')MAXVAL(IONO_NORTH_SigmaH),MINVAL(IONO_NORTH_SigmaH)
+       write(*,*)'Total Pedersen Conductance'
+       write(*,'(f0.30)')MAXVAL(IONO_NORTH_SigmaP),MINVAL(IONO_NORTH_SigmaP)
        ! Add broadband conductance:
        IONO_NORTH_SigmaH = IONO_NORTH_SigmaH + SigmaHalBbnd_II
        IONO_NORTH_SigmaP = IONO_NORTH_SigmaP + SigmaPedBbnd_II
@@ -217,6 +225,7 @@ contains
        ! Place values into convenience arrays to calculate derivatives:
        SigmaH = IONO_NORTH_SigmaH
        sigmaP = IONO_NORTH_SigmaP
+
     else
        IONO_SOUTH_Sigma0 = SigmaPar
        IONO_SOUTH_SigmaH = sqrt(SigmaHalConst**2 + SigmaHalEuv_II**2 + &
@@ -618,14 +627,11 @@ contains
            / (16. + AveEIn_II**2)
        SigmaHOut_II = 0.45 * SigmaPOut_II * AveEIn_II**0.85
     case('gala')
-        ! Approach and coefficients are from Galand and Richmod, 2001
-        BDipole_II = -DipoleStrengthPlanet_I(Earth_) * &
-                     (rPlanet_I(Earth_)/(rPlanet_I(Earth_) + &
-                     IonoHeightPlanet_I(Earth_)))**3 * &
-                     sqrt(1 + 3*(sin(LatIn_II)**2))
-        SigmaPOut_II = 5.7 * sqrt(eFluxIn_II) * (BDipole_II / 54e-6)**(-1.45)
+        BDipole_II = -DipoleStrengthPlanet_I(Earth_) * (rPlanet_I(Earth_)/(rPlanet_I(Earth_) + IonoHeightPlanet_I(Earth_)))**3 &
+                * sqrt(1 + 3*(sin(LatIn_II)**2))
+        SigmaPOut_II = 5.7 * sqrt(eFluxIn_II) * (BDipole_II / 54e-6)**-1.45
         SigmaHOut_II = 2.6 * AveEIn_II**0.3 * sqrt(eFluxIn_II) &
-            * (BDipole_II / 54e-6)**(-1.90)
+            * (BDipole_II / 54e-6)**-1.90
     case('kaep')
     end select
 

@@ -4,7 +4,7 @@
 
 module ModMagnit
 
-  use ModConst, ONLY: cBoltzmann, cProtonMass, cElectronMass, cKToKEV, cKEVToK
+  use ModConst, ONLY: cBoltzmann, cProtonMass, cElectronMass, cElectronCharge, cKToKEV, cKEVToK
   use ModUtilities, ONLY: CON_stop, CON_set_do_test
   use ModIonosphere, ONLY: IONO_nTheta, IONO_nPsi
 
@@ -54,11 +54,15 @@ module ModMagnit
 
   subroutine magnit_gen_fluxes(NameHemiIn, &
       AvgEDiffe_II, AvgEDiffi_II, AvgEMono_II, AvgEBbnd_II, &
-      EfluxDiffe_II, EfluxDiffi_II, EfluxMono_II, EfluxBbnd_II)
+      EfluxDiffe_II, EfluxDiffi_II, EfluxMono_II, EfluxBbnd_II, &
+      LatIn_II)
 
     use ModConst, ONLY: cPi, cKEV
     use ModIonosphere, ONLY: IONO_North_p, IONO_North_rho, &
-        IONO_South_p, IONO_South_rho
+        IONO_South_p, IONO_South_rho, IONO_NORTH_JR, IONO_SOUTH_JR, &
+        IONO_NORTH_invB, IONO_SOUTH_invB
+    use ModConductance, ONLY: cFACFloor
+    use ModPlanetConst, ONLY: rPlanet_I, IonoHeightPlanet_I, Earth_
 
     ! Given magnetospheric density, pressure, and FACs, calculate diffuse and
     ! monoenergetic precipitating fluxes.
@@ -74,10 +78,16 @@ module ModMagnit
         AvgEDiffe_II, AvgEDiffi_II, AvgEMono_II, AvgEBbnd_II, &
         EfluxDiffe_II, EfluxDiffi_II, EfluxMono_II, EfluxBbnd_II
 
+    ! Import Hemispheric Latitudes for Magnetic Field Calculations
+    real, intent(in), dimension(IONO_nTheta, IONO_nPsi) :: LatIn_II
+
     ! Set arrays to hold magnetospheric values.
     real, dimension(IONO_nTheta, IONO_nPsi) :: &
-        MagP_II, MagNp_II, MagPe_II, MagNe_II, NfluxDiffe_II, NfluxDiffi_II
+        MagP_II, MagNp_II, MagPe_II, MagNe_II, NfluxDiffe_II, NfluxDiffi_II, NfluxMono_II, &
+        OCFL_II, NumCoefficient_II=0, Potential_II=0, BRatio_II=0, VExponent_II=0, &
+        PotentialTerm_II=0, MagneticTerm_II=0, FAC_II=0
 
+    real :: numflux_floor
     integer :: j
 
     ! Debug variables:
@@ -92,13 +102,18 @@ module ModMagnit
     if(NameHemiIn == 'north')then
         MagP_II = iono_north_p
         MagNp_II = iono_north_rho / cProtonMass
+        FAC_II = IONO_NORTH_JR
+        OCFL_II = IONO_NORTH_invB
     else if (NameHemiIn == 'south')then
         MagP_II = iono_south_p
         MagNp_II = iono_south_rho / cProtonMass
+        FAC_II = IONO_SOUTH_JR
+        OCFL_II = IONO_SOUTH_invB
     else
       call CON_stop(NameSub//' : unrecognized hemisphere - '//NameHemiIn)
     end if
 
+    ! Set default/background values - TBD.
     ! If we need OCFLB calculation, we would put it here.
 
     ! If not using explicit Pe from GM, obtain values from proton values.
@@ -133,6 +148,92 @@ module ModMagnit
                     AvgEDiffe_II**1.5 / sqrt(2 * cPi * cElectronMass)
     ! Recalc to make consistent with ConeFactors (and get units of keV)
     AvgEDiffe_II = EfluxDiffe_II / (NfluxDiffe_II * cKEV)
+
+    ! Calculate discrete electron precipitation
+    numflux_floor = cFACFloor/cElectronCharge
+
+    ! Calculate Nflux from current
+    where (FAC_II < cFACFloor .or. OCFL_II < 0) &
+      NfluxMono_II = numflux_floor
+    where (FAC_II > cFACFloor .and. OCFL_II > 0)
+      NfluxMono_II = FAC_II / cElectronCharge
+      ! Calculate Parallel Potential Drop
+      ! Calculate large coefficient in numerator "Numerator Coefficient"
+      NumCoefficient_II = NfluxMono_II * sqrt(2 * cPi * cElectronMass) / &
+              (ConeNfluxMono * MagNe_II * sqrt(AvgEDiffe_II * cKEV))
+
+      ! Calculate ratio of ionospheric magnetic field to plasma sheet magnetic field
+      BRatio_II = (rPlanet_I(Earth_) / (sin(LatIn_II)**2 * &
+              (rPlanet_I(Earth_) + IonoHeightPlanet_I(Earth_))))**3 * &
+              sqrt(1 + 3*sin(LatIn_II)**2)
+!      where (BRatio_II > 100000)
+!        BRatio_II = 100000
+!      end where
+
+      ! Potential calculations only valid where NumCoefficient <= BRatio
+      where(NumCoefficient_II <= 1) ! Fixed to prevent negative Potential
+        ! Put it all together into potential
+        Potential_II = - AvgEDiffe_II * cKEV / cElectronCharge * (1 - BRatio_II) * &
+                LOG((BRatio_II - NumCoefficient_II) / (BRatio_II - 1))
+      end where
+
+      ! For right now, where this condition is not true, we will assume no
+      ! parallel potential drop. This is a development choice, not a
+      ! Scientific choice. Of note, if drop is actually 0, j ~ 10^-6 A/m^2
+      ! (I don't know how we should handle these :D)
+
+      ! Huge formula broken down into a few more steps
+
+      ! Calculate large potential exponent that gets reused a bunch
+      VExponent_II = EXP(-cElectronCharge * Potential_II / (AvgEDiffe_II * cKEV) * &
+              (1/(BRatio_II - 1)))
+
+      ! Calculate first product term
+      PotentialTerm_II = ((1 - VExponent_II) / (2 + 2 * ((1 - 1/BRatio_II) * &
+              VExponent_II)) * cElectronCharge * Potential_II) + AvgEDiffe_II * cKEV
+
+      ! Calculate second product term
+      MagneticTerm_II = BRatio_II - ((BRatio_II - 1) * VExponent_II)
+
+      ! Calculate final Eflux values
+      EfluxMono_II = ConeEfluxMono * 2 * MagNe_II * sqrt(AvgEDiffe_II * cKEV) / &
+              sqrt(2 * cPi * cElectronMass) * PotentialTerm_II * MagneticTerm_II
+
+      ! Recalculates NFlux ?????
+      NfluxMono_II = ConeNfluxMono * MagNe_II * sqrt(AvgEDiffe_II * cKEV) / &
+              sqrt(2 * cPi * cElectronMass) * MagneticTerm_II
+
+      ! Calculate Avg E in keV
+      AvgEMono_II = EfluxMono_II / (NfluxMono_II * cKEV)
+      end where
+    write(*,*)'Number Density'
+    write(*,'(f0.30)')MAXVAL(MagNe_II),MINVAL(MagNe_II)
+    write(*,*)'Temperature'
+    write(*,'(f0.30)')MAXVAL(AvgEDiffe_II),MINVAL(AvgEDiffe_II)
+    write(*,*)'Potential Numerator Coefficient'
+    write(*,'(f0.30)')MAXVAL(NumCoefficient_II),MINVAL(NumCoefficient_II)
+    write(*,*)'BRatio'
+    write(*,'(f0.30)')MAXVAL(BRatio_II),MINVAL(BRatio_II)
+    write(*,*)'Potential'
+    write(*,'(f0.30)')MAXVAL(Potential_II),MINVAL(Potential_II)
+    write(*,*)'Exponent'
+    write(*,'(f0.30)')MAXVAL(VExponent_II),MINVAL(VExponent_II)
+    write(*,*)'Potential Term'
+    write(*,'(f0.30)')MAXVAL(PotentialTerm_II),MINVAL(PotentialTerm_II)
+    write(*,*)'Magnetic Term'
+    write(*,'(f0.30)')MAXVAL(MagneticTerm_II),MINVAL(MagneticTerm_II)
+    write(*,*)'Discrete Energy Flux'
+    write(*,'(f0.30)')MAXVAL(EfluxMono_II),MINVAL(EfluxMono_II)
+    write(*,*)'Discrete Average Energy'
+    write(*,'(f0.30)')MAXVAL(AvgEMono_II),MINVAL(AvgEMono_II)
+    write(*,*)'Discrete Number Flux'
+    write(*,'(f0.30)')MAXVAL(NfluxMono_II),MINVAL(NfluxMono_II)
+!    write(*,*)'Diffuse Average Energy'
+!    write(*,'(f0.30)')MAXVAL(AvgEDiffe_II),MINVAL(AvgEDiffe_II)
+!    write(*,*)'Diffuse Energy Flux'
+!    write(*,'(f0.30)')MAXVAL(EfluxDiffe_II),MINVAL(EfluxDiffe_II)
+!    write(*,*)'Diffuse Number Flux'
+!    write(*,'(f0.30)')MAXVAL(NfluxDiffe_II),MINVAL(NfluxDiffe_II)
 
   end subroutine magnit_gen_fluxes
   !============================================================================
