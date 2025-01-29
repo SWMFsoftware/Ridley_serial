@@ -14,8 +14,10 @@ module ModMagnit
   ! Unit conversion factors and other constants:
   real, parameter :: cPtoKProt = cKToKEV/cBoltzmann
   real, parameter :: cPtoKElec = cElectronMass/cBoltzmann * cKToKEV
+  real, parameter :: cFACFloor = 1.0E-12 ! A/m2
 
-  ! Configuration parameters:
+
+          ! Configuration parameters:
   logical :: DoUseGmPe=.false.  ! Use electron pressure?
 
   ! Diffuse auroral parameters
@@ -61,7 +63,6 @@ module ModMagnit
     use ModIonosphere, ONLY: IONO_North_p, IONO_North_rho, &
         IONO_South_p, IONO_South_rho, IONO_NORTH_JR, IONO_SOUTH_JR, &
         IONO_NORTH_invB, IONO_SOUTH_invB, IONO_NORTH_Joule, IONO_SOUTH_Joule
-    use ModConductance, ONLY: cFACFloor
     use ModPlanetConst, ONLY: rPlanet_I, IonoHeightPlanet_I, Earth_
 
     ! Given magnetospheric density, pressure, and FACs, calculate diffuse and

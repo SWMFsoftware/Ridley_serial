@@ -14,7 +14,6 @@ module ModConductance
   real, parameter :: &
        IONO_Min_EFlux = 0.1e-16, &  ! W/m2
        IONO_Min_Ave_E = 0.5,     &  ! keV
-       cFACFloor      = 1.0E-12, &  ! A/m2
        SigmaPar       = 1000.0      ! Parallel conductance, Siemens
 
   ! Logicals to control what conductance sources are used.
