@@ -62,7 +62,8 @@ module ModMagnit
     use ModConst, ONLY: cPi, cKEV
     use ModIonosphere, ONLY: IONO_North_p, IONO_North_rho, &
         IONO_South_p, IONO_South_rho, IONO_NORTH_JR, IONO_SOUTH_JR, &
-        IONO_NORTH_invB, IONO_SOUTH_invB, IONO_NORTH_Joule, IONO_SOUTH_Joule
+        IONO_NORTH_invB, IONO_SOUTH_invB, IONO_NORTH_Joule, &
+        IONO_SOUTH_Joule
     use ModPlanetConst, ONLY: rPlanet_I, IonoHeightPlanet_I, Earth_
 
     ! Given magnetospheric density, pressure, and FACs, calculate diffuse and
@@ -85,7 +86,7 @@ module ModMagnit
     ! Set arrays to hold magnetospheric values.
     real, dimension(IONO_nTheta, IONO_nPsi) :: &
         MagP_II, MagNp_II, MagPe_II, MagNe_II, NfluxDiffe_II, NfluxDiffi_II, NfluxMono_II, &
-        NfluxBbnd_II, OCFL_II, NumCoefficient_II=0, Potential_II=0, BRatio_II=0, &
+        NfluxBbnd_II, OCFL_II, NumCoefficient_II=0, Potential_II=0, MirrorRatio_II=0, &
         VExponent_II=0, PotentialTerm_II=0, FAC_II=0, Joule_II=0, Poynting_II=0
 
     real :: numflux_floor
@@ -162,52 +163,49 @@ module ModMagnit
       NfluxMono_II = FAC_II / cElectronCharge
       ! Calculate Parallel Potential Drop
       ! Calculate large coefficient in numerator "Numerator Coefficient"
-      NumCoefficient_II = NfluxMono_II * sqrt(2 * cPi * cElectronMass) / &
-              (ConeNfluxMono * MagNe_II * sqrt(AvgEDiffe_II * cKEV))
+      NumCoefficient_II = NfluxMono_II / (ConeNfluxMono * NfluxDiffe_II)
 
       ! Calculate ratio of ionospheric magnetic field to plasma sheet magnetic field
-      BRatio_II = (rPlanet_I(Earth_) / (sin(LatIn_II)**2 * &
+      MirrorRatio_II = (rPlanet_I(Earth_) / (sin(LatIn_II)**2 * &
               (rPlanet_I(Earth_) + IonoHeightPlanet_I(Earth_))))**3 * &
               sqrt(1 + 3*sin(LatIn_II)**2)
 
       ! Potential calculations only valid where NumCoefficient <= 1
-      where(NumCoefficient_II <= 1)
+      where(1 <= NumCoefficient_II .and. NumCoefficient_II < MirrorRatio_II)
         ! Put it all together into potential
-        Potential_II = AvgEDiffe_II * cKEV / cElectronCharge * (BRatio_II - 1) * &
-                LOG((BRatio_II - NumCoefficient_II) / (BRatio_II - 1))
+        Potential_II = AvgEDiffe_II * cKEV / cElectronCharge * (1 - MirrorRatio_II) * &
+                LOG((MirrorRatio_II - NumCoefficient_II) / (MirrorRatio_II - 1))
       end where
 
       ! Split up large calculation into a few steps
-
       ! Calculate large potential exponent
-      VExponent_II = EXP(-cElectronCharge * Potential_II / (AvgEDiffe_II * cKEV) * &
-              (1/(BRatio_II - 1)))
+      VExponent_II = EXP(-cElectronCharge * Potential_II / ((AvgEDiffe_II * cKEV) * &
+              (MirrorRatio_II - 1)))
 
       ! Calculate product term
-      PotentialTerm_II = ((1 - VExponent_II) / (2 + 2 * ((1 - 1/BRatio_II) * &
+      PotentialTerm_II = ((1 - VExponent_II) / (2 + ((2 - 2/MirrorRatio_II) * &
               VExponent_II)) * cElectronCharge * Potential_II) + AvgEDiffe_II * cKEV
 
       ! Plug into equation for EFlux
-      EfluxMono_II = 2 * NfluxMono_II * ConeEfluxMono/ConeNfluxMono * PotentialTerm_II
+      EfluxMono_II = 2 * NfluxMono_II * ConeEfluxMono * PotentialTerm_II
 
       ! Calculate Avg E in keV
       AvgEMono_II = EfluxMono_II / (NfluxMono_II * cKEV)
-      end where
-    write(*,*)'Potential'
-    write(*,'(f0.30)')MAXVAL(Potential_II),MINVAL(Potential_II)
-    write(*,*)'Discrete Energy Flux'
-    write(*,'(f0.30)')MAXVAL(EfluxMono_II),MINVAL(EfluxMono_II)
-    write(*,*)'Discrete Average Energy'
-    write(*,'(f0.30)')MAXVAL(AvgEMono_II),MINVAL(AvgEMono_II)
+    end where
+!
+!    ! Calculate broadband electron precipitation
+!    ! Note: Joule Heating is in SI Units = W/m2
+     ! Need to figure out where this value came from,
+     ! I don't like a hardcoded 17 Sig Fig constant
+    where(Joule_II > 0)
+      Poynting_II = Joule_II * 0.43395593979143521 ! in W/m2
 
-    ! Calculate broadband electron precipitation
-    ! Note: Joule Heating is in SI Units = W/m2
-    Poynting_II = IONO_NORTH_Joule * 0.43395593979143521 ! in W/m2 ! Need to figure out where this value came from
+      ! Using empirical relationships from Zhang et al. 2015
+      EfluxBbnd_II = 2e-3 * (ConeEfluxBbnd * Poynting_II) ** 0.5
+      NfluxBbnd_II = 3e13 * (ConeNfluxBbnd * Poynting_II) ** 0.47
+      AvgEBbnd_II = EfluxBbnd_II / (NfluxBbnd_II * cKEV)
+    end where
 
-    ! Using empirical relationships from Zhang et al. 2015
-    EfluxBbnd_II = 2e-3 * (ConeEfluxBbnd * Poynting_II) ** 0.5
-    NfluxBbnd_II = 3e13 * (ConeNfluxBbnd * Poynting_II) ** 0.47
-    AvgEBbnd_II = EfluxBbnd_II / (NfluxBbnd_II * cKEV)
 
 
 

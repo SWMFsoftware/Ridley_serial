@@ -164,6 +164,14 @@ contains
               write(*,'(f0.30)')MAXVAL(EfluxDiffe_II),MINVAL(EfluxDiffe_II)
               write(*,*)'Electron Average Energy'
               write(*,'(f0.30)')MAXVAL(AvgEDiffe_II),MINVAL(AvgEDiffe_II)
+              write(*,*)'Discrete Energy Flux'
+              write(*,'(f0.30)')MAXVAL(EfluxMono_II),MINVAL(EfluxMono_II)
+              write(*,*)'Discrete Average Energy'
+              write(*,'(f0.30)')MAXVAL(AvgEMono_II),MINVAL(AvgEMono_II)
+              write(*,*)'Broadband Energy Flux'
+              write(*,'(f0.30)')MAXVAL(EfluxBbnd_II),MINVAL(EfluxBbnd_II)
+              write(*,*)'Broadband Average Energy'
+              write(*,'(f0.30)')MAXVAL(AvgEBbnd_II),MINVAL(AvgEBbnd_II)
           end if
 
 !          ! Convert fluxes to conductances:
@@ -175,10 +183,7 @@ contains
                1000.*EFluxDiffe_II, SigmaHalDiffe_II, SigmaPedDiffe_II)
           call flux_to_sigma(IONO_nTheta, IONO_nPsi, AvgEDiffi_II, &
                1000.*EFluxDiffi_II, SigmaHalDiffi_II, SigmaPedDiffi_II, 'gala', theta)
-          write(*,*)'Discrete Hall Conductance'
-          write(*,'(f0.30)')MAXVAL(SigmaHalMono_II),MINVAL(SigmaHalMono_II)
-          write(*,*)'Discrete Pedersen Conductance'
-          write(*,'(f0.30)')MAXVAL(SigmaPedMono_II),MINVAL(SigmaPedMono_II)
+
           if(DoTest) then
               write(*,*)'Ion Hall Conductance'
               write(*,'(f0.30)')MAXVAL(SigmaHalDiffi_II),MINVAL(SigmaHalDiffi_II)
@@ -188,6 +193,14 @@ contains
               write(*,'(f0.30)')MAXVAL(SigmaHalDiffe_II),MINVAL(SigmaHalDiffe_II)
               write(*,*)'Electron Pedersen Conductance'
               write(*,'(f0.30)')MAXVAL(SigmaPedDiffe_II),MINVAL(SigmaPedDiffe_II)
+              write(*,*)'Discrete Hall Conductance'
+              write(*,'(f0.30)')MAXVAL(SigmaHalMono_II),MINVAL(SigmaHalMono_II)
+              write(*,*)'Discrete Pedersen Conductance'
+              write(*,'(f0.30)')MAXVAL(SigmaPedMono_II),MINVAL(SigmaPedMono_II)
+              write(*,*)'Broadband Hall Conductance'
+              write(*,'(f0.30)')MAXVAL(SigmaHalBbnd_II),MINVAL(SigmaHalBbnd_II)
+              write(*,*)'Broadband Pedersen Conductance'
+              write(*,'(f0.30)')MAXVAL(SigmaPedBbnd_II),MINVAL(SigmaPedBbnd_II)
           end if
 
        case default
@@ -208,10 +221,6 @@ contains
        ! Add broadband conductance:
        IONO_NORTH_SigmaH = IONO_NORTH_SigmaH + SigmaHalBbnd_II
        IONO_NORTH_SigmaP = IONO_NORTH_SigmaP + SigmaPedBbnd_II
-       write(*,*)'Total Hall Conductance'
-       write(*,'(f0.30)')MAXVAL(IONO_NORTH_SigmaH),MINVAL(IONO_NORTH_SigmaH)
-       write(*,*)'Total Pedersen Conductance'
-       write(*,'(f0.30)')MAXVAL(IONO_NORTH_SigmaP),MINVAL(IONO_NORTH_SigmaP)
        ! Store Average energy and energy flux:
        IONO_NORTH_EFlux = EfluxMono_II
        IONO_NORTH_Ave_E = AvgEMono_II
