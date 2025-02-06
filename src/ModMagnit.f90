@@ -16,7 +16,6 @@ module ModMagnit
   real, parameter :: cPtoKElec = cElectronMass/cBoltzmann * cKToKEV
   real, parameter :: cFACFloor = 1.0E-12 ! A/m2
 
-
           ! Configuration parameters:
   logical :: DoUseGmPe=.false.  ! Use electron pressure?
 
@@ -205,9 +204,6 @@ module ModMagnit
       NfluxBbnd_II = 3e13 * (ConeNfluxBbnd * Poynting_II) ** 0.47
       AvgEBbnd_II = EfluxBbnd_II / (NfluxBbnd_II * cKEV)
     end where
-
-
-
 
   end subroutine magnit_gen_fluxes
   !============================================================================
