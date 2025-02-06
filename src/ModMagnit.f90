@@ -169,7 +169,7 @@ module ModMagnit
               (rPlanet_I(Earth_) + IonoHeightPlanet_I(Earth_))))**3 * &
               sqrt(1 + 3*sin(LatIn_II)**2)
 
-      ! Potential calculations only valid where NumCoefficient <= 1
+      ! Potential calculations only valid where 1 <= NumCoefficient <= MirrorRatio
       where(1 <= NumCoefficient_II .and. NumCoefficient_II < MirrorRatio_II)
         ! Put it all together into potential
         Potential_II = AvgEDiffe_II * cKEV / cElectronCharge * (1 - MirrorRatio_II) * &
