@@ -620,6 +620,7 @@ contains
     ! Local variables:
     character(len=4) :: NameModel='robi'
     real, dimension(IONO_nTheta,IONO_nPsi):: BDipole_II=0
+    real, parameter:: AvgELimit = 40.0
 
     logical :: DoTest, DoTestMe
     ! Set up defaults: ions and Robinson et al. 1987
@@ -631,11 +632,22 @@ contains
         NameModel = 'robi'
     end if
 
+    SigmaPOut_II = 0
+    SigmaHOut_II = 0
+
     select case(NameModel)
     case('robi')
+
        SigmaPOut_II = sqrt(eFluxIn_II) * (40. * AveEIn_II) &
            / (16. + AveEIn_II**2)
        SigmaHOut_II = 0.45 * SigmaPOut_II * AveEIn_II**0.85
+
+       ! Robinson formulas are only valid for 2-40 keV range,
+       ! we limit as such and scale down results at higher energy values
+       where(AveEIn_II > AvgELimit)
+           SigmaPOut_II = SigmaPOut_II * EXP((AvgELimit - AveEIn_II)/10)
+           SigmaHOut_II = SigmaHOut_II * EXP((AvgELimit - AveEIn_II)/10)
+       end where
     case('gala')
         BDipole_II = -DipoleStrengthPlanet_I(Earth_) * &
                 (rPlanet_I(Earth_)/(rPlanet_I(Earth_) + &
