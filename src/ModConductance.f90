@@ -182,7 +182,7 @@ contains
                1000.*EFluxMono_II, SigmaHalMono_II, SigmaPedMono_II)
           call flux_to_sigma(IONO_nTheta, IONO_nPsi, AvgEBbnd_II, &
                1000.*EfluxBbnd_II, SigmaHalBbnd_II, SigmaPedBbnd_II)
-          !call flux_to_sigma(IONO_nTheta, IONO_nPsi, AvgEDiffe_II, &
+          ! call flux_to_sigma(IONO_nTheta, IONO_nPsi, AvgEDiffe_II, &
           !     1000.*EFluxDiffe_II, SigmaHalDiffe_II, SigmaPedDiffe_II)
           call flux_to_sigma(IONO_nTheta, IONO_nPsi, AvgEDiffi_II, &
                1000.*EFluxDiffi_II, SigmaHalDiffi_II, SigmaPedDiffi_II, &
