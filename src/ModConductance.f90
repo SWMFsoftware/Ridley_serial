@@ -28,7 +28,7 @@ module ModConductance
        PolarCapPedCond=0.25  ! replaces PolarCapPedConductance
 
   ! Floor values for GM density and pressure, SI units:
-  real, parameter :: GmRhoFloor = 1E-21, GmPFloor = 1E-13
+  real, parameter :: GmRhoFloor = 1E-21, GmPFloor = 1E-13, GMPeFloor = 1E-13
 
   ! Arrays to hold components of conductance - 1 array
   ! for each source of conductance.  Long term storage for output files.
@@ -175,24 +175,32 @@ contains
           end if
 
 !          ! Convert fluxes to conductances:
+           ! Additional options should be added in param to control conductance
+           ! from various sources. Diffuse flux is commented out currently
+           ! to avoid double counting electron conductance.
           call flux_to_sigma(IONO_nTheta, IONO_nPsi, AvgEMono_II, &
                1000.*EFluxMono_II, SigmaHalMono_II, SigmaPedMono_II)
           call flux_to_sigma(IONO_nTheta, IONO_nPsi, AvgEBbnd_II, &
                1000.*EfluxBbnd_II, SigmaHalBbnd_II, SigmaPedBbnd_II)
-          call flux_to_sigma(IONO_nTheta, IONO_nPsi, AvgEDiffe_II, &
-               1000.*EFluxDiffe_II, SigmaHalDiffe_II, SigmaPedDiffe_II)
+          !call flux_to_sigma(IONO_nTheta, IONO_nPsi, AvgEDiffe_II, &
+          !     1000.*EFluxDiffe_II, SigmaHalDiffe_II, SigmaPedDiffe_II)
           call flux_to_sigma(IONO_nTheta, IONO_nPsi, AvgEDiffi_II, &
-               1000.*EFluxDiffi_II, SigmaHalDiffi_II, SigmaPedDiffi_II, 'gala', theta)
+               1000.*EFluxDiffi_II, SigmaHalDiffi_II, SigmaPedDiffi_II, &
+                  'gala', theta)
 
           if(DoTest) then
               write(*,*)'Ion Hall Conductance'
-              write(*,'(f0.30)')MAXVAL(SigmaHalDiffi_II),MINVAL(SigmaHalDiffi_II)
+              write(*,'(f0.30)')MAXVAL(SigmaHalDiffi_II), &
+                      MINVAL(SigmaHalDiffi_II)
               write(*,*)'Ion Pedersen Conductance'
-              write(*,'(f0.30)')MAXVAL(SigmaPedDiffi_II),MINVAL(SigmaPedDiffi_II)
+              write(*,'(f0.30)')MAXVAL(SigmaPedDiffi_II), &
+                      MINVAL(SigmaPedDiffi_II)
               write(*,*)'Electron Hall Conductance'
-              write(*,'(f0.30)')MAXVAL(SigmaHalDiffe_II),MINVAL(SigmaHalDiffe_II)
+              write(*,'(f0.30)')MAXVAL(SigmaHalDiffe_II), &
+                      MINVAL(SigmaHalDiffe_II)
               write(*,*)'Electron Pedersen Conductance'
-              write(*,'(f0.30)')MAXVAL(SigmaPedDiffe_II),MINVAL(SigmaPedDiffe_II)
+              write(*,'(f0.30)')MAXVAL(SigmaPedDiffe_II), &
+                      MINVAL(SigmaPedDiffe_II)
               write(*,*)'Discrete Hall Conductance'
               write(*,'(f0.30)')MAXVAL(SigmaHalMono_II),MINVAL(SigmaHalMono_II)
               write(*,*)'Discrete Pedersen Conductance'

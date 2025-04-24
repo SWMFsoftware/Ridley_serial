@@ -421,8 +421,8 @@ contains
          iProc_A = iProc_A)                           ! processor assigment
 
   end subroutine IE_set_grid
-  !============================================================================
 
+  !============================================================================
   subroutine IE_get_for_gm(Buffer_IIV, iSize, jSize, nVar, NameVar_I, &
        tSimulation)
 
@@ -702,10 +702,10 @@ contains
     use IE_ModMain, ONLY: IsNewInput
     use ModProcIE
     use ModIonosphere
-    use ModConductance, ONLY: GmRhoFloor, GmPFloor
+    use ModConductance, ONLY: GmRhoFloor, GmPFloor, GMPeFloor
 
     integer,          intent(in) :: iSize, jSize, nVar
-    integer                      :: i, j
+    integer                      :: i, j, iVar
     real                         :: Buffer_IIV(iSize, jSize, nVar)
 
     logical :: DoTest, DoTestMe
@@ -723,6 +723,13 @@ contains
     ! Set minimum acceptable values for density & pressure:
     where (Buffer_IIV(:,:,3) < GmRhoFloor) Buffer_IIV(:,:,3)=GmRhoFloor
     where (Buffer_IIV(:,:,4) < GmPFloor  ) Buffer_IIV(:,:,4)=GmPFloor
+    iVar = 7  ! Track variables after standard 6 to fill earliest space in Buffer
+    if (DoUseGMPe) then
+        where (Buffer_IIV(:,:,iVar) < GmPeFloor) Buffer_IIV(:,:,iVar)=GmPFloor
+        iVar = iVar + 1
+    end if
+    ! if (DoUseGMPpar) then ...
+    ! if (DoUseGMPepar) then ...
 
     if (iProc == 0) then
        Iono_North_Jr = Buffer_IIV(1:IONO_nTheta,:,1)
@@ -733,6 +740,11 @@ contains
           Iono_North_p    = Buffer_IIV(1:IONO_nTheta,:,4)
           Iono_North_dLat = Buffer_IIV(1:IONO_nTheta,:,5)
           Iono_North_dLon = Buffer_IIV(1:IONO_nTheta,:,6)
+          iVar = 7
+          if (DouseGMPe) then
+              Iono_North_Pe = Buffer_IIV(1:IONO_nTheta,:,iVar)
+              iVar = iVar + 1
+          end if
           if(DoTest) call write_dataN
        end if
     endif
@@ -745,6 +757,11 @@ contains
           Iono_South_p    = Buffer_IIV(IONO_nTheta:2*IONO_nTheta-1,:,4)
           Iono_South_dLat = Buffer_IIV(IONO_nTheta:2*IONO_nTheta-1,:,5)
           Iono_South_dLon = Buffer_IIV(IONO_nTheta:2*IONO_nTheta-1,:,6)
+          iVar = 7
+          if (DoUseGMPe) then
+              Iono_South_Pe = Buffer_IIV(IONO_nTheta:2*IONO_nTheta-1,:,iVar)
+              iVar = iVar + 1
+          end if
           if(DoTest) call write_dataS
        end if
     endif
@@ -1356,6 +1373,10 @@ contains
          interpolate_lookup_table
     use ModConductance, ONLY: f107_flux
     use ModKind
+    use ModIonosphere,  ONLY: DoUseGMPe, DoUseGMPpar, DoUseGMPepar
+    use ModProcessVarName,  ONLY: process_var_name
+    use CON_coupler, ONLY: Grid_C
+    use CON_comp_param, ONLY: GM_
 
     real, intent(inout) :: tSimulation   ! current time of component
 
@@ -1364,6 +1385,8 @@ contains
     real(Real8_) :: tStart, tNow
     real         :: tNowReal
     integer      :: nStep
+    logical      :: IsFirstCall = .true.
+    integer      :: nPeGm, nPparGM, nPeparGM
 
     logical :: DoTest, DoTestMe
     character(len=*), parameter:: NameSub = 'IE_run'
@@ -1372,6 +1395,18 @@ contains
 
     if(DoTest)write(*,*)NameSub,': iProc, tSimulation, tSimulationLimit=',&
          iProc, tSimulation, tSimulationLimit
+
+    if (IsFirstCall) then
+        call process_var_name(Grid_C(GM_)%NameVar, nPe=nPeGM, nPpar=nPparGM, &
+                nPePar=nPeparGM)
+        DoUseGMPe      =  nPeGM     > 0
+        DoUseGMPpar    =  nPparGM   > 0
+        DoUseGMPepar   =  nPeparGM  > 0
+        ! Print Configuration to screen
+        if (DoTest) write(*,*) 'IE: DoUseGMPe, DoUseGMPpar, DoUseGMPepar = ', &
+                 DoUseGMPe, DoUseGMPpar, DoUseGMPepar
+        IsFirstCall     = .false.
+    end if
 
     ! Store the current time
     time_simulation = tSimulation

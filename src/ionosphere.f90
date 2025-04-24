@@ -75,9 +75,11 @@ subroutine ionosphere_fine_grid
   use IE_ModMain, ONLY: conductance_model
   use ModIonosphere
   use ModConductance
+  use ModMagnit, ONLY: print_magnit_config
   use ModIeRlm
   use CON_planet, ONLY: get_planet, lNamePlanet
   use ModNumConst, ONLY: cHalfPi, cTwoPi
+
   implicit none
 
   integer :: i,j
@@ -140,12 +142,13 @@ subroutine ionosphere_fine_grid
            write(iUnitOut,'(10x,a,l1)')'UseSubOvalCond=',UseSubOvalCond
            write(iUnitOut,'(10x,a,l1)')'DoFitCircle=',   DoFitCircle
         case('MAGNIT')
-           write(iUnitOut,'(a)') "MAGNIT Physics-based Aurora"
-           write(iUnitOut,'(a)') "(Beta-testing Phase)"
-           write(*,*) '################## CAUTION ##################'
-           write(*,*) '(Beta Testing) The conductance calculations from MAGNIT are unstable.'
-           write(*,*) 'Please proceed with caution. For issues, please contact developers.'
-           write(*,*) '#############################################'
+           call print_magnit_config(iUnitOut)
+!           write(iUnitOut,'(a)') "MAGNIT Physics-based Aurora"
+!           write(iUnitOut,'(a)') "(Beta-testing Phase)"
+!           write(*,*) '################## CAUTION ##################'
+!           write(*,*) '(Beta Testing) The conductance calculations from MAGNIT are unstable.'
+!           write(*,*) 'Please proceed with caution. For issues, please contact developers.'
+!           write(*,*) '#############################################'
         case default
         end select
 
@@ -636,7 +639,7 @@ subroutine ionosphere_write_output(iFile, iBlock)
         case(min_vars)
            write(iUnit, '(I5,a)')  6, ' nvars'
         case(all_vars)
-           write(iUnit, '(I5,a)') 35, ' nvars'
+           write(iUnit, '(I5,a)') 38, ' nvars'
         case(uam_vars)                             !^CFG  IF TIEGCM
            write(iUnit, '(I5,a)')  9, ' nvars'     !^CFG  IF TIEGCM
         case(aur_vars)
@@ -670,8 +673,8 @@ subroutine ionosphere_write_output(iFile, iBlock)
            write(iUnit, '(I5,a)')  7, ' SigmaP [mhos]'
            write(iUnit, '(I5,a)')  8, ' E-Flux [W/m2]'
            write(iUnit, '(I5,a)')  9, ' Ave-E [keV]'
-           write(iUnit, '(I5,a)') 10, ' E-Flux-Mono [W/m2]'
-           write(iUnit, '(I5,a)') 11, ' Ave-E-Mono [keV]'
+           write(iUnit, '(I5,a)') 10, ' E-Flux-Elec [W/m2]'
+           write(iUnit, '(I5,a)') 11, ' Ave-E-Elec [keV]'
            write(iUnit, '(I5,a)') 12, ' E-Flux-Diffi [W/m2]'
            write(iUnit, '(I5,a)') 13, ' Ave-E-Diffi [keV]'
            write(iUnit, '(I5,a)') 14, ' E-Flux-Diffe [W/m2]'
@@ -694,8 +697,11 @@ subroutine ionosphere_write_output(iFile, iBlock)
            write(iUnit, '(I5,a)') 31, ' RT 1/B [1/T]'
            write(iUnit, '(I5,a)') 32, ' RT Rho [kg/m^3]'
            write(iUnit, '(I5,a)') 33, ' RT P [Pa]'
-           write(iUnit, '(I5,a)') 34, ' conjugate dLat [deg]'
-           write(iUnit, '(I5,a)') 35, ' conjugate dLon [deg]'
+           write(iUnit, '(I5,a)') 34, ' RT Ppar [Pa]'
+           write(iUnit, '(I5,a)') 35, ' RT Pe [Pa]'
+           write(iUnit, '(I5,a)') 36, ' RT Pepar [Pa]'
+           write(iUnit, '(I5,a)') 37, ' conjugate dLat [deg]'
+           write(iUnit, '(I5,a)') 38, ' conjugate dLon [deg]'
 
         case(uam_vars)                                  !^CFG  IF TIEGCM BEGIN
            write(iUnit, '(I5,a)')  1, ' Theta [deg]'
@@ -798,7 +804,8 @@ subroutine ionosphere_write_output(iFile, iBlock)
            write(iUnit, *)  ' "Ux [km/s]","Uy [km/s]","Uz [km/s]"'
            write(iUnit, *)  ' "JouleHeat [mW/m^2]"'
            write(iUnit, *)  ' "IonNumFlux [/cm^2/s]"'
-           write(iUnit, *)  ' "RT 1/B [1/T]","RT Rho [kg/m^3]","RT P [Pa]"'
+           write(iUnit, *)  ' "RT 1/B [1/T]","RT Rho [kg/m^3]","RT P [Pa]",&
+                              "RT Ppar [Pa]","RT Pe [Pa]","RT Pepar [Pa]"'
            write(iUnit, *)  ' "conjugate dLat [deg]"'
            write(iUnit, *)  ' "conjugate dLon [deg]"'
 
@@ -881,6 +888,7 @@ subroutine ionosphere_write_output(iFile, iBlock)
                    1.0e03*IONO_NORTH_Joule(i,j), &
                    1.0e-04*IONO_NORTH_IonNumFlux(i,j), &
                    IONO_NORTH_invB(i,j),IONO_NORTH_rho(i,j),IONO_NORTH_p(i,j), &
+                   IONO_NORTH_Ppar(i,j),IONO_NORTH_Pe(i,j),IONO_NORTH_Pepar(i,j),&
                    IONO_NORTH_dLat(i,j), &
                    IONO_NORTH_dLon(i,j)
            end do
@@ -999,6 +1007,7 @@ subroutine ionosphere_write_output(iFile, iBlock)
                    1.0e03*IONO_SOUTH_Joule(i,j), &
                    1.0e-04*IONO_SOUTH_IonNumFlux(i,j), &
                    IONO_SOUTH_invB(i,j),IONO_SOUTH_rho(i,j),IONO_SOUTH_p(i,j),&
+                   IONO_SOUTH_Ppar(i,j),IONO_SOUTH_Pe(i,j),IONO_SOUTH_Pepar(i,j),&
                    IONO_SOUTH_dLat(i,j), &
                    IONO_SOUTH_dLon(i,j)
            end do

@@ -32,6 +32,9 @@ module ModIonosphere
 
   real :: cpcp_north=0.0, cpcp_south=0.0
 
+  logical :: DoUseGMPe = .false., DoUseGMPpar = .false., &
+          DoUseGMPepar = .false.
+
   ! Ionosphere Solution on the whole grid
   real, allocatable :: IONO_Phi(:,:)
   real, allocatable :: IONO_IonNumFlux(:,:)
@@ -156,6 +159,12 @@ module ModIonosphere
   real, allocatable :: IONO_SOUTH_rho(:,:)
   real, allocatable :: IONO_NORTH_p(:,:)
   real, allocatable :: IONO_SOUTH_p(:,:)
+  real, allocatable :: IONO_NORTH_Ppar(:,:)
+  real, allocatable :: IONO_SOUTH_Ppar(:,:)
+  real, allocatable :: IONO_NORTH_Pe(:,:)
+  real, allocatable :: IONO_SOUTH_Pe(:,:)
+  real, allocatable :: IONO_NORTH_Pepar(:,:)
+  real, allocatable :: IONO_SOUTH_Pepar(:,:)
   real, allocatable :: IONO_NORTH_t(:,:)
   real, allocatable :: IONO_SOUTH_t(:,:)
   real, allocatable :: IONO_NORTH_dLat(:,:)
@@ -293,6 +302,12 @@ contains
     allocate(IONO_SOUTH_rho(IONO_nTheta,IONO_nPsi))
     allocate(IONO_NORTH_p(IONO_nTheta,IONO_nPsi))
     allocate(IONO_SOUTH_p(IONO_nTheta,IONO_nPsi))
+    allocate(IONO_NORTH_Ppar(IONO_nTheta,IONO_nPsi))
+    allocate(IONO_SOUTH_Ppar(IONO_nTheta,IONO_nPsi))
+    allocate(IONO_NORTH_Pe(IONO_nTheta,IONO_nPsi))
+    allocate(IONO_SOUTH_Pe(IONO_nTheta,IONO_nPsi))
+    allocate(IONO_NORTH_Pepar(IONO_nTheta,IONO_nPsi))
+    allocate(IONO_SOUTH_Pepar(IONO_nTheta,IONO_nPsi))
     allocate(IONO_NORTH_t(IONO_nTheta,IONO_nPsi))
     allocate(IONO_SOUTH_t(IONO_nTheta,IONO_nPsi))
     allocate(IONO_NORTH_dLat(IONO_nTheta,IONO_nPsi))
@@ -448,6 +463,12 @@ contains
     deallocate(IONO_SOUTH_rho)
     deallocate(IONO_NORTH_p)
     deallocate(IONO_SOUTH_p)
+    deallocate(IONO_NORTH_Ppar)
+    deallocate(IONO_SOUTH_Ppar)
+    deallocate(IONO_NORTH_Pe)
+    deallocate(IONO_SOUTH_Pe)
+    deallocate(IONO_NORTH_Pepar)
+    deallocate(IONO_SOUTH_Pepar)
     deallocate(IONO_NORTH_t)
     deallocate(IONO_SOUTH_t)
     deallocate(IONO_NORTH_dLat)

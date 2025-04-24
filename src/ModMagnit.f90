@@ -91,9 +91,6 @@ module ModMagnit
     real :: numflux_floor
     integer :: j
 
-    ! Starts to taper off precipitation due to shrinking loss cone
-    ! At mirror ratio values above the limit
-    real, parameter :: limMirrorRatio = 400
     ! Debug variables:
     logical :: DoTestMe, DoTest
     character(len=*), parameter:: NameSub = 'magnit_gen_fluxes'
@@ -159,7 +156,9 @@ module ModMagnit
     numflux_floor = cFACFloor/cElectronCharge
 
     ! Calculate Nflux from current
-    PRECIP: where (FAC_II > cFACFloor .and. OCFL_II > 0)
+    where (FAC_II < cFACFloor .or. OCFL_II < 0) &
+      NfluxMono_II = numflux_floor
+    where (FAC_II > cFACFloor .and. OCFL_II > 0)
       NfluxMono_II = FAC_II / cElectronCharge
       ! Calculate Parallel Potential Drop
       ! Calculate large coefficient in numerator "Numerator Coefficient"
@@ -168,7 +167,7 @@ module ModMagnit
       ! Calculate ratio of ionospheric magnetic field to plasma sheet magnetic field
       MirrorRatio_II = (rPlanet_I(Earth_) / (sin(LatIn_II)**2 * &
               (rPlanet_I(Earth_) + IonoHeightPlanet_I(Earth_))))**3 * &
-              sqrt(1 + 3*cos(LatIn_II)**2)
+              sqrt(1 + 3*sin(LatIn_II)**2)
 
       ! Potential calculations only valid where 1 <= NumCoefficient <= MirrorRatio
       where(1 <= NumCoefficient_II .and. NumCoefficient_II < MirrorRatio_II)
@@ -191,18 +190,7 @@ module ModMagnit
 
       ! Calculate Avg E in keV
       AvgEMono_II = EfluxMono_II / (NfluxMono_II * cKEV)
-
-      ! Adjusts scaling factors for small loss cone at high latitude
-      where(MirrorRatio_II > limMirrorRatio)
-         EfluxMono_II = EfluxMono_II * sqrt(limMirrorRatio / MirrorRatio_II)
-         AvgEMono_II = AvgEMono_II * sqrt(limMirrorRatio / MirrorRatio_II)
-      end where
-
-    elsewhere PRECIP
-      NfluxMono_II = numflux_floor
-      AvgEMono_II = 0
-      EfluxMono_II = 0
-    end where PRECIP
+    end where
 !
 !    ! Calculate broadband electron precipitation
 !    ! Note: Joule Heating is in SI Units = W/m2
