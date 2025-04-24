@@ -190,6 +190,7 @@ the Param/f107.txt table automatically.
       <option name="Ridley Legacy Model vrs. 3" value="RLM4" />
       <option name="Ridley Legacy Model vrs. 3" value="RLM5" />
       <option name="Cond. Model for Extreme Events" value="CMEE" />
+      <option name="MAGNIT auroral precipitation model" value="MAGNIT" />
     </parameter>
   </if>
 #AURORA
@@ -213,6 +214,8 @@ empirically with an intensification along an oval fitted to upward FACs.
 oval intensification pattern.
 \item \textbf{CMEE}: The Conductance Model for Extreme Events - similar to
 RLM5 but with an empirical fitting based on extreme events.
+\item \textbf{MAGNIT}: The MAGNetosphere Ionosphere Thermosphere auroral
+conductance model.
 \end{itemize}
 
 </command>
