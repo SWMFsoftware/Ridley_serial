@@ -741,7 +741,7 @@ contains
           Iono_North_dLat = Buffer_IIV(1:IONO_nTheta,:,5)
           Iono_North_dLon = Buffer_IIV(1:IONO_nTheta,:,6)
           iVar = 7
-          if (DouseGMPe) then
+          if (DoUseGMPe) then
               Iono_North_Pe = Buffer_IIV(1:IONO_nTheta,:,iVar)
               iVar = iVar + 1
           end if
