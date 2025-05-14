@@ -17,15 +17,25 @@ module ModConductance
        SigmaPar       = 1000.0      ! Parallel conductance, Siemens
 
   ! Logicals to control what conductance sources are used.
-  logical :: DoUseEuvCond=.true., DoUseAurora=.true.
+  logical :: DoUseEuvCond=.true., DoUseAurora=.true., DoUseDiffI=.true., &
+       DoUseDiffE=.true., DoUseMono=.true., DoUseBbnd=.true., &
+       UsePrecipSmoothing=.true.
 
   ! Name of auroral model to use, defaults to 'RLM5'
   character(len=8) :: NameAuroraMod = 'RLM5'
 
+  ! Name of Conductance Relationships used
+  character(len=4) :: eCondRel = 'robi', &
+                      iCondRel = 'gala', KernelType = 'gaus'
+
+  ! Set Kernel Size
+  integer :: KernelSize = 3
+
   ! Background & constant conductance values:
   real :: f107_flux=-1, SigmaHalConst=0, SigmaPedConst=0, &
        StarLightCond=1.0,  & ! replaces starlightpedconductance
-       PolarCapPedCond=0.25  ! replaces PolarCapPedConductance
+       PolarCapPedCond=0.25, & ! replaces PolarCapPedConductance
+       KernelSpread=1.0 ! Sets spread of Gaussian kernel for smoothing
 
   ! Floor values for GM density and pressure, SI units:
   real, parameter :: GmRhoFloor = 1E-21, GmPFloor = 1E-13, GMPeFloor = 1E-13
@@ -174,19 +184,30 @@ contains
               write(*,'(f0.30)')MAXVAL(AvgEBbnd_II),MINVAL(AvgEBbnd_II)
           end if
 
-!          ! Convert fluxes to conductances:
-           ! Additional options should be added in param to control conductance
-           ! from various sources. Diffuse flux is commented out currently
-           ! to avoid double counting electron conductance.
-          call flux_to_sigma(IONO_nTheta, IONO_nPsi, AvgEMono_II, &
-               1000.*EFluxMono_II, SigmaHalMono_II, SigmaPedMono_II)
-          call flux_to_sigma(IONO_nTheta, IONO_nPsi, AvgEBbnd_II, &
-               1000.*EfluxBbnd_II, SigmaHalBbnd_II, SigmaPedBbnd_II)
-          ! call flux_to_sigma(IONO_nTheta, IONO_nPsi, AvgEDiffe_II, &
-          !     1000.*EFluxDiffe_II, SigmaHalDiffe_II, SigmaPedDiffe_II)
-          call flux_to_sigma(IONO_nTheta, IONO_nPsi, AvgEDiffi_II, &
-               1000.*EFluxDiffi_II, SigmaHalDiffi_II, SigmaPedDiffi_II, &
-                  'gala', theta)
+          ! Convert fluxes to conductances:
+          ! Diffuse flux is only calculated separately if the total electron
+          ! flux stored in Mono is not calculated. Mono should likely be
+          ! Renamed to Electron
+          if (DoUseDiffE .and. .not. DoUseMono) then
+              call flux_to_sigma(IONO_nTheta, IONO_nPsi, AvgEDiffe_II, &
+                   1000.*EFluxDiffe_II, SigmaHalDiffe_II, SigmaPedDiffe_II, &
+                      eCondRel)
+          end if
+          if (DoUseMono .and. DoUseDiffE) then
+              call flux_to_sigma(IONO_nTheta, IONO_nPsi, AvgEMono_II, &
+                   1000.*EFluxMono_II, SigmaHalMono_II, SigmaPedMono_II, &
+                      eCondRel)
+          end if
+          if (DoUseDiffI) then
+            call flux_to_sigma(IONO_nTheta, IONO_nPsi, AvgEDiffi_II, &
+                   1000.*EFluxDiffi_II, SigmaHalDiffi_II, SigmaPedDiffi_II, &
+                   iCondRel, theta)
+          end if
+          if (DoUseBbnd) then
+              call flux_to_sigma(IONO_nTheta, IONO_nPsi, AvgEBbnd_II, &
+                   1000.*EfluxBbnd_II, SigmaHalBbnd_II, SigmaPedBbnd_II, &
+                      eCondRel)
+          end if
 
           if(DoTest) then
               write(*,*)'Ion Hall Conductance'
@@ -383,8 +404,6 @@ contains
     character(len=*), intent(in) :: NameHemiIn
     real, intent(out), dimension(IONO_nTheta,IONO_nPsi) :: &
          CondHalOut_II, CondPedOut_II
-
-    integer :: i, j
 
     real, parameter :: cBlendAngle = 70.0*cDegToRad
     real :: f107p53, f107p49, cos_limit, meeting_value_p, meeting_value_h
@@ -617,7 +636,8 @@ contains
     !    gala :: Galand and Richmond, 2001 (ions)
     !    kaep :: Kaeppler et al., 2015 (electrons)
 
-    use ModPlanetConst, ONLY: rPlanet_I, IonoHeightPlanet_I, DipoleStrengthPlanet_I, Earth_
+    use ModPlanetConst, ONLY: rPlanet_I, IonoHeightPlanet_I, &
+            DipoleStrengthPlanet_I, Earth_
     ! Arguments:
     integer, intent(in) :: nLatIn, nLonIn
     real, intent(in),  dimension(nLatIn, nLonIn) :: AveEIn_II, eFluxIn_II
@@ -626,8 +646,9 @@ contains
     real, dimension(IONO_nTheta,IONO_nPsi), intent(in), optional :: LatIn_II
 
     ! Local variables:
-    character(len=4) :: NameModel='robi'
-    real, dimension(IONO_nTheta,IONO_nPsi):: BDipole_II=0
+    character(len=4) :: NameModel
+    real, dimension(IONO_nTheta,IONO_nPsi):: BDipole_II=0, cond_Eflux_II=0, &
+            cond_AvgE_II=0
     real, parameter:: AvgELimit = 40.0
 
     logical :: DoTest, DoTestMe
@@ -642,32 +663,98 @@ contains
 
     SigmaPOut_II = 0
     SigmaHOut_II = 0
+    cond_Eflux_II = eFluxIn_II
+    cond_AvgE_II = AveEIn_II
+
+    if (UsePrecipSmoothing) then
+        call polar_convolution(cond_Eflux_II, IONO_nTheta, IONO_nPsi)
+        call polar_convolution(cond_AvgE_II, IONO_nTheta, IONO_nPsi)
+    end if
 
     select case(NameModel)
     case('robi')
-
-       SigmaPOut_II = sqrt(eFluxIn_II) * (40. * AveEIn_II) &
-           / (16. + AveEIn_II**2)
-       SigmaHOut_II = 0.45 * SigmaPOut_II * AveEIn_II**0.85
+       SigmaPOut_II = sqrt(cond_Eflux_II) * (40. * cond_AvgE_II) &
+           / (16. + cond_AvgE_II**2)
+       SigmaHOut_II = 0.45 * SigmaPOut_II * cond_AvgE_II**0.85
 
        ! Robinson formulas are only valid for 2-40 keV range,
        ! we limit as such and scale down results at higher energy values
-       where(AveEIn_II > AvgELimit)
-           SigmaPOut_II = SigmaPOut_II * EXP((AvgELimit - AveEIn_II)/10)
-           SigmaHOut_II = SigmaHOut_II * EXP((AvgELimit - AveEIn_II)/10)
+       where(cond_AvgE_II > AvgELimit)
+           SigmaPOut_II = SigmaPOut_II * EXP((AvgELimit - cond_AvgE_II)/10)
+           SigmaHOut_II = SigmaHOut_II * EXP((AvgELimit - cond_AvgE_II)/10)
        end where
     case('gala')
         BDipole_II = -DipoleStrengthPlanet_I(Earth_) * &
                 (rPlanet_I(Earth_)/(rPlanet_I(Earth_) + &
                 IonoHeightPlanet_I(Earth_)))**3 &
                 * sqrt(1 + 3*(sin(LatIn_II)**2))
-        SigmaPOut_II = 5.7 * sqrt(eFluxIn_II) * (BDipole_II / 54e-6)**(-1.45)
-        SigmaHOut_II = 2.6 * AveEIn_II**0.3 * sqrt(eFluxIn_II) &
+        SigmaPOut_II = 5.7 * sqrt(cond_Eflux_II) * &
+                (BDipole_II / 54e-6)**(-1.45)
+        SigmaHOut_II = 2.6 * cond_AvgE_II**0.3 * sqrt(cond_Eflux_II) &
             * (BDipole_II / 54e-6)**(-1.90)
     case('kaep')
+        SigmaPOut_II = sqrt(cond_Eflux_II) * (40. * cond_AvgE_II) &
+                / (16. + AveEIn_II**2)
+        SigmaHOut_II = 0.57 * SigmaPOut_II * cond_AvgE_II**0.53
     end select
 
    end subroutine flux_to_sigma
+  !============================================================================
+
+  subroutine polar_convolution(a_II, nLat, nLon)
+    ! Use a Gaussian convolution to smooth a 2D array in polar coordinates
+    ! such that periodicity and continuity are enforced across the LON=360/0
+    ! boundary.
+
+    use ModConst, ONLY: cPi
+
+    integer, intent(in)        :: nLat, nLon
+    real, intent(inout), dimension(nLat,nLon) :: &
+            a_II
+
+    integer :: i, j
+    real :: sigma
+    real, dimension(nLat,nLon + 2 * KernelSize)  :: Sample_II
+    real, dimension(1 + 2 * KernelSize, 1 + 2 * KernelSize) :: &
+            kernel_II
+
+    logical :: DoTest, DoTestMe
+    character(len=*), parameter:: NameSub = 'polar_convolution'
+    !--------------------------------------------------------------------------
+    call CON_set_do_test(NameSub, DoTest, DoTestMe)
+
+    Sample_II(:, 1 + KernelSize:nLon + KernelSize) = a_II
+    Sample_II(:, 1:KernelSize) = a_II(:, nLon - KernelSize + 1:nLon)
+    Sample_II(:, nLon + KernelSize + 1:nLon + 2 * KernelSize) = &
+            a_II(:, 1:KernelSize)
+
+    select case(KernelType)
+        case('gaus')
+            sigma = KernelSpread
+            do i = 1, 1 + 2 * KernelSize
+                do j = 1, 1 + 2 * KernelSize
+                    kernel_II(i, j) = 1 / (2 * cPi * sigma**2) * &
+                            exp(-((i - KernelSize - 1)**2 + &
+                                    (j - KernelSize - 1)**2) / (2 * sigma**2))
+                end do
+            end do
+    case('bxcr')
+            kernel_II = 1.0
+    end select
+
+    kernel_II = kernel_II / sum(kernel_II)
+
+    if (DoTest) write(*,*)'kernel_II = ', kernel_II
+
+    a_II = 0.0
+    do i = 1, nLat - 2 * KernelSize
+        do j = 1, nLon
+            a_II(i + KernelSize, j) = sum(kernel_II * &
+                    Sample_II(i:i + 2 * KernelSize, j:j + 2 * KernelSize))
+        end do
+    end do
+
+  end subroutine polar_convolution
   !============================================================================
 
 end module ModConductance

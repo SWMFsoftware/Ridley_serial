@@ -25,9 +25,9 @@ module ModMagnit
   ! Loss cone factors set flux in loss cones for proton & electron diffuse,
   ! monoenergetic, and broadband precip. Factors are for Energy Flux and
   ! Number Flux, each. See Mukhopadhyay et al. 2022 for details.
-  real :: ConeEfluxDife = 0.600, ConeEfluxDifp = 0.207, &
+  real :: ConeEfluxDife = 0.217, ConeEfluxDifp = 0.207, &
           ConeEfluxMono = 1.000, ConeEfluxBbnd = 2.247, &
-          ConeNfluxDife = 0.110, ConeNfluxDifp = 0.100, &
+          ConeNfluxDife = 0.055, ConeNfluxDifp = 0.038, &
           ConeNfluxMono = 0.741, ConeNfluxBbnd = 0.494
   contains
   !============================================================================
@@ -86,10 +86,10 @@ module ModMagnit
 
     ! Set arrays to hold magnetospheric values.
     real, dimension(IONO_nTheta, IONO_nPsi) :: &
-        MagP_II, MagNp_II, MagPe_II, MagNe_II, NfluxDiffe_II, NfluxDiffi_II, NfluxMono_II, &
-        NfluxBbnd_II, OCFL_II, PrecipRatio_II=0, Potential_II=0, MirrorRatio_II=0, &
-        VExponent_II=0, PotentialTerm_II=0, FAC_II=0, Joule_II=0, Poynting_II=0, &
-        ElectronTemp_II=0
+        MagP_II, MagNp_II, MagPe_II, MagNe_II, NfluxDiffe_II, NfluxDiffi_II, &
+        NfluxMono_II, NfluxBbnd_II, OCFL_II, PrecipRatio_II=0, Potential_II=0, &
+        MirrorRatio_II=0, VExponent_II=0, PotentialTerm_II=0, FAC_II=0, &
+        Joule_II=0, Poynting_II=0, ElectronTemp_II=0, OCFL_flip_II=0
 
     integer :: j
 
@@ -130,7 +130,9 @@ module ModMagnit
       do j=1, Iono_nPsi
         MagPe_II(:, j) = ratioPe * MagP_II(:, IONO_nPsi-j+1)
         MagNe_II(:, j) = MagNp_II(:, IONO_nPsi-j+1)
+        OCFL_flip_II(:, j) = OCFL_II(:, IONO_nPsi-j+1)
       end do
+      OCFL_II = OCFL_flip_II
     else
       MagNe_II = MagNp_II
     end if
@@ -163,7 +165,8 @@ module ModMagnit
     ! Calculate ratio of diffuse to monoenergetic precipitation
     PrecipRatio_II = NfluxMono_II / NfluxDiffe_II
 
-    ! Calculate ratio of ionospheric magnetic field to plasma sheet magnetic field
+    ! Calculate ratio of ionospheric magnetic field to plasma sheet
+    ! magnetic field
     MirrorRatio_II = (rPlanet_I(Earth_) / (sin(LatIn_II)**2 * &
             (rPlanet_I(Earth_) + IonoHeightPlanet_I(Earth_))))**3 * &
             sqrt(1 + 3*cos(LatIn_II)**2)
@@ -172,8 +175,8 @@ module ModMagnit
     where(1 <= PrecipRatio_II .and. PrecipRatio_II < MirrorRatio_II .and. &
           OCFL_II > 0)
       ! Put it all together into potential
-      Potential_II = ElectronTemp_II / cElectronCharge * (1 - MirrorRatio_II) * &
-              LOG((MirrorRatio_II - PrecipRatio_II) / (MirrorRatio_II - 1))
+      Potential_II = ElectronTemp_II / cElectronCharge * (1 - MirrorRatio_II) &
+              * LOG((MirrorRatio_II - PrecipRatio_II) / (MirrorRatio_II - 1))
     elsewhere
       NfluxMono_II = NfluxDiffe_II
     end where
@@ -183,8 +186,8 @@ module ModMagnit
             (MirrorRatio_II - 1)))
     ! Calculate product term
     PotentialTerm_II = ((1 - VExponent_II) * ConeEfluxMono / &
-         (1 + ((1 - 1/MirrorRatio_II) * VExponent_II)) * cElectronCharge * Potential_II) &
-         + AvgEDiffe_II * cKEV
+         (1 + ((1 - 1/MirrorRatio_II) * VExponent_II)) * cElectronCharge * &
+         Potential_II) + AvgEDiffe_II * cKEV
 
     ! Plug into equation for EFlux
     EfluxMono_II = NfluxMono_II * PotentialTerm_II
@@ -210,5 +213,5 @@ module ModMagnit
   end subroutine magnit_gen_fluxes
   !============================================================================
 
-end module ModMagnit!==============================================================================
+end module ModMagnit
 !==============================================================================
