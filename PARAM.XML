@@ -549,6 +549,115 @@ aurora.
 Default values are shown above.
 </command>
 
+<command name="MAGNITPRECIP">
+  <parameter name="DoUseDiffI"    type="logical" default="T"/>
+  <parameter name="DoUseDiffE"    type="logical" default="T"/>
+  <parameter name="DoUseMono"     type="logical" default="T"/>
+  <parameter name="DoUseBbnd"     type="logical" default="T"/>
+  <parameter name="eCondRel" type="string" length="4" input="select">
+    <option name="Robinson Relationships, Robinson et al. 1987" value="robi"/>
+    <option name="Kaeppler update, Kaeppler et al. 2015"  value="kaep"/>
+  </parameter>
+
+#MAGNITPRECIP
+T               DoUseDiffI
+T               DoUseDiffE
+T               DoUseMono
+T               DoUseBbnd
+robi            ECondRel
+
+Sets whether each source of precipitation within the MAGNIT conductance model
+is used when calculating total conductance in the ionosphere.
+The source abbreviations stand for:
+
+DiffI: Diffuse Ion,
+DiffE: Diffuse Electron,
+Mono: Monoenergetic Electron,
+Bbnd: Broadband Electron,
+
+eCondRel sets the electron conductance relationship for diffuse, monoenergetic,
+and broadband precipitation. The options are:
+\begin{itemize}
+\item \textbf{robi}: Robinson et al. 1987
+\item \textbf{kaep}: Kaeppler et al. 2015
+\end{itemize}
+
+Default values are shown above.
+</command>
+
+<command name="LOSSCONEFACTORS">
+  <parameter name="ConeEfluxDifp" type="real" min="0" default="0.207"/>
+  <parameter name="ConeNfluxDifp" type="real" min="0" default="0.038"/>
+  <parameter name="ConeEfluxDife" type="real" min="0" default="0.217"/>
+  <parameter name="ConeNfluxDife" type="real" min="0" default="0.055"/>
+  <parameter name="ConeEfluxMono" type="real" min="0" default="1.000"/>
+  <parameter name="ConeNfluxMono" type="real" min="0" default="0.741"/>
+  <parameter name="ConeEfluxBbnd" type="real" min="0" default="2.247"/>
+  <parameter name="ConeNfluxBbnd" type="real" min="0" default="0.494"/>
+
+#LOSSCONEFACTORS
+0.207           ConeEfluxDifp
+0.100           ConeNfluxDifp
+0.600           ConeEfluxDife
+0.110           ConeNfluxDife
+1.000           ConeEfluxMono
+0.741           ConeNfluxMono
+2.247           ConeEfluxBbnd
+0.494           ConeNfluxBbnd
+
+Sets the loss cone factors for each source of precipitation within the MAGNIT
+auroral conductance model. Since ideal MHD does not have pitch angle
+distribution information, we make assumptions about percentages of particles
+that are in the loss cone and precipitate to the ionosphere. These are
+represented by the 8 loss cone factors: an energy flux factor and a number flux
+factor for each of the four sources (proton diffuse, electron diffuse, electron
+discrete/mono-energetic, and broadband). Increasing the energy flux loss cone
+factor for a  source will increase resulting energy flux and average energies.
+Increasing the number flux loss cone factor will not affect energy flux, and
+will decrease average energy.
+
+Different values are required based on run configuration and MHD coupling
+parameters. The values currently being used for runs with MHD electron pressure
+coupling are shown, though these values have not yet been validated. The default
+values are for base MHD without electron pressure, and have been validated for
+the SWPC run configuration, see Mukhopadhyay 2022.
+
+</command>
+
+<command name="MAGNITPRECIPSMOOTHING">
+  <parameter name="UsePrecipSmoothing" type="logical" default="T"/>
+  <if expr="$UsePrecipSmoothing">
+    <parameter name="KernelType"  type="string" length="4" input="select">
+      <option name="Gaussian Filter" value="gaus"/>
+      <option name="Boxcar filter" value="bxcr"/>
+    </parameter>
+    <parameter name="KernelSize"   type="integer" min="0" default="3"/>
+    <parameter name="KernelSpread" type="real" min="0" default="1.0"/>
+  </if>
+
+#MAGNITPRECIPSMOOTHING
+T         UsePrecipSmoothing
+gaus      KernelType
+3         KernelSize
+1.0       KernelSpread
+
+This command turns on a convolution smoothing method for each of the four
+precipitation sources within the MAGNIT auroral conductance model.
+KernelType can be set to the following options:
+\begin{itemize}
+\item \textbf{gaus}: Gaussian Filter
+\item \textbf{bxcr}: Boxcar Filter
+\end{itemize}
+
+KernelSize sets the size of the kernel in each direction from the active point.
+This means that a KernelSize of 3 will be a 7x7 kernel (both dimensions will be
+$2 * KernelSize + 1$).
+KernelSpread sets the spread depending on the kernel type. Currently, this is
+only relevant for the Gaussian Filter, where a higher spread will result in a
+larger importance put on points farther away from the active point.
+The default values are shown above.
+</command>
+
 <command name="BOUNDARY">
 	<parameter name="LatBoundary" type="real" min="0" max="90" default="10"/>
 

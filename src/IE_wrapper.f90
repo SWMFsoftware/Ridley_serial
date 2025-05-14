@@ -105,7 +105,12 @@ contains
       use ModFiles
       use ModConductance, ONLY: DoUseEuvCond, f107_flux, &
            PolarCapPedCond, StarLightCond, SigmaHalConst, SigmaPedConst, &
-           imodel_legacy, DoUseAurora, NameAuroraMod
+           imodel_legacy, DoUseAurora, NameAuroraMod, DoUseDiffI, DoUseDiffE, &
+           DoUseMono, DoUseBbnd, UsePrecipSmoothing, KernelType, KernelSize, &
+           KernelSpread, eCondRel
+      use ModMagnit, ONLY: ConeEfluxDifp, ConeNfluxDifp, ConeEfluxDife, &
+              ConeNfluxDife, ConeEfluxMono, ConeNfluxMono, ConeEfluxBbnd, &
+              ConeNfluxBbnd
       use ModIeRlm, ONLY: UseOval, UseNewOval, DoOvalShift, &
            UseSubOvalCond, DoFitCircle, FactorHallCMEE, FactorPedCMEE, &
            NameHalFile, NamePedFile, LatNoConductanceSI
@@ -248,6 +253,27 @@ contains
                     ' command '//trim(NameCommand)// &
                     ' can only be used with conductance model 4 or 5'
                if(UseStrict)call CON_stop('Correct PARAM.in!')
+            end if
+         case("#MAGNITPRECIP")
+             call read_var('eCondRel', eCondRel)
+         case("#LOSSCONEFACTORS")
+             call read_var('ConeEfluxDifp', ConeEfluxDifp)
+             call read_var('ConeNfluxDifp', ConeNfluxDifp)
+             call read_var('ConeEfluxDife', ConeEfluxDife)
+             call read_var('ConeNfluxDife', ConeNfluxDife)
+             call read_var('ConeEfluxMono', ConeEfluxMono)
+             call read_var('ConeNfluxMono', ConeNfluxMono)
+             call read_var('ConeEfluxBbnd', ConeEfluxBbnd)
+             call read_var('ConeNfluxBbnd', ConeNfluxBbnd)
+         case("#MAGNITPRECIPSMOOTHING")
+            if (trim(NameAuroraMod) == 'MAGNIT') then
+                call read_var('UsePrecipSmoothing', UsePrecipSmoothing)
+                if (UsePrecipSmoothing) then
+                    call read_var('KernelType', KernelType)
+                    call read_var('KernelSize', KernelSize)
+                    call read_var('KernelSpread', KernelSpread)
+                end if
+
             end if
 
          ! Physics & solver related params
