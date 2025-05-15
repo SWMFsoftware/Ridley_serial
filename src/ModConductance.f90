@@ -666,7 +666,7 @@ contains
     cond_Eflux_II = eFluxIn_II
     cond_AvgE_II = AveEIn_II
 
-    if (UsePrecipSmoothing) then
+    if (UsePrecipSmoothing .and. trim(NameAuroraMod) == 'MAGNIT') then
         call polar_convolution(cond_Eflux_II, IONO_nTheta, IONO_nPsi)
         call polar_convolution(cond_AvgE_II, IONO_nTheta, IONO_nPsi)
     end if
