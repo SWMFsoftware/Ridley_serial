@@ -193,7 +193,7 @@ module ModMagnit
     EfluxMono_II = NfluxMono_II * PotentialTerm_II
 
     ! Calculate Avg E in keV
-    AvgEMono_II = EfluxMono_II / (NfluxMono_II * cKEV)
+    AvgEMono_II = EfluxMono_II / (NfluxDiffe_II * cKEV)
     !
 !    ! Calculate broadband electron precipitation
 !    ! Note: Joule Heating is in SI Units = W/m2
