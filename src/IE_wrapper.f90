@@ -136,6 +136,10 @@ contains
       case('CHECK')
          IsUninitialized=.false.
 
+         if(NameAuroraMod /= 'MAGNIT') then
+             UsePrecipSmoothing = .false.
+         end if
+
          ! We should check and correct parameters here
          if(iProc==0)write(*,*) NameSub,': CHECK iSession =',i_session_read()
 
@@ -266,15 +270,12 @@ contains
              call read_var('ConeEfluxBbnd', ConeEfluxBbnd)
              call read_var('ConeNfluxBbnd', ConeNfluxBbnd)
          case("#MAGNITPRECIPSMOOTHING")
-            if (trim(NameAuroraMod) == 'MAGNIT') then
-                call read_var('UsePrecipSmoothing', UsePrecipSmoothing)
-                if (UsePrecipSmoothing) then
-                    call read_var('KernelType', KernelType)
-                    call read_var('KernelSize', KernelSize)
-                    call read_var('KernelSpread', KernelSpread)
-                end if
-
-            end if
+             call read_var('UsePrecipSmoothing', UsePrecipSmoothing)
+             if (UsePrecipSmoothing) then
+                 call read_var('KernelType', KernelType)
+                 call read_var('KernelSize', KernelSize)
+                 call read_var('KernelSpread', KernelSpread)
+             end if
 
          ! Physics & solver related params
          case("#IM")

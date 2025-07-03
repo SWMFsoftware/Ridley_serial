@@ -147,12 +147,12 @@ contains
     if (DoUseAurora) then
        ! Obtain average energy and energy flux values based on
        ! selected aurora model:
-       select case(trim(NameAuroraMod))
+       select case(NameAuroraMod)
        case('RLM3', 'RLM4', 'RLM5', 'CMEE')!'FAC2FLUX')
           ! RLM-family of conductance models, including the
           ! Conductance Model for Extreme Events:
           ! RLM/CMEE fills the mono-energetic array ONLY
-          call facs_to_fluxes(trim(NameAuroraMod), NameHemiIn, &
+          call facs_to_fluxes(NameAuroraMod, NameHemiIn, &
                AvgEMono_II, EfluxMono_II)
           ! Convert average energy/energy flux into conductance:
           call flux_to_sigma(IONO_nTheta, IONO_nPsi, AvgEMono_II, &
@@ -666,7 +666,7 @@ contains
     cond_Eflux_II = eFluxIn_II
     cond_AvgE_II = AveEIn_II
 
-    if (UsePrecipSmoothing .and. trim(NameAuroraMod) == 'MAGNIT') then
+    if (UsePrecipSmoothing) then
         call polar_convolution(cond_Eflux_II, IONO_nTheta, IONO_nPsi)
         call polar_convolution(cond_AvgE_II, IONO_nTheta, IONO_nPsi)
     end if
