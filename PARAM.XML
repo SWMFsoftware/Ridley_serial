@@ -665,16 +665,16 @@ The default values are shown above.
 10.0                    eLimitScale (keV)
 
 Defines a max energy of electron precipitation above which conductance as produced by
-the Robinson empirical formula is tapered off by 
+the Robinson empirical formula is tapered off by
 \begin{verbatim}
-exp((eCondLimit - Energy)/eLimitScale) 
+exp((eCondLimit - Energy)/eLimitScale)
 \end{verbatim}
 
-This is implemented because the Robinson relationship is only theoretically valid for
-$<=$ 40 keV, but this formulation should not be used in its current form. 
+This is implemented because the Robinson relationship is only theoretically valid
+for &lt;= 40 keV but this formulation should not be used in its current form.
 
 eCondLimit defaults to 10000, as to effectively be irrelevant.
-eLimitScale defaults to 10.0 keV (i.e., an excess in energy of 10keV would decay down by $1/e$). 
+eLimitScale defaults to 10.0 keV (i.e., an excess in energy of 10keV would decay down by $1/e$).
 </command>
 
 <command name="BOUNDARY">
