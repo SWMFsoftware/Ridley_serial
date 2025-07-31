@@ -107,7 +107,7 @@ contains
            PolarCapPedCond, StarLightCond, SigmaHalConst, SigmaPedConst, &
            imodel_legacy, DoUseAurora, NameAuroraMod, DoUseDiffI, DoUseDiffE, &
            DoUseMono, DoUseBbnd, UsePrecipSmoothing, KernelType, KernelSize, &
-           KernelSpread, eCondRel
+           KernelSpread, eCondRel, eCondLimit, eLimitScale
       use ModMagnit, ONLY: ConeEfluxDifp, ConeNfluxDifp, ConeEfluxDife, &
               ConeNfluxDife, ConeEfluxMono, ConeNfluxMono, ConeEfluxBbnd, &
               ConeNfluxBbnd
@@ -276,8 +276,11 @@ contains
                  call read_var('KernelSize', KernelSize)
                  call read_var('KernelSpread', KernelSpread)
              end if
+         case("#ROBINSONLIMIT")
+            call read_var('eCondLimit', eCondLimit)
+            call read_var('eLimitScale', eLimitScale)
 
-         ! Physics & solver related params
+      ! Physics & solver related params
          case("#IM")
             call read_var('TypeImCouple',TypeImCouple)
             call lower_case(TypeImCouple)

@@ -35,7 +35,9 @@ module ModConductance
   real :: f107_flux=-1, SigmaHalConst=0, SigmaPedConst=0, &
        StarLightCond=1.0,  & ! replaces starlightpedconductance
        PolarCapPedCond=0.25, & ! replaces PolarCapPedConductance
-       KernelSpread=1.0 ! Sets spread of Gaussian kernel for smoothing
+       KernelSpread=1.0, & ! Sets spread of Gaussian kernel for smoothing
+       eCondLimit=10000., & ! Electron Conductance energy limit in keV
+       eLimitScale=10. ! Sets scaling factor for above eCondLimit
 
   ! Floor values for GM density and pressure, SI units:
   real, parameter :: GmRhoFloor = 1E-21, GmPFloor = 1E-13, GMPeFloor = 1E-13
@@ -649,7 +651,6 @@ contains
     character(len=4) :: NameModel
     real, dimension(IONO_nTheta,IONO_nPsi):: BDipole_II=0, cond_Eflux_II=0, &
             cond_AvgE_II=0
-    real, parameter:: AvgELimit = 40.0
 
     logical :: DoTest, DoTestMe
     ! Set up defaults: ions and Robinson et al. 1987
@@ -679,9 +680,11 @@ contains
 
        ! Robinson formulas are only valid for 2-40 keV range,
        ! we limit as such and scale down results at higher energy values
-       where(cond_AvgE_II > AvgELimit)
-           SigmaPOut_II = SigmaPOut_II * EXP((AvgELimit - cond_AvgE_II)/10)
-           SigmaHOut_II = SigmaHOut_II * EXP((AvgELimit - cond_AvgE_II)/10)
+       where(cond_AvgE_II > eCondLimit)
+           SigmaPOut_II = SigmaPOut_II * EXP((eCondLimit - cond_AvgE_II) &
+                   /eLimitScale)
+           SigmaHOut_II = SigmaHOut_II * EXP((eCondLimit - cond_AvgE_II) &
+                   /eLimitScale)
        end where
     case('gala')
         BDipole_II = -DipoleStrengthPlanet_I(Earth_) * &

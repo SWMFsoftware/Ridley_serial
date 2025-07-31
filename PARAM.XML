@@ -471,18 +471,17 @@ Examples of the required format can be found in Ridley_serial/input/.
     <parameter name="FactorPedCMEE"       type="real" default="5"/>
   </if>
 
-#USECMEEFIT
-T             UseCMEEFitting (rest of parameters read if true)
+#CMEEFIT
 45            LatNoConductanceSI (default)
 7.5           FactorHallCMEE (default)
 5             FactorPedCMEE (default)
 
   This command allows modifications in the auroral oval properties and addition
-  of a baseline conductance when using CMEE.  When the fitting option is true, a
-  boundary condition at the boundary latitude (LatNoConductanceSI) is added to limit
-  auroral conductance values equatorward of this boundary.  The baseline conductance,
-  added to the oval adjusted conductance to avoid spikes in CPCP, has two values for
-  Hall and Pedersen conductance. Default values are shown above.
+  of a baseline conductance when using CMEE.  Using this command automatically sets
+  the fitting to be on. A boundary condition at the boundary latitude (LatNoConductanceSI)
+  is added to limit auroral conductance values equatorward of this boundary.  The baseline
+  conductance, added to the oval adjusted conductance to avoid spikes in CPCP, has two
+  values for Hall and Pedersen conductance. Default values are shown above.
 
   NOTE: If and when changing FactorHallCMEE and FactorPedCMEE from their default values,
   it is recommended that a higher value for both are chosen in order to avoid unrealistic
@@ -656,6 +655,26 @@ KernelSpread sets the spread depending on the kernel type. Currently, this is
 only relevant for the Gaussian Filter, where a higher spread will result in a
 larger importance put on points farther away from the active point.
 The default values are shown above.
+</command>
+
+<command name="ROBINSONLIMIT">
+	<parameter name="eCondLimit" type="real" min="0" default="10000"/>
+
+#ROBINSONLIMIT
+40.0			eCondLimit (keV)
+10.0                    eLimitScale (keV)
+
+Defines a max energy of electron precipitation above which conductance as produced by
+the Robinson empirical formula is tapered off by 
+\begin{verbatim}
+exp((eCondLimit - Energy)/eLimitScale) 
+\end{verbatim}
+
+This is implemented because the Robinson relationship is only theoretically valid for
+$<=$ 40 keV, but this formulation should not be used in its current form. 
+
+eCondLimit defaults to 10000, as to effectively be irrelevant.
+eLimitScale defaults to 10.0 keV (i.e., an excess in energy of 10keV would decay down by $1/e$). 
 </command>
 
 <command name="BOUNDARY">
