@@ -114,7 +114,7 @@ contains
       use ModIeRlm, ONLY: UseOval, UseNewOval, DoOvalShift, &
            UseSubOvalCond, DoFitCircle, FactorHallCMEE, FactorPedCMEE, &
            NameHalFile, NamePedFile, LatNoConductanceSI
-      use ModUtilities,   ONLY: fix_dir_name, check_dir, lower_case
+      use ModUtilities, ONLY: fix_dir_name, check_dir, lower_case
 
       ! The name of the command
       character (len=100) :: NameCommand
@@ -872,11 +872,11 @@ contains
   !============================================================================
   subroutine IE_put_from_ua(Buffer_IIBV, nMLTs, nLats, nVarIn, NameVarUaIn_V)
 
-    use IE_ModMain,     ONLY: IsNewInput, DoCoupleUaCurrent
+    use IE_ModMain, ONLY: IsNewInput, DoCoupleUaCurrent
     use ModConductance, ONLY: StarLightCond
     use ModIonosphere
     use ModConst
-    use ModUtilities,   ONLY: check_allocate
+    use ModUtilities, ONLY: check_allocate
 
     !--------------------------------------------------------------------------
     save
@@ -1100,7 +1100,7 @@ contains
     use ModIonosphere
     use ModProcIE
 
-    use CON_router,   ONLY: IndexPtrType, WeightPtrType
+    use CON_router, ONLY: IndexPtrType, WeightPtrType
 
     integer,intent(in)            :: nPoint, iPointStart, nVar
     real, intent(in)              :: Buff_V(nVar)
@@ -1146,13 +1146,13 @@ contains
     ! indexes stored in Index and weights stored in Weight
     ! The variables should be put into Buff_V
 
-    use CON_router,   ONLY: IndexPtrType, WeightPtrType
+    use CON_router, ONLY: IndexPtrType, WeightPtrType
     use ModIonosphere, ONLY: IONO_nTheta, IONO_nPsi, &
          IONO_NORTH_PHI, IONO_NORTH_JR, IONO_SOUTH_PHI, IONO_SOUTH_JR, &
          IONO_NORTH_SigmaH, IONO_NORTH_SigmaP, &
          IONO_SOUTH_SigmaH, IONO_SOUTH_SigmaP, &
          cpcp_north, cpcp_south
-    use IE_ModMain,    ONLY: TypeImCouple
+    use IE_ModMain, ONLY: TypeImCouple
 
     integer,intent(in)            :: nPoint, iPointStart, nVar
     real,intent(out)              :: Buff_V(nVar)
@@ -1277,12 +1277,12 @@ contains
 
     ! Initialize the Ionosphere Electrostatic (IE) module for session iSession
 
-    use CON_physics,    ONLY: get_time, get_planet, get_axes
-    use ModIonosphere,  ONLY: IONO_Bdp, init_mod_ionosphere
-    use IE_ModMain,     ONLY: time_accurate, time_simulation, ThetaTilt
-    use IE_ModIo,       ONLY: dt_output, t_output_last
+    use CON_physics, ONLY: get_time, get_planet, get_axes
+    use ModIonosphere, ONLY: IONO_Bdp, init_mod_ionosphere
+    use IE_ModMain, ONLY: time_accurate, time_simulation, ThetaTilt
+    use IE_ModIo, ONLY: dt_output, t_output_last
     use ModConductance, ONLY: NameAuroraMod
-    use ModIeRlm,       ONLY: load_conductances, NameHalFile, NamePedFile
+    use ModIeRlm, ONLY: load_conductances, NameHalFile, NamePedFile
     use ModProcIE
 
     integer,  intent(in) :: iSession      ! session number (starting from 1)
@@ -1380,7 +1380,7 @@ contains
   subroutine IE_save_restart(tSimulation)
 
     use CON_coupler, ONLY: NameRestartOutDirComp
-    use IE_ModIo,   ONLY: NameRestartOutDir
+    use IE_ModIo, ONLY: NameRestartOutDir
 
     real, intent(in) :: tSimulation   ! seconds from start time
 
@@ -1397,14 +1397,14 @@ contains
 
     use ModProcIE
     use IE_ModMain
-    use IE_ModIo,       ONLY: DoRestart, iUnitOut, StringPrefix
-    use CON_physics,    ONLY: get_time, get_axes, time_real_to_int
+    use IE_ModIo, ONLY: DoRestart, iUnitOut, StringPrefix
+    use CON_physics, ONLY: get_time, get_axes, time_real_to_int
     use ModLookupTable, ONLY: i_lookup_table, init_lookup_table, &
          interpolate_lookup_table
     use ModConductance, ONLY: f107_flux
     use ModKind
-    use ModIonosphere,  ONLY: DoUseGMPe, DoUseGMPpar, DoUseGMPepar
-    use ModProcessVarName,  ONLY: process_var_name
+    use ModIonosphere, ONLY: DoUseGMPe, DoUseGMPpar, DoUseGMPepar
+    use ModProcessVarName, ONLY: process_var_name
     use CON_coupler, ONLY: Grid_C
     use CON_comp_param, ONLY: GM_
 
@@ -1536,7 +1536,7 @@ contains
 
   subroutine IE_get_for_ps(Buffer_II, iSize, jSize, tSimulation)
 
-    use ModNumConst,   ONLY: cRadToDeg
+    use ModNumConst, ONLY: cRadToDeg
     use ModIonosphere, ONLY: IONO_nPsi, IONO_nTheta, &
          IONO_Phi, IONO_NORTH_Theta,IONO_NORTH_Psi
 

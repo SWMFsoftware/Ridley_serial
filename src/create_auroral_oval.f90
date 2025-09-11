@@ -10,13 +10,13 @@ subroutine create_auroral_oval(currentIn, thetaIn, psiIn, &
   ! include all longitudes in the calculation of the oval position and to
   ! weight the day-night shift by the strength of the binned FAC values.
 
-  use ModNumConst,   ONLY: cDegToRad, cRadToDeg, cHalfPi, cPi
+  use ModNumConst, ONLY: cDegToRad, cRadToDeg, cHalfPi, cPi
   use ModIonosphere, ONLY: IONO_nTheta, IONO_nPsi
-  use IE_ModIo,      ONLY: NameIonoDir
-  use ModIeRlm,      ONLY: DoOvalShift, DoFitCircle
-  use IE_ModMain,    ONLY: Time_Array, nSolve
-  use ModIoUnit,     ONLY: UnitTMP_
-  use ModUtilities,  ONLY: open_file, close_file, CON_set_do_test
+  use IE_ModIo, ONLY: NameIonoDir
+  use ModIeRlm, ONLY: DoOvalShift, DoFitCircle
+  use IE_ModMain, ONLY: Time_Array, nSolve
+  use ModIoUnit, ONLY: UnitTMP_
+  use ModUtilities, ONLY: open_file, close_file, CON_set_do_test
 
   implicit none
 

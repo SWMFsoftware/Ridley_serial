@@ -288,8 +288,8 @@ contains
   !============================================================================
   subroutine check_solution(x_I, y_I, b_I, n)
 
-    use IE_ModMain,   ONLY: Time_Simulation, nSolve
-    use ModIoUnit,    ONLY: UnitTmp_
+    use IE_ModMain, ONLY: Time_Simulation, nSolve
+    use ModIoUnit, ONLY: UnitTmp_
     use ModUtilities, ONLY: open_file, close_file
 
     ! Calculate y = A.x where A is the (pentadiagonal) matrix

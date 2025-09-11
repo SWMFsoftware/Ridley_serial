@@ -2497,11 +2497,11 @@ subroutine determine_oval_characteristics(Current_in, Theta_in, Psi_in, &
   ! This routine calculates everything in radians away from the pole.
 
   use ModIonosphere
-  use IE_ModIo,       ONLY: NameIonoDir
+  use IE_ModIo, ONLY: NameIonoDir
   use ModConductance, ONLY: DoOvalShift
-  use IE_ModMain,     ONLY: Time_Array, nSolve
-  use ModIoUnit,      ONLY: UnitTMP_
-  use ModUtilities,   ONLY: open_file, close_file
+  use IE_ModMain, ONLY: Time_Array, nSolve
+  use ModIoUnit, ONLY: UnitTMP_
+  use ModUtilities, ONLY: open_file, close_file
 
   implicit none
 

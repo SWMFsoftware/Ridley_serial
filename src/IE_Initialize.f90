@@ -5,10 +5,10 @@ subroutine initialize_ie_ua_buffers(iOutputError)
 
   use ModErrors
   use ModIE_Interface
-  use IE_ModMain, only: iDebugLevel
+  use IE_ModMain, ONLY: iDebugLevel
   use ModFiles
-  use ModConst, only: cRadToDeg, cTwoPi
-  use CON_coupler, ONLY : Grid_C, ncell_id, IE_
+  use ModConst, ONLY: cRadToDeg, cTwoPi
+  use CON_coupler, ONLY: Grid_C, ncell_id, IE_
 
   implicit none
 

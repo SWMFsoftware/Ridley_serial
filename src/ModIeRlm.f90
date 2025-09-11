@@ -273,9 +273,9 @@ contains
     ! This routine calculates everything in radians away from the pole.
 
     use ModIonosphere
-    use IE_ModIo,       ONLY: NameIonoDir
-    use ModIoUnit,      ONLY: UnitTMP_
-    use IE_ModMain,     ONLY: Time_Array, nSolve
+    use IE_ModIo, ONLY: NameIonoDir
+    use ModIoUnit, ONLY: UnitTMP_
+    use IE_ModMain, ONLY: Time_Array, nSolve
 
     ! Inputs:
     real, dimension(1:IONO_nTheta, 1:IONO_nPsi), intent(in) :: &

@@ -15,8 +15,8 @@ subroutine ionosphere_currents(iBlock, Jx,Jy,Jz,                             &
 
   use ModIonosphere
   use ModCoordTransform, ONLY: dir_to_xyz, cross_product
-  use CON_planet_field,  ONLY: get_planet_field
-  use IE_ModMain,        ONLY: Time_Simulation
+  use CON_planet_field, ONLY: get_planet_field
+  use IE_ModMain, ONLY: Time_Simulation
 
   implicit none
 

@@ -401,7 +401,7 @@ contains
 
     ! use IE_ModSize
     use ModNumConst, ONLY: cDegToRad
-    use IE_ModMain,  ONLY: CosThetaTilt, SinThetaTilt
+    use IE_ModMain, ONLY: CosThetaTilt, SinThetaTilt
 
     character(len=*), intent(in) :: NameHemiIn
     real, intent(out), dimension(IONO_nTheta,IONO_nPsi) :: &
