@@ -25,8 +25,7 @@ module ModConductance
   character(len=8) :: NameAuroraMod = 'RLM5'
 
   ! Name of Conductance Relationships used
-  character(len=4) :: eCondRel = 'robi', &
-                      iCondRel = 'gala', KernelType = 'gaus'
+  character(len=4) :: eCondRel = 'robi', iCondRel = 'gala', KernelType = 'gaus'
 
   ! Set Kernel Size
   integer :: KernelSize = 3
@@ -49,12 +48,6 @@ module ModConductance
   real, dimension(IONO_nTheta,IONO_nPsi) :: &
        SigHalEuv_NORTH=0.0, SigHalEuv_SOUTH=0.0, &
        SigPedEuv_NORTH=0.0, SigPedEuv_SOUTH=0.0
-       ! Existing variables that should be moved here
-       ! Also, no reason to allocate (we think).
-       ! IONO_NORTH_DIFF_Ave_E=0,0, IONO_SOUTH_DIFF_Ave_E=0.0  &
-       ! IONO_NORTH_MONO_Ave_E=0.0, IONO_SOUTH_MONO_Ave_E=0.0, &
-       ! IONO_NORTH_DIFF_EFlux=0.0, IONO_SOUTH_DIFF_EFlux=0.0, &
-       ! IONO_NORTH_MONO_EFlux=0.0, IONO_SOUTH_MONO_EFlux=0.0
 
 contains
   !============================================================================
@@ -95,7 +88,7 @@ contains
     ! Local containers for spatial derivatives:
     real, dimension(IONO_nTheta,IONO_nPsi) :: &
          SigmaH, SigmaP, &
-         SigmaThTh, SigmaThPs, SigmaPsPs,     &
+         SigmaThTh, SigmaThPs, SigmaPsPs, &
          dSigmaThTh_dTheta, dSigmaThTh_dPsi, dSigmaThPs_dTheta, &
          dSigmaThPs_dPsi, dSigmaPsPs_dTheta, dSigmaPsPs_dPsi
 
@@ -242,7 +235,6 @@ contains
 
     ! Sum conductance into the correct hemisphere.
     if(NameHemiIn == 'north')then
-       IONO_NORTH_Sigma0 = SigmaPar
        IONO_NORTH_SigmaH = sqrt(SigmaHalConst**2 + SigmaHalEuv_II**2 + &
             (2.*StarLightCond)**2 + SigmaHalMono_II**2 + SigmaHalDiffe_II**2 + &
             SigmaHalDiffi_II**2)
@@ -268,7 +260,6 @@ contains
        sigmaP = IONO_NORTH_SigmaP
 
     else
-       IONO_SOUTH_Sigma0 = SigmaPar
        IONO_SOUTH_SigmaH = sqrt(SigmaHalConst**2 + SigmaHalEuv_II**2 + &
             (2.*StarLightCond)**2 + SigmaHalMono_II**2 + SigmaHalDiffe_II**2 + &
             SigmaHalDiffi_II**2)
@@ -291,7 +282,7 @@ contains
        IONO_SOUTH_BBND_Ave_E = AvgEBbnd_II
        ! Place values into convenience arrays to calculate derivatives:
        SigmaH = IONO_SOUTH_SigmaH
-       sigmaP = IONO_SOUTH_SigmaP
+       SigmaP = IONO_SOUTH_SigmaP
     end if
 
     ! Calculate of-diagonal conductance values.
@@ -388,7 +379,6 @@ contains
 
   end subroutine generate_conductance
   !============================================================================
-
   subroutine calc_euv_cond(NameHemiIn, CondHalOut_II, CondPedOut_II)
 
     ! For a given hemisphere, calculate the EUV-driven conductance using
@@ -470,8 +460,8 @@ contains
 
   end subroutine calc_euv_cond
   !============================================================================
-
   subroutine smooth_lagrange_polar(a_II, iLatSize, jLonSize, tolIn)
+
     ! Use a simple sliding window technique to smooth a 2D array in polar
     ! coordinates such that periodicity and continuity are enforced across
     ! the LON=360/0 boundary. The max and min latitude points are not
@@ -534,8 +524,8 @@ contains
 
   end subroutine smooth_lagrange_polar
   !============================================================================
-
   subroutine imodel_legacy(iModelIn, f10In, StarLightIn, PolarCapIn)
+
     ! Create mapping between new conductance-related PARAMs and legacy
     ! #IONOSPHERE param with the "imodel" parameter.  This maintains
     ! backwards compatability.
@@ -623,7 +613,6 @@ contains
 
   end subroutine imodel_legacy
   !============================================================================
-
   subroutine flux_to_sigma(nLatIn, nLonIn, AveEIn_II, eFluxIn_II, &
        SigmaHOut_II, SigmaPOut_II, NameModelIn, LatIn_II)
 
@@ -703,8 +692,8 @@ contains
 
    end subroutine flux_to_sigma
   !============================================================================
-
   subroutine polar_convolution(a_II, nLat, nLon)
+
     ! Use a Gaussian convolution to smooth a 2D array in polar coordinates
     ! such that periodicity and continuity are enforced across the LON=360/0
     ! boundary.
@@ -759,6 +748,5 @@ contains
 
   end subroutine polar_convolution
   !============================================================================
-
 end module ModConductance
 !==============================================================================
