@@ -20,20 +20,14 @@ module ModIonosphere
        IONO_MU = 1.256637e-06,                  &
        IONO_Theta_0 = 0.0001
 
-  ! This served as a map between iModel and what the number means.
-  ! Should be deleted once we're done here.
-!  integer, parameter :: IONO_Model_No_Hall = 1, &
-!       IONO_Model_With_Hall = 2,                &
-!       IONO_Model_With_Simple_Aurora = 3,       &
-!       IONO_Model_With_Complex_Aurora = 4
+  ! Dipole strength and radial sizes
+  real :: IONO_Bdp, IONO_Radius=1.0, IONO_Height=1.0, Radius
 
-  real :: IONO_Bdp,   &
-       IONO_Radius=1.0, IONO_Height=1.0, Radius
-
+  ! Cross Polar Cap Potentials
   real :: cpcp_north=0.0, cpcp_south=0.0
 
-  logical :: DoUseGMPe = .false., DoUseGMPpar = .false., &
-          DoUseGMPepar = .false.
+  ! Using (aniso) ion and electron pressures from GM
+  logical :: DoUseGMPe = .false., DoUseGMPpar = .false., DoUseGMPepar = .false.
 
   ! Ionosphere Solution on the whole grid
   real, allocatable :: IONO_Phi(:,:)
@@ -46,9 +40,9 @@ module ModIonosphere
   real, allocatable :: IONO_SigmaH(:,:)
 
   ! Ionosphere solution array definitions
-  real, allocatable :: IONO_NORTH_Phi(:,:)
+  real, allocatable :: IONO_NORTH_Phi(:,:)   ! potential
   real, allocatable :: IONO_SOUTH_Phi(:,:)
-  real, allocatable :: IONO_NORTH_X(:,:)
+  real, allocatable :: IONO_NORTH_X(:,:)     ! coordinates
   real, allocatable :: IONO_NORTH_Y(:,:)
   real, allocatable :: IONO_NORTH_Z(:,:)
   real, allocatable :: IONO_NORTH_Theta(:,:)
@@ -58,7 +52,7 @@ module ModIonosphere
   real, allocatable :: IONO_SOUTH_Z(:,:)
   real, allocatable :: IONO_SOUTH_Theta(:,:)
   real, allocatable :: IONO_SOUTH_Psi(:,:)
-  real, allocatable :: IONO_NORTH_Ex(:,:)
+  real, allocatable :: IONO_NORTH_Ex(:,:)   ! electric field
   real, allocatable :: IONO_NORTH_Ey(:,:)
   real, allocatable :: IONO_NORTH_Ez(:,:)
   real, allocatable :: IONO_NORTH_ETh(:,:)
@@ -68,7 +62,7 @@ module ModIonosphere
   real, allocatable :: IONO_SOUTH_Ez(:,:)
   real, allocatable :: IONO_SOUTH_ETh(:,:)
   real, allocatable :: IONO_SOUTH_EPs(:,:)
-  real, allocatable :: IONO_NORTH_Ux(:,:)
+  real, allocatable :: IONO_NORTH_Ux(:,:)   ! velocity
   real, allocatable :: IONO_NORTH_Uy(:,:)
   real, allocatable :: IONO_NORTH_Uz(:,:)
   real, allocatable :: IONO_NORTH_UTh(:,:)
@@ -78,24 +72,26 @@ module ModIonosphere
   real, allocatable :: IONO_SOUTH_Uz(:,:)
   real, allocatable :: IONO_SOUTH_UTh(:,:)
   real, allocatable :: IONO_SOUTH_UPs(:,:)
-  real, allocatable :: IONO_NORTH_EFlux(:,:)
-  real, allocatable :: IONO_NORTH_Ave_E(:,:)
+  real, allocatable :: IONO_NORTH_EFlux(:,:)  ! energy flux
+  real, allocatable :: IONO_NORTH_Ave_E(:,:)  ! average energy flux
   real, allocatable :: IONO_SOUTH_EFlux(:,:)
   real, allocatable :: IONO_SOUTH_Ave_E(:,:)
-  real, allocatable :: IONO_NORTH_Sigma0(:,:)
-  real, allocatable :: IONO_NORTH_SigmaH(:,:)
-  real, allocatable :: IONO_NORTH_SigmaP(:,:)
+  real, allocatable :: IONO_NORTH_SigmaH_IPE(:,:) ! Hall conductance from IPE
+  real, allocatable :: IONO_NORTH_SigmaP_IPE(:,:) ! Ped conductance from IPE
+  real, allocatable :: IONO_SOUTH_SigmaH_IPE(:,:)
+  real, allocatable :: IONO_SOUTH_SigmaP_IPE(:,:)
+  real, allocatable :: IONO_NORTH_SigmaH(:,:)  ! Hall conductance
+  real, allocatable :: IONO_NORTH_SigmaP(:,:)  ! Pedersen conductance
   real, allocatable :: IONO_NORTH_SigmaThTh(:,:)
   real, allocatable :: IONO_NORTH_SigmaThPs(:,:)
   real, allocatable :: IONO_NORTH_SigmaPsPs(:,:)
-  real, allocatable :: IONO_SOUTH_Sigma0(:,:)
   real, allocatable :: IONO_SOUTH_SigmaH(:,:)
   real, allocatable :: IONO_SOUTH_SigmaP(:,:)
   real, allocatable :: IONO_SOUTH_SigmaThTh(:,:)
   real, allocatable :: IONO_SOUTH_SigmaThPs(:,:)
   real, allocatable :: IONO_SOUTH_SigmaPsPs(:,:)
-  real, allocatable :: IONO_NORTH_dSigmaThTh_dTheta(:,:)
-  real, allocatable :: IONO_NORTH_dSigmaThPs_dTheta(:,:)
+  real, allocatable :: IONO_NORTH_dSigmaThTh_dTheta(:,:) ! derivatives of
+  real, allocatable :: IONO_NORTH_dSigmaThPs_dTheta(:,:) ! conductance
   real, allocatable :: IONO_NORTH_dSigmaPsPs_dTheta(:,:)
   real, allocatable :: IONO_NORTH_dSigmaThTh_dPsi(:,:)
   real, allocatable :: IONO_NORTH_dSigmaThPs_dPsi(:,:)
@@ -106,11 +102,11 @@ module ModIonosphere
   real, allocatable :: IONO_SOUTH_dSigmaThTh_dPsi(:,:)
   real, allocatable :: IONO_SOUTH_dSigmaThPs_dPsi(:,:)
   real, allocatable :: IONO_SOUTH_dSigmaPsPs_dPsi(:,:)
-  real, allocatable :: IONO_NORTH_Joule(:,:)
+  real, allocatable :: IONO_NORTH_Joule(:,:)       ! Joule heating
   real, allocatable :: IONO_SOUTH_Joule(:,:)
-  real, allocatable :: IONO_NORTH_IonNumFlux(:,:)
+  real, allocatable :: IONO_NORTH_IonNumFlux(:,:)  ! Ion flux
   real, allocatable :: IONO_SOUTH_IonNumFlux(:,:)
-  real, allocatable :: IONO_NORTH_JR(:,:)
+  real, allocatable :: IONO_NORTH_JR(:,:)          ! Current
   real, allocatable :: IONO_NORTH_JTh(:,:)
   real, allocatable :: IONO_NORTH_JPs(:,:)
   real, allocatable :: IONO_NORTH_Jx(:,:)
@@ -122,13 +118,13 @@ module ModIonosphere
   real, allocatable :: IONO_SOUTH_Jx(:,:)
   real, allocatable :: IONO_SOUTH_Jy(:,:)
   real, allocatable :: IONO_SOUTH_Jz(:,:)
-  real, allocatable :: IONO_NORTH_TGCM_JR(:,:)
+  real, allocatable :: IONO_NORTH_TGCM_JR(:,:)  ! TGCM current
   real, allocatable :: IONO_SOUTH_TGCM_JR(:,:)
   real, allocatable :: IONO_NORTH_Fake_JR(:,:)
   real, allocatable :: IONO_SOUTH_Fake_JR(:,:)
-  real, allocatable :: iono_north_im_jr(:,:)
+  real, allocatable :: iono_north_im_jr(:,:)    ! Inner Mag current
   real, allocatable :: iono_south_im_jr(:,:)
-  real, allocatable :: iono_north_im_avee(:,:)
+  real, allocatable :: iono_north_im_avee(:,:)  ! Inner Mag energy flux
   real, allocatable :: iono_south_im_avee(:,:)
   real, allocatable :: iono_north_im_eflux(:,:)
   real, allocatable :: iono_south_im_eflux(:,:)
@@ -153,15 +149,15 @@ module ModIonosphere
 
   logical, allocatable :: IsFilledWithIm(:,:)
 
-  real, allocatable :: IONO_NORTH_invB(:,:)
+  real, allocatable :: IONO_NORTH_invB(:,:)  ! Field line volume 1/B
   real, allocatable :: IONO_SOUTH_invB(:,:)
-  real, allocatable :: IONO_NORTH_rho(:,:)
+  real, allocatable :: IONO_NORTH_rho(:,:)   ! Mass density
   real, allocatable :: IONO_SOUTH_rho(:,:)
-  real, allocatable :: IONO_NORTH_p(:,:)
+  real, allocatable :: IONO_NORTH_p(:,:)     ! Ion pressure
   real, allocatable :: IONO_SOUTH_p(:,:)
   real, allocatable :: IONO_NORTH_Ppar(:,:)
   real, allocatable :: IONO_SOUTH_Ppar(:,:)
-  real, allocatable :: IONO_NORTH_Pe(:,:)
+  real, allocatable :: IONO_NORTH_Pe(:,:)    ! Electron pressure
   real, allocatable :: IONO_SOUTH_Pe(:,:)
   real, allocatable :: IONO_NORTH_Pepar(:,:)
   real, allocatable :: IONO_SOUTH_Pepar(:,:)
@@ -188,14 +184,13 @@ module ModIonosphere
   logical :: north, DoPrecond
   integer :: nThetaUsed, nX
 
+  ! Grid spacing
   real, dimension(IONO_nTheta) :: dTheta_North, dTheta_South
   real, dimension(IONO_nPsi)   :: dPsi_North, dPsi_South
 
 contains
   !============================================================================
-
   subroutine init_mod_ionosphere
-
     !--------------------------------------------------------------------------
     if(allocated(IONO_Phi)) RETURN
 
@@ -245,13 +240,11 @@ contains
     allocate(IONO_NORTH_Ave_E(IONO_nTheta,IONO_nPsi))
     allocate(IONO_SOUTH_EFlux(IONO_nTheta,IONO_nPsi))
     allocate(IONO_SOUTH_Ave_E(IONO_nTheta,IONO_nPsi))
-    allocate(IONO_NORTH_Sigma0(IONO_nTheta,IONO_nPsi)); IONO_NORTH_Sigma0=1000.
     allocate(IONO_NORTH_SigmaH(IONO_nTheta,IONO_nPsi)); IONO_NORTH_SigmaH = 0
     allocate(IONO_NORTH_SigmaP(IONO_nTheta,IONO_nPsi)); IONO_NORTH_SigmaP = 0
     allocate(IONO_NORTH_SigmaThTh(IONO_nTheta,IONO_nPsi))
     allocate(IONO_NORTH_SigmaThPs(IONO_nTheta,IONO_nPsi))
     allocate(IONO_NORTH_SigmaPsPs(IONO_nTheta,IONO_nPsi))
-    allocate(IONO_SOUTH_Sigma0(IONO_nTheta,IONO_nPsi)); IONO_SOUTH_Sigma0=1000.
     allocate(IONO_SOUTH_SigmaH(IONO_nTheta,IONO_nPsi)); IONO_SOUTH_SigmaH = 0
     allocate(IONO_SOUTH_SigmaP(IONO_nTheta,IONO_nPsi)); IONO_SOUTH_SigmaP = 0
     allocate(IONO_SOUTH_SigmaThTh(IONO_nTheta,IONO_nPsi))
@@ -356,9 +349,7 @@ contains
 
   end subroutine init_mod_ionosphere
   !============================================================================
-
   subroutine clean_mod_ionosphere
-
     !--------------------------------------------------------------------------
     if(.not.allocated(IONO_Phi)) RETURN
 
@@ -406,13 +397,11 @@ contains
     deallocate(IONO_NORTH_Ave_E)
     deallocate(IONO_SOUTH_EFlux)
     deallocate(IONO_SOUTH_Ave_E)
-    deallocate(IONO_NORTH_Sigma0)
     deallocate(IONO_NORTH_SigmaH)
     deallocate(IONO_NORTH_SigmaP)
     deallocate(IONO_NORTH_SigmaThTh)
     deallocate(IONO_NORTH_SigmaThPs)
     deallocate(IONO_NORTH_SigmaPsPs)
-    deallocate(IONO_SOUTH_Sigma0)
     deallocate(IONO_SOUTH_SigmaH)
     deallocate(IONO_SOUTH_SigmaP)
     deallocate(IONO_SOUTH_SigmaThTh)
@@ -506,6 +495,5 @@ contains
 
   end subroutine clean_mod_ionosphere
   !============================================================================
-
 end module ModIonosphere
 !==============================================================================
