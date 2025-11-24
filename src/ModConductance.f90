@@ -21,6 +21,11 @@ module ModConductance
        DoUseDiffE=.true., DoUseMono=.true., DoUseBbnd=.true., &
        UsePrecipSmoothing=.true.
 
+  ! Use IPE conductances?
+  logical:: UseIpeConductance = .false.
+  ! Latitude limits for IPE conductances
+  real:: LatFullIpe = -1.0, LatFullRim = 90.0
+  
   ! Name of auroral model to use, defaults to 'RLM5'
   character(len=8) :: NameAuroraMod = 'RLM5'
 

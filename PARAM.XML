@@ -149,6 +149,29 @@ information is written to a logfile.
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!! Physical parameters !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+<command name="IPECONDUCTANCE">
+  <parameter name="UseIpeConductance" type="logical" default="F"/>
+  <if expr="$UseIpeConductance">
+    <parameter name="LatFullIpe" type="real" min="0" max="90" default="50"/>
+    <parameter name="LatFullRim" type="real" min="$LatFullIpe" max="90"
+	       default="60"/>
+  </if>
+#IPECONDUCTANCE
+T           UseIpeConductance  ! rest read if true
+50.0        LatFullIpe
+60.0        LatFullRim
+
+If UseIpeConductance is true, the IPE conductances are used.
+The latitude (in absolute value) limits for IPE conductances
+are given by LatFullIpe and LatFullRim:
+the IPE conductance are used from the lower boundary of RIM to
+LatFullIpe, a linear combination of the conductances between
+LatFullIpe and LatFullRim, and RIM conductances from LatFullRim to 90
+degrees.
+
+By default UseIpeConductance is false. 
+</command>
+  
 <command name="SOLAREUV">
   <parameter name="DoUseEuvCond" type="logical" default="T"/>
   <if expr="$DoUseEuvCond">

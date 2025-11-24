@@ -54,8 +54,6 @@ contains
     use ModIonosphere
     use IE_ModIo
     use IE_ModMain
-!    use ModIonoMagPerturb
-
     use ModIoUnit
     use CON_comp_info
 
@@ -107,7 +105,8 @@ contains
            PolarCapPedCond, StarLightCond, SigmaHalConst, SigmaPedConst, &
            imodel_legacy, DoUseAurora, NameAuroraMod, DoUseDiffI, DoUseDiffE, &
            DoUseMono, DoUseBbnd, UsePrecipSmoothing, KernelType, KernelSize, &
-           KernelSpread, eCondRel, eCondLimit, eLimitScale
+           KernelSpread, eCondRel, eCondLimit, eLimitScale, &
+           UseIpeConductance, LatFullIpe, LatFullRim
       use ModMagnit, ONLY: ConeEfluxDifp, ConeNfluxDifp, ConeEfluxDife, &
               ConeNfluxDife, ConeEfluxMono, ConeNfluxMono, ConeEfluxBbnd, &
               ConeNfluxBbnd
@@ -279,8 +278,16 @@ contains
          case("#ROBINSONLIMIT")
             call read_var('eCondLimit', eCondLimit)
             call read_var('eLimitScale', eLimitScale)
-
-      ! Physics & solver related params
+         case("#IPECONDUCTANCE")
+            call read_var('UseIpeConductance', UseIpeConductance)
+            if(UseIpeConductance)then
+               call read_var('LatFullIpe', LatFullIpe)
+               LatFullIpe = max(0.0, min(90.0, LatFullIpe))
+               call read_var('LatFullRim', LatFullRim)
+               LatFullRim = max(LatFullIpe, min(90.0, LatFullRim))
+            end if
+            
+         ! Physics & solver related params
          case("#IM")
             call read_var('TypeImCouple',TypeImCouple)
             call lower_case(TypeImCouple)
