@@ -286,7 +286,7 @@ contains
                call read_var('LatFullRim', LatFullRim)
                LatFullRim = max(LatFullIpe, min(90.0, LatFullRim))
             end if
-            
+
          ! Physics & solver related params
          case("#IM")
             call read_var('TypeImCouple',TypeImCouple)
