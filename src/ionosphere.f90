@@ -59,13 +59,6 @@ subroutine ionosphere(iter, iAction)
 
 end subroutine ionosphere
 !==============================================================================
-
-!*************************************************************************
-!
-! INITIALIZATION Routines
-!
-!*************************************************************************
-
 subroutine ionosphere_fine_grid
 
   ! This routine sets the fine grid meshes for the
@@ -237,7 +230,6 @@ subroutine ionosphere_fine_grid
 
 end subroutine ionosphere_fine_grid
 !==============================================================================
-
 subroutine ionosphere_init
 
   ! This routine initializes the fine grid
@@ -316,21 +308,7 @@ subroutine ionosphere_init
 
 end subroutine ionosphere_init
 !==============================================================================
-
-!*************************************************************************
-!
-! INPUT/OUTPUT Routines
-!
-!*************************************************************************
-
 !^CFG  IF TIEGCM BEGIN
-!-------------------------------------------------------------------------
-! write_timegcm_file
-!
-!
-!
-!-------------------------------------------------------------------------
-
 subroutine write_timegcm_file(iter, phi_north, phi_south,   &
      eflux_north, eflux_south, avee_north, avee_south)
 
@@ -346,11 +324,13 @@ subroutine write_timegcm_file(iter, phi_north, phi_south,   &
   real :: psi_offset
 
   integer :: i, j
-  character (len=4), Parameter :: IO_ext=".dat"
+  character (len=4), parameter :: IO_ext = '.dat'
+  character(len=*), parameter:: NameSub = 'write_timegcm_file'
   !----------------------------------------------------------------------------
   write(*,*) '=> Writing output datafiles for TIMEGCM.'
 
-  call open_file(FILE=trim(NameIonoDir)//"MHD_to_TIMEGCM"//IO_ext)
+  call open_file(FILE=trim(NameIonoDir)//"MHD_to_TIMEGCM"//IO_ext, &
+       NameCaller=NameSub)
 
 !  Write Year, month, day, hour, minute, second
 
@@ -408,20 +388,10 @@ subroutine write_timegcm_file(iter, phi_north, phi_south,   &
      end do
   end do
 
-  call close_file
+  call close_file(NameCaller=NameSub)
 
 end subroutine write_timegcm_file
 !==============================================================================
-!^CFG END TIEGCM
-
-!^CFG  IF TIEGCM BEGIN
-!-------------------------------------------------------------------------
-! read_timegcm_file
-!
-!
-!
-!-------------------------------------------------------------------------
-
 subroutine read_timegcm_file
 
   use ModIonosphere
@@ -433,7 +403,7 @@ subroutine read_timegcm_file
   character (len=100) :: TIMEGCM_file
   real :: dum_lat, dum_lon, min_lat, max_lat, max_fac
   integer, dimension(1:6) :: time_array
-
+  character(len=*), parameter:: NameSub='read_timegcm_file'
   !----------------------------------------------------------------------------
   min_lat = 60.0
   max_lat = 85.0
@@ -443,7 +413,7 @@ subroutine read_timegcm_file
 
   TIMEGCM_file = trim(NameIonoDir)//"TIMEGCM_to_MHD.dat"
 
-  call open_file(FILE=TIMEGCM_file, STATUS="old")
+  call open_file(FILE=TIMEGCM_file, STATUS="old", NameCaller=NameSub)
 
   read(iUnit,fmt="(6I5)") (time_array(i),i=1,6)
 
@@ -485,12 +455,11 @@ subroutine read_timegcm_file
      end do
   end do
 
-  call close_file
+  call close_file(NameCaller=NameSub)
 
 end subroutine read_timegcm_file
 !==============================================================================
 !^CFG END TIEGCM
-
 subroutine IE_output
 
   use IE_ModIo
@@ -525,7 +494,6 @@ subroutine IE_output
 
 end subroutine IE_output
 !==============================================================================
-
 subroutine ionosphere_write_output(iFile, iBlock)
 
   ! This routine writes out the fine grid
@@ -620,7 +588,7 @@ subroutine ionosphere_write_output(iFile, iBlock)
 
   end if
 
-  call open_file(FILE=NameFile, STATUS="unknown")
+  call open_file(FILE=NameFile, NameCaller=NameSub)
 
   select case(iBlock)
   case(1) ! North writes header and data
@@ -1075,11 +1043,10 @@ subroutine ionosphere_write_output(iFile, iBlock)
   case default
      call CON_stop(NameSub//' invalid iBlock value')
   end select
-  call close_file
+  call close_file(NameCaller=NameSub)
 
 end subroutine ionosphere_write_output
 !==============================================================================
-
 subroutine IE_save_logfile
 
   use ModIonosphere
@@ -1093,6 +1060,8 @@ subroutine IE_save_logfile
   implicit none
   integer :: iError
   logical :: IsFirstTime = .true., DoWrite
+
+  character(len=*), parameter:: NameSub = 'IE_save_logfile'
   !----------------------------------------------------------------------------
   if (.not.DoSaveLogfile) RETURN
 
@@ -1114,7 +1083,7 @@ subroutine IE_save_logfile
              mod(time_array(1),100),time_array(2:6),".log"
      end if
 
-     call open_file(unitlog, FILE=NameFile)
+     call open_file(unitlog, FILE=NameFile, NameCaller=NameSub)
      write(unitlog,fmt="(a)")  'Ridley Ionosphere Model, [deg] and [kV]'
      write(unitlog,fmt="(a)") &
           't year mo dy hr mn sc msc tilt cpcpn cpcps'
@@ -1131,14 +1100,16 @@ subroutine IE_save_logfile
 
 end subroutine IE_save_logfile
 !==============================================================================
-
 subroutine ionosphere_read_restart_file
   ! This routine reads an ionospheric restart solution file.
 
   use ModProcIE
   use ModIonosphere
   use IE_ModIo
+
   implicit none
+
+  character(len=*), parameter:: NameSub = 'ionosphere_read_restart_file'
   !----------------------------------------------------------------------------
   if(iProc == 0)then
      write(*,*) '=> Reading restart file for ionosphere.'
@@ -1151,7 +1122,7 @@ subroutine ionosphere_read_restart_file
 
      ! Read north restart file
      call open_file(FILE=trim(NameRestartInDir)//"north.rst", &
-          STATUS="OLD", FORM="UNFORMATTED")
+          STATUS="OLD", FORM="UNFORMATTED", NameCaller=NameSub)
 
      read(iUnit) IONO_NORTH_Phi
      read(iUnit) IONO_NORTH_IonNumFlux
@@ -1166,7 +1137,7 @@ subroutine ionosphere_read_restart_file
   end if
   if(iProc == nProc - 1)then
      call open_file(FILE=trim(NameRestartInDir)//"south.rst", &
-          STATUS="OLD", FORM="UNFORMATTED")
+          STATUS="OLD", FORM="UNFORMATTED", NameCaller=NameSub)
 
      read(iUnit) IONO_SOUTH_Phi
      read(iUnit) IONO_SOUTH_IonNumFlux
@@ -1182,7 +1153,6 @@ subroutine ionosphere_read_restart_file
 
 end subroutine ionosphere_read_restart_file
 !==============================================================================
-
 subroutine ionosphere_write_restart_file
 
   ! This routine writes out 3 files:
@@ -1194,16 +1164,19 @@ subroutine ionosphere_write_restart_file
   use ModIonosphere
   use IE_ModMain, ONLY: Time_Simulation, nSolve
   use IE_ModIo
+
   implicit none
 
   integer:: iError
+  character(len=*), parameter:: NameSub = 'ionosphere_write_restart_file'
   !----------------------------------------------------------------------------
   if(iProc == 0)then
      write(*,*) '=> Writing restart file for ionosphere.'
 
      call make_dir(NameRestartOutDir)
 
-     call open_file(FILE=trim(NameRestartOutDir)//"restart.H")
+     call open_file(FILE=trim(NameRestartOutDir)//"restart.H", &
+          NameCaller=NameSub)
 
      write(iUnit,'(a)') "#TIMESIMULATION"
      write(iUnit,*)     Time_Simulation
@@ -1216,7 +1189,7 @@ subroutine ionosphere_write_restart_file
   call MPI_barrier(iComm, iError)
   if(iProc == 0)then
      call open_file(FILE=trim(NameRestartOutDir)//"north.rst", &
-          FORM="UNFORMATTED")
+          FORM="UNFORMATTED", NameCaller=NameSub)
 
      write(iUnit) IONO_NORTH_Phi
      write(iUnit) IONO_NORTH_IonNumFlux
@@ -1231,7 +1204,7 @@ subroutine ionosphere_write_restart_file
   end if
   if(iProc == nProc - 1)then
      call open_file(FILE=trim(NameRestartOutDir)//"south.rst", &
-          FORM="UNFORMATTED")
+          FORM="UNFORMATTED", NameCaller=NameSub)
 
      write(iUnit) IONO_SOUTH_Phi
      write(iUnit) IONO_SOUTH_IonNumFlux
@@ -1247,8 +1220,8 @@ subroutine ionosphere_write_restart_file
 
 end subroutine ionosphere_write_restart_file
 !==============================================================================
-
 subroutine iono_getpot(isize,jsize,MHD_lat,MHD_lon,MHD_pot,MHD_Jr)
+
   use ModIonosphere
   implicit none
 
@@ -1333,7 +1306,6 @@ subroutine iono_getpot(isize,jsize,MHD_lat,MHD_lon,MHD_pot,MHD_Jr)
 
 end subroutine iono_getpot
 !==============================================================================
-
 subroutine calculate_xyz_geo_gse
 
   use ModIonosphere

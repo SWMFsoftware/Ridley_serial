@@ -300,13 +300,14 @@ contains
     real, intent(in) :: b_I(n)        ! rhs
 
     integer :: iTheta, iPsi, i, iError(1)
+    character(len=*), parameter:: NameSub = 'check_solution'
     !--------------------------------------------------------------------------
     call matvec_ionosphere(x_I, y_I, n)
 
     if(north)then
-       call open_file(FILE='iono_north.out')
+       call open_file(FILE='iono_north.out', NameCaller=NameSub)
     else
-       call open_file(FILE='iono_south.out')
+       call open_file(FILE='iono_south.out', NameCaller=NameSub)
     end if
     write(UnitTmp_,'(a79)')'Iono Solver_var22'
     write(UnitTmp_,'(i7,es13.5,3i3)') nSolve,Time_Simulation,2,1,13
@@ -328,7 +329,7 @@ contains
             d_I(i), e_I(i), f_I(i), e1_I(i), f1_I(i), &
             y_I(i), b_I(i), y_I(i)-b_I(i)
     end do; end do
-    call close_file
+    call close_file(NameCaller=NameSub)
 
   end subroutine check_solution
   !============================================================================

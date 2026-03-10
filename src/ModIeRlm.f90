@@ -44,7 +44,6 @@ module ModIeRlm
 
 contains
   !============================================================================
-
   subroutine load_conductances()
 
     use ModConductance, ONLY: NameAuroraMod
@@ -93,7 +92,7 @@ contains
 
     ! Start with Hall Conductance:
     if(DoTest) write(*,*)NameSub//': Opening Hall cond. file '//NameHalFile
-    call open_file(file='IE/'//NameHalFile, status="old")
+    call open_file(file='IE/'//NameHalFile, status="old", NameCaller=NameSub)
 
     ! Skip until DIMENSIONS are found:
     do
@@ -157,7 +156,7 @@ contains
     end do
 
     ! Close Hall conductance file:
-    call close_file
+    call close_file(NameCaller=NameSub)
 
     if(DoTest)then
        ! Write out first and last conductances to screen for visual checking:
@@ -181,7 +180,7 @@ contains
 
     ! Load Pedersen Conductance:
     if(DoTest) write(*,*)NameSub//': Opening Pedersen cond. file '//NamePedFile
-    call open_file(file='IE/'//NamePedFile, status="old")
+    call open_file(file='IE/'//NamePedFile, status="old", NameCaller=NameSub)
 
     ! Skip until DIMENSIONS are found
     do
@@ -226,7 +225,7 @@ contains
     end do
 
     ! Close Pedersen conductance file:
-    call close_file
+    call close_file(NameCaller=NameSub)
 
     ! Wrap values around MLT 00 == 24:
     cond_mlts(i_cond_nmlts+1)   = cond_mlts(1)+24.0
