@@ -403,7 +403,7 @@ subroutine read_timegcm_file
   character (len=100) :: TIMEGCM_file
   real :: dum_lat, dum_lon, min_lat, max_lat, max_fac
   integer, dimension(1:6) :: time_array
-  character(len=*), parameter:: NameSub='read_timegcm_file'
+  character(len=*), parameter:: NameSub = 'read_timegcm_file'
   !----------------------------------------------------------------------------
   min_lat = 60.0
   max_lat = 85.0
