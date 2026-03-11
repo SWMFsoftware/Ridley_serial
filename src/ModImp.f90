@@ -89,14 +89,14 @@ module ModImp
       character(len=*), parameter:: NameSub = 'imp_integrated_flux'
       !------------------------------------------------------------------------
           if (trim(NameHemiIn) == 'south') then
-              AvgEDiffe_II = iono_south_im_aveeElec / 1000.0 ! eV to keV
+              AvgEDiffe_II = iono_south_im_aveeElec ! in keV
               EfluxDiffe_II = iono_south_im_efluxElec / 1000.0 ! mW/m^2 to W/m^2
-              AvgEDiffi_II = iono_south_im_aveeHydr / 1000.0
+              AvgEDiffi_II = iono_south_im_aveeHydr
               EfluxDiffi_II = iono_south_im_efluxHydr / 1000.0
           else if (trim(NameHemiIn) == 'north') then
-              AvgEDiffe_II = iono_north_im_aveeElec / 1000.0
+              AvgEDiffe_II = iono_north_im_aveeElec
               EfluxDiffe_II = iono_north_im_efluxElec / 1000.0
-              AvgEDiffi_II = iono_north_im_aveeHydr / 1000.0
+              AvgEDiffi_II = iono_north_im_aveeHydr
               EfluxDiffi_II = iono_north_im_efluxHydr / 1000.0
            else
               call CON_stop(NameSub//' : unrecognized hemisphere - '//&
