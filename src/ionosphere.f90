@@ -1356,16 +1356,16 @@ subroutine calculate_indexes
    use ModMpi
    use ModNumConst, ONLY: cHalfPi, cTwoPi
    implicit none
-   
+
    real, dimension(IONO_nTheta, IONO_nPsi) :: cell_area_II, theta_II, psi_II, &
                                               var_II
    real :: dTheta, dPsi
    integer:: iError
-   !----------------------------------------------------------------------------
+  !----------------------------------------------------------------------------
    if (iProc == 0) then
       theta_II = IONO_NORTH_Theta
       psi_II = IONO_NORTH_Psi
-   else 
+   else
       theta_II = IONO_SOUTH_Theta
       psi_II = IONO_SOUTH_psi
    end if
@@ -1374,7 +1374,7 @@ subroutine calculate_indexes
    dPsi   = cTwoPi/(IONO_nPsi-1)
    cell_area_II = Radius * Radius * dTheta * dPsi * sin(theta_II)
 
-   if (iProc == 0) then 
+   if (iProc == 0) then
       fac_up_north = SUM(IONO_NORTH_Jr * cell_area_II, &
                            MASK=(IONO_NORTH_Jr > 0)) / 1e6
       fac_down_north = SUM(IONO_NORTH_Jr * cell_area_II, &
@@ -1386,7 +1386,7 @@ subroutine calculate_indexes
       hemi_pow_bbnd_north = SUM(IONO_NORTH_BBND_EFlux * cell_area_II) / 1e9
       hemi_pow_north = hemi_pow_diffe_north + hemi_pow_diffi_north + &
                        hemi_pow_mono_north + hemi_pow_bbnd_north
-   else 
+   else
       fac_up_south = SUM(IONO_SOUTH_Jr * cell_area_II, &
                            MASK=(IONO_SOUTH_Jr > 0)) / 1e6
       fac_down_south = SUM(IONO_SOUTH_Jr * cell_area_II, &
