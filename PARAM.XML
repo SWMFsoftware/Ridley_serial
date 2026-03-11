@@ -140,7 +140,16 @@ Log files are named with the new substring including full year, ie. _e20000321-1
 F			DoSaveIELogfile
 
 If true, every time that iono_solve is called, iteration, time, and solution
-information is written to a logfile.
+information is written to a logfile. Log file contains Simulation time in 
+seconds, Date and Time, and the following variables first for 
+north then south: 
+
+CPCP in kV, Integrated Upward Field Aligned Currents in MA, Integrated Downward
+Field Aligned Currents in MA, Total Hemispheric Power in GW, Hemispheric Power
+for Diffuse Electrons in GW, Added Hemispheric Power from Discrete Acceleration 
+in GW, Hemispheric Power for Broadband Electrons in GW, Hemispheric Power for 
+Diffuse Ions in GW
+  
 </command>
 
 </commandgroup>

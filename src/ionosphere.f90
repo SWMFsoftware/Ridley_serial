@@ -1067,6 +1067,8 @@ subroutine IE_save_logfile
 
   if(nProc>1) call MPI_bcast(cpcp_south,1,MPI_REAL,1,iComm,iError)
 
+  call calculate_indexes
+
   if(iProc/=0) RETURN
 
   DoWrite = .true.
@@ -1084,17 +1086,24 @@ subroutine IE_save_logfile
      end if
 
      call open_file(unitlog, FILE=NameFile, NameCaller=NameSub)
-     write(unitlog,fmt="(a)")  'Ridley Ionosphere Model, [deg] and [kV]'
+     write(unitlog,fmt="(a)")  'Ridley Ionosphere Model, [deg] [kV] [MA] and '&
+                               //'[GW]'
      write(unitlog,fmt="(a)") &
-          't year mo dy hr mn sc msc tilt cpcpn cpcps'
+          't year mo dy hr mn sc msc tilt cpcpn cpcps jr_un jr_us jr_dn jr_ds'&
+          //' hpown hpows hp_diffe_n hp_diffe_s hp_mono_n hp_mono_s hp_bbnd_n'&
+          //' hp_bbnd_s hp_diffi_n hp_diffi_s'
 
      ! Only write data if the simulation time is zero so during
      ! restart we don't repeat the last item from a previous run.
      DoWrite = Time_Simulation == 0.0
   end if
-  if(DoWrite)write(unitlog,fmt="(es13.5,i5,5i3,i4,f11.5,2es13.5)") &
+  if(DoWrite)write(unitlog,fmt="(es13.5,i5,5i3,i4,f11.5,16es13.5)") &
        Time_Simulation, Time_Array(1:7), &
-       ThetaTilt*cRadToDeg, cpcp_north, cpcp_south
+       ThetaTilt*cRadToDeg, cpcp_north, cpcp_south, fac_up_north, fac_up_south,&
+       fac_down_north, fac_down_south, hemi_pow_north, hemi_pow_south, &
+       hemi_pow_diffe_north, hemi_pow_diffe_south, hemi_pow_mono_north, &
+       hemi_pow_mono_south, hemi_pow_bbnd_north, hemi_pow_bbnd_south, &
+       hemi_pow_diffi_north, hemi_pow_diffi_south
 
   call flush_unit(unitlog)
 
@@ -1340,3 +1349,72 @@ subroutine calculate_xyz_geo_gse
   end do
 end subroutine calculate_xyz_geo_gse
 !==============================================================================
+subroutine calculate_indexes
+
+   use ModIonosphere
+   use ModProcIE
+   use ModMpi
+   use ModNumConst, ONLY: cHalfPi, cTwoPi
+   implicit none
+   
+   real, dimension(IONO_nTheta, IONO_nPsi) :: cell_area_II, theta_II, psi_II, &
+                                              var_II
+   real :: dTheta, dPsi
+   integer:: iError
+   !----------------------------------------------------------------------------
+   if (iProc == 0) then
+      theta_II = IONO_NORTH_Theta
+      psi_II = IONO_NORTH_Psi
+   else 
+      theta_II = IONO_SOUTH_Theta
+      psi_II = IONO_SOUTH_psi
+   end if
+
+   dTheta = cHalfPi/(IONO_nTheta-1)
+   dPsi   = cTwoPi/(IONO_nPsi-1)
+   cell_area_II = Radius * Radius * dTheta * dPsi * sin(theta_II)
+
+   if (iProc == 0) then 
+      fac_up_north = SUM(IONO_NORTH_Jr * cell_area_II, &
+                           MASK=(IONO_NORTH_Jr > 0)) / 1e6
+      fac_down_north = SUM(IONO_NORTH_Jr * cell_area_II, &
+                           MASK=(IONO_NORTH_Jr < 0)) / 1e6
+      hemi_pow_diffe_north = SUM(IONO_NORTH_DIFFE_EFlux * cell_area_II) / 1e9
+      hemi_pow_diffi_north = SUM(IONO_NORTH_DIFFI_EFlux * cell_area_II) / 1e9
+      hemi_pow_mono_north = SUM((IONO_NORTH_MONO_EFlux - &
+                                 IONO_NORTH_DIFFE_EFlux) * cell_area_II) / 1e9
+      hemi_pow_bbnd_north = SUM(IONO_NORTH_BBND_EFlux * cell_area_II) / 1e9
+      hemi_pow_north = hemi_pow_diffe_north + hemi_pow_diffi_north + &
+                       hemi_pow_mono_north + hemi_pow_bbnd_north
+   else 
+      fac_up_south = SUM(IONO_SOUTH_Jr * cell_area_II, &
+                           MASK=(IONO_SOUTH_Jr > 0)) / 1e6
+      fac_down_south = SUM(IONO_SOUTH_Jr * cell_area_II, &
+                           MASK=(IONO_SOUTH_Jr < 0)) / 1e6
+      hemi_pow_diffe_south = SUM(IONO_SOUTH_DIFFE_EFlux * cell_area_II) / 1e9
+      hemi_pow_diffi_south = SUM(IONO_SOUTH_DIFFI_EFlux * cell_area_II) / 1e9
+      hemi_pow_mono_south = SUM((IONO_SOUTH_MONO_EFlux - &
+                                 IONO_SOUTH_DIFFE_EFlux) * cell_area_II) / 1e9
+      hemi_pow_bbnd_south = SUM(IONO_SOUTH_BBND_EFlux * cell_area_II) / 1e9
+      hemi_pow_south = hemi_pow_diffe_south + hemi_pow_diffi_south + &
+                       hemi_pow_mono_south + hemi_pow_bbnd_south
+   end if
+
+   if(nProc>1) then
+      call MPI_bcast(fac_up_south,1,MPI_REAL,1,iComm,iError)
+      call MPI_bcast(fac_down_south,1,MPI_REAL,1,iComm,iError)
+      call MPI_bcast(hemi_pow_diffe_south,1,MPI_REAL,1,iComm,iError)
+      call MPI_bcast(hemi_pow_diffi_south,1,MPI_REAL,1,iComm,iError)
+      call MPI_bcast(hemi_pow_mono_south,1,MPI_REAL,1,iComm,iError)
+      call MPI_bcast(hemi_pow_bbnd_south,1,MPI_REAL,1,iComm,iError)
+      call MPI_bcast(hemi_pow_south,1,MPI_REAL,1,iComm,iError)
+   end if
+end subroutine calculate_indexes
+!==============================================================================
+
+
+
+      
+
+   
+

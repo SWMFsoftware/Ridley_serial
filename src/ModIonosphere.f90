@@ -25,6 +25,13 @@ module ModIonosphere
 
   ! Cross Polar Cap Potentials
   real :: cpcp_north=0.0, cpcp_south=0.0
+  ! Hemispheric Variables for log output
+  real :: fac_up_north=0.0, fac_down_north=0.0, fac_up_south=0.0, &
+          fac_down_south=0.0, hemi_pow_north=0.0, hemi_pow_south=0.0, &
+          hemi_pow_diffe_north=0.0, hemi_pow_diffe_south=0.0, &
+          hemi_pow_mono_north=0.0, hemi_pow_mono_south=0.0, &
+          hemi_pow_bbnd_north=0.0, hemi_pow_bbnd_south=0.0, &
+          hemi_pow_diffi_north=0.0, hemi_pow_diffi_south=0.0
 
   ! Using (aniso) ion and electron pressures from GM
   logical :: DoUseGMPe = .false., DoUseGMPpar = .false., DoUseGMPepar = .false.
