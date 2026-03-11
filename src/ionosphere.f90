@@ -1411,10 +1411,3 @@ subroutine calculate_indexes
    end if
 end subroutine calculate_indexes
 !==============================================================================
-
-
-
-      
-
-   
-
