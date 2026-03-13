@@ -1094,7 +1094,7 @@ subroutine IE_save_logfile
                               //'total aurora and each subcomponent'
      write(unitlog,fmt="(a)") &
           't year mo dy hr mn sc msc tilt n_cpcp s_cpcp n_iru s_iru n_ird'&
-          //' s_ird n_hpow s_hpow n_hpow_diffe s_hpow_diffe n_hpow_mono'& 
+          //' s_ird n_hpow s_hpow n_hpow_diffe s_hpow_diffe n_hpow_mono'&
           //' s_hpow_mono n_hpow_bbnd s_hpow_bbnd n_hpow_diffi s_hpow_diffi'
 
      ! Only write data if the simulation time is zero so during
