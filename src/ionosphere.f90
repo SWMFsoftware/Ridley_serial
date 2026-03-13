@@ -1086,12 +1086,16 @@ subroutine IE_save_logfile
      end if
 
      call open_file(unitlog, FILE=NameFile, NameCaller=NameSub)
-     write(unitlog,fmt="(a)")  'Ridley Ionosphere Model, [deg] [kV] [MA] and '&
-                               //'[GW]'
+     write(unitlog,fmt="(a)")  'Ridley Ionosphere Model, tilt [deg] CPCP [kV]'&
+                               //'Integrated Current [MA] and '&
+                               //'Hemispheric Power [GW]'
+     write(unitlog,fmt="(a)") 'iru and ird: integrated upward and downward '&
+                              //'FACs. hpow vars: hemispheric power for '&
+                              //'total aurora and each subcomponent'
      write(unitlog,fmt="(a)") &
-          't year mo dy hr mn sc msc tilt cpcpn cpcps jr_un jr_us jr_dn jr_ds'&
-          //' hpown hpows hp_diffe_n hp_diffe_s hp_mono_n hp_mono_s hp_bbnd_n'&
-          //' hp_bbnd_s hp_diffi_n hp_diffi_s'
+          't year mo dy hr mn sc msc tilt n_cpcp s_cpcp n_iru s_iru n_ird'&
+          //' s_ird n_hpow s_hpow n_hpow_diffe s_hpow_diffe n_hpow_mono'& 
+          //' s_hpow_mono n_hpow_bbnd s_hpow_bbnd n_hpow_diffi s_hpow_diffi'
 
      ! Only write data if the simulation time is zero so during
      ! restart we don't repeat the last item from a previous run.
@@ -1365,7 +1369,8 @@ subroutine calculate_indexes
    if (iProc == 0) then
       theta_II = IONO_NORTH_Theta
       psi_II = IONO_NORTH_Psi
-   else
+   end if
+   if(iProc == nProc - 1)then
       theta_II = IONO_SOUTH_Theta
       psi_II = IONO_SOUTH_psi
    end if
@@ -1386,7 +1391,8 @@ subroutine calculate_indexes
       hemi_pow_bbnd_north = SUM(IONO_NORTH_BBND_EFlux * cell_area_II) / 1e9
       hemi_pow_north = hemi_pow_diffe_north + hemi_pow_diffi_north + &
                        hemi_pow_mono_north + hemi_pow_bbnd_north
-   else
+   end if
+   if(iProc == nProc - 1)then
       fac_up_south = SUM(IONO_SOUTH_Jr * cell_area_II, &
                            MASK=(IONO_SOUTH_Jr > 0)) / 1e6
       fac_down_south = SUM(IONO_SOUTH_Jr * cell_area_II, &
