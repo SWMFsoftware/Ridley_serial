@@ -1089,7 +1089,7 @@ subroutine IE_save_logfile
      write(unitlog,fmt="(a)")  'Ridley Ionosphere Model, tilt [deg] CPCP [kV]'&
                                //'Integrated Current [MA] and '&
                                //'Hemispheric Power [GW]'
-     write(unitlog,fmt="(a)") 'iru and ird: integrated upward and downward '&
+     write(unitlog,fmt="(a)") '# iru and ird: integrated upward and downward '&
                               //'FACs. hpow vars: hemispheric power for '&
                               //'total aurora and each subcomponent'
      write(unitlog,fmt="(a)") &
@@ -1367,19 +1367,10 @@ subroutine calculate_indexes
    integer:: iError
   !----------------------------------------------------------------------------
    if (iProc == 0) then
-      theta_II = IONO_NORTH_Theta
-      psi_II = IONO_NORTH_Psi
-   end if
-   if(iProc == nProc - 1)then
-      theta_II = IONO_SOUTH_Theta
-      psi_II = IONO_SOUTH_psi
-   end if
+      dTheta = cHalfPi/(IONO_nTheta-1)
+      dPsi   = cTwoPi/(IONO_nPsi-1)
+      cell_area_II = Radius * Radius * dTheta * dPsi * sin(IONO_NORTH_Theta)
 
-   dTheta = cHalfPi/(IONO_nTheta-1)
-   dPsi   = cTwoPi/(IONO_nPsi-1)
-   cell_area_II = Radius * Radius * dTheta * dPsi * sin(theta_II)
-
-   if (iProc == 0) then
       fac_up_north = SUM(IONO_NORTH_Jr * cell_area_II, &
                            MASK=(IONO_NORTH_Jr > 0)) / 1e6
       fac_down_north = SUM(IONO_NORTH_Jr * cell_area_II, &
@@ -1393,6 +1384,10 @@ subroutine calculate_indexes
                        hemi_pow_mono_north + hemi_pow_bbnd_north
    end if
    if(iProc == nProc - 1)then
+      dTheta = cHalfPi/(IONO_nTheta-1)
+      dPsi   = cTwoPi/(IONO_nPsi-1)
+      cell_area_II = Radius * Radius * dTheta * dPsi * sin(IONO_SOUTH_Theta)
+
       fac_up_south = SUM(IONO_SOUTH_Jr * cell_area_II, &
                            MASK=(IONO_SOUTH_Jr > 0)) / 1e6
       fac_down_south = SUM(IONO_SOUTH_Jr * cell_area_II, &
