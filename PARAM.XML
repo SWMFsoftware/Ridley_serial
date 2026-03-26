@@ -689,6 +689,20 @@ larger importance put on points farther away from the active point.
 The default values are shown above.
 </command>
 
+<command name="POLARCAPSMOOTHING">
+  <parameter name="DoPolarCapSmoothing" type="logical" default="T"/>
+  <parameter name="PCapSmoothingSize" type="real" min="0" default="2.0"/>
+
+#POLARCAPSMOOTHING
+T         DoPolarCapSmoothing
+2.0       PCapSmoothingSize
+
+If DoPolarCapSmoothing is true, this command sets the size of region 
+interpolated between the polar cap and closed field lines in 1 dimension. Value 
+is given as a float value of degrees in latitude. Default values are shown. 
+</command>
+
+
 <command name="ROBINSONLIMIT">
 	<parameter name="eCondLimit" type="real" min="0" default="10000"/>
 

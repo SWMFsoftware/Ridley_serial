@@ -29,6 +29,10 @@ module ModMagnit
           ConeEfluxMono = 1.000, ConeEfluxBbnd = 2.247, &
           ConeNfluxDife = 0.055, ConeNfluxDifp = 0.038, &
           ConeNfluxMono = 0.741, ConeNfluxBbnd = 0.494
+
+  ! Lower limit for GM poynting flux
+  real :: GmPoyntFloor = 1E-6
+
   contains
   !============================================================================
 
@@ -63,8 +67,8 @@ module ModMagnit
     use ModConst, ONLY: cPi, cKEV
     use ModIonosphere, ONLY: IONO_North_p, IONO_North_rho, &
         IONO_South_p, IONO_South_rho, IONO_NORTH_JR, IONO_SOUTH_JR, &
-        IONO_NORTH_invB, IONO_SOUTH_invB, IONO_NORTH_Joule, &
-        IONO_SOUTH_Joule, IONO_North_Pe, IONO_South_Pe
+        IONO_NORTH_invB, IONO_SOUTH_invB, IONO_NORTH_Poynting, &
+        IONO_SOUTH_Poynting, IONO_North_Pe, IONO_South_Pe, DoPolarCapSmoothing
 
     ! Given magnetospheric density, pressure, and FACs, calculate diffuse and
     ! monoenergetic precipitating fluxes.
@@ -86,10 +90,10 @@ module ModMagnit
     ! Set arrays to hold magnetospheric values.
     real, dimension(IONO_nTheta, IONO_nPsi) :: &
         MagP_II, MagNp_II, MagPe_II, MagNe_II, NfluxDiffe_II, NfluxDiffi_II, &
-        NfluxBbnd_II, OCFL_II, FAC_II=0, Joule_II=0, Poynting_II=0, &
+        NfluxBbnd_II, OCFL_II, FAC_II=0, Poynting_II=0, &
             ElectronTemp_II=0, OCFL_flip_II=0
 
-    integer :: j
+    integer :: i,j
 
     ! Debug variables:
     logical :: DoTestMe, DoTest
@@ -105,19 +109,19 @@ module ModMagnit
         MagNp_II = iono_north_rho / cProtonMass
         FAC_II = IONO_NORTH_JR
         OCFL_II = IONO_NORTH_invB
-        Joule_II = IONO_NORTH_Joule
+        Poynting_II = -IONO_NORTH_Poynting
         if (DoUseGMPe) MagPe_II = iono_north_pe
     else if (NameHemiIn == 'south')then
         MagP_II = iono_south_p
         MagNp_II = iono_south_rho / cProtonMass
         FAC_II = IONO_SOUTH_JR
         OCFL_II = IONO_SOUTH_invB
-        Joule_II = IONO_SOUTH_Joule
+        Poynting_II = -IONO_SOUTH_Poynting
         if (DoUseGMPe) MagPe_II = iono_south_pe
     else
       call CON_stop(NameSub//' : unrecognized hemisphere - '//NameHemiIn)
     end if
-
+    
     ! Set default/background values - TBD.
     ! If we need OCFLB calculation, we would put it here.
 
@@ -126,9 +130,13 @@ module ModMagnit
     ! Scale Pe using ratioPe
     if(.not. DoUseGMPe) then
       do j=1, Iono_nPsi
-        MagPe_II(:, j) = ratioPe * MagP_II(:, IONO_nPsi-j+1)
-        MagNe_II(:, j) = MagNp_II(:, IONO_nPsi-j+1)
-        OCFL_flip_II(:, j) = OCFL_II(:, IONO_nPsi-j+1)
+        do i = I, Iono_nTheta
+            if(OCFL_II(i,j) > 0 .and. OCFL_II(i, IONO_nPsi-j+1) > 0) then 
+                MagPe_II(i, j) = ratioPe * MagP_II(i, IONO_nPsi-j+1)
+                MagNe_II(i, j) = MagNp_II(i, IONO_nPsi-j+1)
+                OCFL_flip_II(i, j) = OCFL_II(i, IONO_nPsi-j+1)
+            end if
+        end do
       end do
       OCFL_II = OCFL_flip_II
     else
@@ -147,6 +155,7 @@ module ModMagnit
 
 ! Calculate diffuse precipitation: electrons.
     ElectronTemp_II  = MagPe_II / MagNe_II  ! T = P/nk in Joules
+    
     NfluxDiffe_II = ConeNfluxDife * MagNe_II * ElectronTemp_II**0.5 / &
                  sqrt(2 * cPi * cElectronMass)  ! units of #/m2/s
     ! units of W/m2
@@ -155,23 +164,21 @@ module ModMagnit
     ! Recalc to make consistent with ConeFactors (and get units of keV)
     AvgEDiffe_II = EfluxDiffe_II / (NfluxDiffe_II * cKEV)
 
+    ! Smooth area between closed and open field lines
+    if(DoPolarCapSmoothing) then
+        call smooth_polar_cap(ElectronTemp_II, OCFL_II, NameHemiIn)
+        call smooth_polar_cap(NfluxDiffe_II, OCFL_II, NameHemiIn)
+        call smooth_polar_cap(EfluxDiffe_II, OCFL_II, NameHemiIn)
+        call smooth_polar_cap(AvgEDiffe_II, OCFL_II, NameHemiIn)
+        call smooth_polar_cap(EfluxDiffi_II, OCFL_II, NameHemiIn)
+        call smooth_polar_cap(AvgEDiffi_II, OCFL_II, NameHemiIn)
+    end if
+
     ! Calculate monoenergetic electron precipitation
     call monoenergetic_flux(FAC_II, OCFL_II, NfluxDiffe_II, ElectronTemp_II, &
             AvgEDiffe_II, LatIn_II, EfluxMono_II, AvgEMono_II)
-!    ! Calculate broadband electron precipitation
-!    ! Note: Joule Heating is in SI Units = W/m2
-     ! Need to figure out where this value came from,
-     ! I don't like a hardcoded 17 Sig Fig constant
-    EfluxBbnd_II = 0
-    AvgEBbnd_II = 0
-    where(Joule_II > 0)
-      Poynting_II = Joule_II * 0.43395593979143521 ! in W/m2
 
-      ! Using empirical relationships from Zhang et al. 2015
-      EfluxBbnd_II = 2e-3 * (ConeEfluxBbnd * Poynting_II) ** 0.5
-      NfluxBbnd_II = 3e13 * (ConeNfluxBbnd * Poynting_II) ** 0.47
-      AvgEBbnd_II = EfluxBbnd_II / (NfluxBbnd_II * cKEV)
-    end where
+        call broadband_flux(Poynting_II, EfluxBbnd_II, AvgEBbnd_II)
 
   end subroutine magnit_gen_fluxes
   !============================================================================
@@ -206,15 +213,22 @@ module ModMagnit
             (rPlanet_I(Earth_) + IonoHeightPlanet_I(Earth_))))**3 * &
             sqrt(1 + 3*cos(LatIn_II)**2)
 
+    where(PrecipRatio_II >= MirrorRatio_II .and. OCFL_II > 0) 
+        NfluxMono_II = NfluxDiffe_II * MirrorRatio_II
+        PrecipRatio_II = MirrorRatio_II
+    end where
+
     ! Potential calculations only valid where 1 <= NumCoefficient <= MirrorRatio
-    where(1 <= PrecipRatio_II .and. PrecipRatio_II < MirrorRatio_II .and. &
-            OCFL_II > 0)
+    where(1 <= PrecipRatio_II .and. OCFL_II > 0)
       ! Put it all together into potential
       Potential_II = ElectronTemp_II / cElectronCharge * (1 - MirrorRatio_II) &
               * LOG((MirrorRatio_II - PrecipRatio_II) / (MirrorRatio_II - 1))
-    elsewhere
+    elsewhere(1 <= PrecipRatio_II .and. OCFL_II < 0)
+      Potential_II = ElectronTemp_II * (PrecipRatio_II - 1)
+    elsewhere  
       NfluxMono_II = NfluxDiffe_II
     end where
+
     ! Split up large calculation into a few steps
     ! Calculate large potential exponent
     VExponent_II = EXP(-cElectronCharge * Potential_II / ((ElectronTemp_II) * &
@@ -230,6 +244,122 @@ module ModMagnit
     ! Calculate Avg E in keV
     AvgEMono_II = EfluxMono_II / (NfluxDiffe_II * cKEV)
   end subroutine monoenergetic_flux
+  !============================================================================
+   subroutine broadband_flux(Poynting_II, EfluxBbnd_II, AvgEBbnd_II)
+
+    use ModConst, ONLY: cKEV
+
+    real, intent(out), dimension(IONO_nTheta, IONO_nPsi) :: EfluxBbnd_II, &
+                                                            AvgEBbnd_II
+    real, intent(in), dimension(IONO_nTheta, IONO_nPsi) :: Poynting_II                                                       
+
+    integer :: i,j
+    real, dimension(IONO_nTheta, IONO_nPsi) :: NfluxBbnd_II=0
+    !--------------------------------------------------------------------------
+    ! Calculate broadband electron precipitation
+    EfluxBbnd_II = 0
+    AvgEBbnd_II = 0
+
+    ! Using empirical relationships from Zhang et al. 2015
+    where(Poynting_II > GmPoyntFloor) 
+        EfluxBbnd_II = 2e-3 * (ConeEfluxBbnd * Poynting_II) ** 0.5
+        NfluxBbnd_II = 3e13 * (ConeNfluxBbnd * Poynting_II) ** 0.47
+        AvgEBbnd_II = EfluxBbnd_II / (NfluxBbnd_II * cKEV)
+    end where
+
+  end subroutine broadband_flux
+  !============================================================================
+   subroutine smooth_polar_cap(var_II, OCFL_II, NameHemiIn, ImBoundary_II)
+
+    use ModIonosphere, ONLY: IONO_nTheta, IONO_nPsi, PCapSmoothingSize
+
+    real, intent(inout), dimension(IONO_nTheta, IONO_nPsi) :: var_II
+    real, intent(in),  dimension(IONO_nTheta, IONO_nPsi) :: OCFL_II
+    real, intent(in),  dimension(IONO_nTheta, IONO_nPsi), optional :: &
+                                                                ImBoundary_II
+
+    character(len=*), intent(in) :: NameHemiIn
+
+    integer :: i, j, closed_max, open_min, diff
+    !--------------------------------------------------------------------------
+    ! 1D smoothing between open and closed field line regions
+
+    ! If IM boundary is present, use the gap as the space to smooth
+    if (present(ImBoundary_II)) then
+        do j = 1, Iono_nPsi
+            if (NameHemiIn == 'north') then
+                open_min = 1
+                boundaryIMN: do i = 1, Iono_nPsi
+                    if (OCFL_II(i,j) < 0) open_min = i
+                    if (ImBoundary_II(i,j) > 0) then
+                        closed_max = i
+                        exit boundaryIMN
+                    end if
+                end do boundaryIMN
+                diff = closed_max - open_min
+                ! Leave this MLT if no gap region 
+                if (diff <= 0) CYCLE
+                ! Linearly reconstruct gap
+                do i = open_min, closed_max
+                    var_II(i,j) = var_II(open_min,j) * real(closed_max-i)/diff &
+                                + var_II(closed_max,j) * real(i - open_min)/diff
+                end do 
+            else
+                open_min = IONO_nPsi
+                boundaryIMS: do i = IONO_nPsi, 1, -1
+                    if (OCFL_II(i,j) < 0) open_min = i
+                    if (ImBoundary_II(i,j) > 0) then
+                        closed_max = i
+                        exit boundaryIMS
+                    end if
+                end do boundaryIMS
+                diff = open_min - closed_max
+                ! Leave this MLT if no gap region
+                if (diff <= 0) CYCLE
+                ! Linearly reconstruct gap
+                do i = closed_max, open_min
+                    var_II(i,j) = var_II(open_min,j) * real(i-closed_max)/diff &
+                                + var_II(closed_max,j) * real(open_min - i)/diff
+                end do
+            end if
+        end do
+    ! If IM boundary is not present, use size in degrees (defaults to 2 degrees)
+    else
+        diff = CEILING(PCapSmoothingSize * (IONO_nTheta-1) / 90)
+        do j = 1, Iono_nPsi
+            if (NameHemiIn == 'north') then
+                open_min = 1
+                boundaryGMN: do i = 1, Iono_nTheta
+                    if (OCFL_II(i,j) < 0) closed_max = i
+                    if (OCFL_II(i,j) > 0) exit boundaryGMN
+                end do boundaryGMN
+                ! closed_max = closed_max + diff/2
+                closed_max = closed_max + 1
+                open_min = closed_max - diff
+                ! Linearly reconstruct gap
+                do i = open_min, closed_max
+                    var_II(i,j) = var_II(open_min,j) * real(closed_max-i)/diff &
+                                + var_II(closed_max,j) * real(i-open_min)/diff
+                end do
+            else
+                open_min = IONO_nPsi
+                boundaryGMS: do i = IONO_nTheta, 1, -1
+                    if (OCFL_II(i,j) < 0) closed_max = i
+                    if (OCFL_II(i,j) > 0) exit boundaryGMS
+                end do boundaryGMS
+                ! closed_max = closed_max - diff/2
+                closed_max = closed_max - 1
+                open_min = closed_max + diff
+                ! Linearly reconstruct gap
+                do i = open_min, closed_max, - 1
+                    var_II(i,j) = var_II(open_min,j) * real(i-closed_max)/diff &
+                                + var_II(closed_max,j) * real(open_min-i)/diff
+                end do
+            end if
+        end do
+    end if
+            
+  end subroutine smooth_polar_cap
   !============================================================================
 
 end module ModMagnit
