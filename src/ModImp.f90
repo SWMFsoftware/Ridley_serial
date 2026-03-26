@@ -29,7 +29,7 @@ contains
               iono_north_im_efluxElec, iono_south_im_eFluxElec, &
               iono_north_im_aveeHydr, iono_south_im_aveeHydr, &
               iono_north_im_efluxHydr, iono_south_im_eFluxHydr, &
-              iono_north_im_nElecPrec, iono_south_im_nElecPrec             
+              iono_north_im_nElecPrec, iono_south_im_nElecPrec
       use ModConst, ONLY: cKEV
 
     real, intent(out), dimension(IONO_nTheta, IONO_nPsi) :: &

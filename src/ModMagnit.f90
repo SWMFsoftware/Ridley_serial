@@ -121,7 +121,7 @@ module ModMagnit
     else
       call CON_stop(NameSub//' : unrecognized hemisphere - '//NameHemiIn)
     end if
-    
+
     ! Set default/background values - TBD.
     ! If we need OCFLB calculation, we would put it here.
 
@@ -131,7 +131,7 @@ module ModMagnit
     if(.not. DoUseGMPe) then
       do j=1, Iono_nPsi
         do i = I, Iono_nTheta
-            if(OCFL_II(i,j) > 0 .and. OCFL_II(i, IONO_nPsi-j+1) > 0) then 
+            if(OCFL_II(i,j) > 0 .and. OCFL_II(i, IONO_nPsi-j+1) > 0) then
                 MagPe_II(i, j) = ratioPe * MagP_II(i, IONO_nPsi-j+1)
                 MagNe_II(i, j) = MagNp_II(i, IONO_nPsi-j+1)
                 OCFL_flip_II(i, j) = OCFL_II(i, IONO_nPsi-j+1)
@@ -155,7 +155,7 @@ module ModMagnit
 
 ! Calculate diffuse precipitation: electrons.
     ElectronTemp_II  = MagPe_II / MagNe_II  ! T = P/nk in Joules
-    
+
     NfluxDiffe_II = ConeNfluxDife * MagNe_II * ElectronTemp_II**0.5 / &
                  sqrt(2 * cPi * cElectronMass)  ! units of #/m2/s
     ! units of W/m2
@@ -213,7 +213,7 @@ module ModMagnit
             (rPlanet_I(Earth_) + IonoHeightPlanet_I(Earth_))))**3 * &
             sqrt(1 + 3*cos(LatIn_II)**2)
 
-    where(PrecipRatio_II >= MirrorRatio_II .and. OCFL_II > 0) 
+    where(PrecipRatio_II >= MirrorRatio_II .and. OCFL_II > 0)
         NfluxMono_II = NfluxDiffe_II * MirrorRatio_II
         PrecipRatio_II = MirrorRatio_II
     end where
@@ -225,7 +225,7 @@ module ModMagnit
               * LOG((MirrorRatio_II - PrecipRatio_II) / (MirrorRatio_II - 1))
     elsewhere(1 <= PrecipRatio_II .and. OCFL_II < 0)
       Potential_II = ElectronTemp_II * (PrecipRatio_II - 1)
-    elsewhere  
+    elsewhere
       NfluxMono_II = NfluxDiffe_II
     end where
 
@@ -251,7 +251,7 @@ module ModMagnit
 
     real, intent(out), dimension(IONO_nTheta, IONO_nPsi) :: EfluxBbnd_II, &
                                                             AvgEBbnd_II
-    real, intent(in), dimension(IONO_nTheta, IONO_nPsi) :: Poynting_II                                                       
+    real, intent(in), dimension(IONO_nTheta, IONO_nPsi) :: Poynting_II
 
     integer :: i,j
     real, dimension(IONO_nTheta, IONO_nPsi) :: NfluxBbnd_II=0
@@ -261,7 +261,7 @@ module ModMagnit
     AvgEBbnd_II = 0
 
     ! Using empirical relationships from Zhang et al. 2015
-    where(Poynting_II > GmPoyntFloor) 
+    where(Poynting_II > GmPoyntFloor)
         EfluxBbnd_II = 2e-3 * (ConeEfluxBbnd * Poynting_II) ** 0.5
         NfluxBbnd_II = 3e13 * (ConeNfluxBbnd * Poynting_II) ** 0.47
         AvgEBbnd_II = EfluxBbnd_II / (NfluxBbnd_II * cKEV)
@@ -293,24 +293,24 @@ module ModMagnit
                     if (OCFL_II(i,j) < 0) open_min = i
                     if (ImBoundary_II(i,j) > 0) then
                         closed_max = i
-                        exit boundaryIMN
+                        EXIT boundaryIMN
                     end if
                 end do boundaryIMN
                 diff = closed_max - open_min
-                ! Leave this MLT if no gap region 
+                ! Leave this MLT if no gap region
                 if (diff <= 0) CYCLE
                 ! Linearly reconstruct gap
                 do i = open_min, closed_max
                     var_II(i,j) = var_II(open_min,j) * real(closed_max-i)/diff &
                                 + var_II(closed_max,j) * real(i - open_min)/diff
-                end do 
+                end do
             else
                 open_min = IONO_nPsi
                 boundaryIMS: do i = IONO_nPsi, 1, -1
                     if (OCFL_II(i,j) < 0) open_min = i
                     if (ImBoundary_II(i,j) > 0) then
                         closed_max = i
-                        exit boundaryIMS
+                        EXIT boundaryIMS
                     end if
                 end do boundaryIMS
                 diff = open_min - closed_max
@@ -331,7 +331,7 @@ module ModMagnit
                 open_min = 1
                 boundaryGMN: do i = 1, Iono_nTheta
                     if (OCFL_II(i,j) < 0) closed_max = i
-                    if (OCFL_II(i,j) > 0) exit boundaryGMN
+                    if (OCFL_II(i,j) > 0) EXIT boundaryGMN
                 end do boundaryGMN
                 ! closed_max = closed_max + diff/2
                 closed_max = closed_max + 1
@@ -345,7 +345,7 @@ module ModMagnit
                 open_min = IONO_nPsi
                 boundaryGMS: do i = IONO_nTheta, 1, -1
                     if (OCFL_II(i,j) < 0) closed_max = i
-                    if (OCFL_II(i,j) > 0) exit boundaryGMS
+                    if (OCFL_II(i,j) > 0) EXIT boundaryGMS
                 end do boundaryGMS
                 ! closed_max = closed_max - diff/2
                 closed_max = closed_max - 1
@@ -358,7 +358,7 @@ module ModMagnit
             end if
         end do
     end if
-            
+
   end subroutine smooth_polar_cap
   !============================================================================
 
