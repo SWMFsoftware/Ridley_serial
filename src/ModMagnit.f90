@@ -135,6 +135,10 @@ module ModMagnit
                 MagPe_II(i, j) = ratioPe * MagP_II(i, IONO_nPsi-j+1)
                 MagNe_II(i, j) = MagNp_II(i, IONO_nPsi-j+1)
                 OCFL_flip_II(i, j) = OCFL_II(i, IONO_nPsi-j+1)
+            else
+                MagPe_II(i,j) = ratioPe * MagP_II(i, j)
+                MagNe_II(i,j) = MagNp_II(i, j)
+                OCFL_flip_II(i, j) = OCFL_II(i, j)
             end if
         end do
       end do
