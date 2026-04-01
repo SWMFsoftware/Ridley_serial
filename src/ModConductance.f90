@@ -256,9 +256,9 @@ contains
           else
              write(*,*) NameSub, ' !!! LatFullIpe < 90 is not yet implemented'
           end if
-          !write(*,*) NameSub,' IPE NORTH SigmaH max,min=', &
+          ! write(*,*) NameSub,' IPE NORTH SigmaH max,min=', &
           !     maxval(IONO_NORTH_SigmaH), minval(IONO_NORTH_SigmaH)
-          !write(*,*) NameSub,' IPE NORTH SigmaP max,min=', &
+          ! write(*,*) NameSub,' IPE NORTH SigmaP max,min=', &
           !    maxval(IONO_NORTH_SigmaP), minval(IONO_NORTH_SigmaP)
        endif
 
@@ -302,9 +302,9 @@ contains
           else
              write(*,*) NameSub, ' !!! LatFullIpe < 90 is not yet implemented'
           end if
-          !write(*,*) NameSub,' !!! IPE SOUTH SigmaH max,min=', &
+          ! write(*,*) NameSub,' !!! IPE SOUTH SigmaH max,min=', &
           !     maxval(IONO_SOUTH_SigmaH), minval(IONO_SOUTH_SigmaH)
-          !write(*,*) NameSub,' !!! IPE SOUTH SigmaP max,min=', &
+          ! write(*,*) NameSub,' !!! IPE SOUTH SigmaP max,min=', &
           !     maxval(IONO_SOUTH_SigmaP), minval(IONO_SOUTH_SigmaP)
        endif
 
