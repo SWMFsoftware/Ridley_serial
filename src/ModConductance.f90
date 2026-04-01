@@ -24,8 +24,8 @@ module ModConductance
 
   ! Use IPE conductances?
   logical:: UseIpeConductance = .false.
-  ! Latitude limits for IPE conductances
-  real:: LatFullIpe = -1.0, LatFullRim = 90.0
+  ! Upper latitude limits for IPE conductances
+  real:: LatFullIpe = 90.0, LatFullRim = 100.0
 
   ! Name of auroral model to use, defaults to 'RLM5'
   character(len=8) :: NameAuroraMod = 'RLM5'
@@ -63,6 +63,8 @@ contains
     ! arrays, and compute the spatial derivatives.
     ! Arguments:
     !     NameHemiIn -- Select hemisphere (north, south).
+
+    use ModProcIE, ONLY: iProc
 
     ! Dummy variables:
     character(len=5), intent(in) :: NameHemiIn
@@ -172,9 +174,9 @@ contains
               if (IsImCoupled) call imp_gen_fluxes(NameHemiIn, &
                        AvgEDiffe_II, AvgEDiffi_II, AvgEMono_II, AvgEBbnd_II, &
                        EfluxDiffe_II, EfluxDiffi_II, EfluxMono_II, EfluxBbnd_II, theta)
-            end select
+           end select
 
-            if(DoTest) then
+           if(DoTest) then
               if (NameHemiIn == 'north') then
                  write(*,*)'Ion Energy Flux', MAXVAL(EfluxDiffi_II),MINVAL(EfluxDiffi_II)
                  write(*,*)'Ion Average Energy', MAXVAL(AvgEDiffi_II),MINVAL(AvgEDiffi_II)
@@ -239,6 +241,27 @@ contains
        ! Add broadband conductance:
        IONO_NORTH_SigmaH = IONO_NORTH_SigmaH + SigmaHalBbnd_II
        IONO_NORTH_SigmaP = IONO_NORTH_SigmaP + SigmaPedBbnd_II
+
+       ! Combine with IPE conductance
+       if(allocated(IONO_NORTH_SigmaH_IPE)) UseIpeConductance = .true.
+       if(UseIpeConductance .and. LatFullIpe > 0.0)then
+          if(.not.allocated(IONO_NORTH_SigmaH_IPE))then
+             write(*,*) NameSub, &
+                  ' !!! IONO_NORTH_SigmaH_IPE is not allocated on iProcIE=', &
+                  iProc
+          elseif(LatFullIpe >= 90.0)then
+             ! Set all the conductances
+             IONO_NORTH_SigmaH = IONO_NORTH_SigmaH_IPE
+             IONO_NORTH_SigmaP = IONO_NORTH_SigmaP_IPE
+          else
+             write(*,*) NameSub, ' !!! LatFullIpe < 90 is not yet implemented'
+          end if
+          !write(*,*) NameSub,' IPE NORTH SigmaH max,min=', &
+          !     maxval(IONO_NORTH_SigmaH), minval(IONO_NORTH_SigmaH)
+          !write(*,*) NameSub,' IPE NORTH SigmaP max,min=', &
+          !    maxval(IONO_NORTH_SigmaP), minval(IONO_NORTH_SigmaP)
+       endif
+
        ! Store Average energy and energy flux:
        IONO_NORTH_EFlux = EfluxMono_II
        IONO_NORTH_Ave_E = AvgEMono_II
@@ -252,7 +275,7 @@ contains
        IONO_NORTH_BBND_Ave_E = AvgEBbnd_II
        ! Place values into convenience arrays to calculate derivatives:
        SigmaH = IONO_NORTH_SigmaH
-       sigmaP = IONO_NORTH_SigmaP
+       SigmaP = IONO_NORTH_SigmaP
 
     else
        IONO_SOUTH_SigmaH = sqrt(SigmaHalConst**2 + SigmaHalEuv_II**2 + &
@@ -264,6 +287,27 @@ contains
        ! Add broadband conductance:
        IONO_SOUTH_SigmaH = IONO_SOUTH_SigmaH + SigmaHalBbnd_II
        IONO_SOUTH_SigmaP = IONO_SOUTH_SigmaP + SigmaPedBbnd_II
+
+       ! Combine with IPE conductance
+       if(allocated(IONO_SOUTH_SigmaH_IPE)) UseIpeConductance = .true.
+       if(UseIpeConductance .and. LatFullIpe > 0.0)then
+          if(.not.allocated(IONO_SOUTH_SigmaH_IPE))then
+             write(*,*) NameSub, &
+                  ' !!! IONO_SOUTH_SigmaH_IPE is not allocated on iProcIE=', &
+                  iProc
+          elseif(LatFullIpe >= 90.0)then
+             ! Set all the conductances
+             IONO_SOUTH_SigmaH = IONO_SOUTH_SigmaH_IPE
+             IONO_SOUTH_SigmaP = IONO_SOUTH_SigmaP_IPE
+          else
+             write(*,*) NameSub, ' !!! LatFullIpe < 90 is not yet implemented'
+          end if
+          !write(*,*) NameSub,' !!! IPE SOUTH SigmaH max,min=', &
+          !     maxval(IONO_SOUTH_SigmaH), minval(IONO_SOUTH_SigmaH)
+          !write(*,*) NameSub,' !!! IPE SOUTH SigmaP max,min=', &
+          !     maxval(IONO_SOUTH_SigmaP), minval(IONO_SOUTH_SigmaP)
+       endif
+
        ! Store Average energy and energy flux:
        IONO_SOUTH_EFlux = EfluxMono_II
        IONO_SOUTH_Ave_E = AvgEMono_II
