@@ -38,15 +38,16 @@ module IE_ModMain
 
   ! Character string selecting the potential sent to the IM module
   ! Possible values are 'north', 'south', 'average', 'cpcpmin'
-  character (len=7) :: TypeImCouple = 'north   '
+  character(len=7) :: TypeImCouple = 'north'
 
   ! Fraction of IM current to consider
   real :: FractionImJr = 1.0
 
-  ! Parameter for coupling the UA current and
-  ! latitude boundary for currents from GM and for calculating Phi
+  ! Parameter for coupling the UA current
   logical :: DoCoupleUaCurrent = .false.
-  real    :: LatBoundary = 10.0 * cDegToRad
+
+  ! Latitude boundary [rad] for currents from GM and for calculating Phi
+  real :: LatBoundary = 10*cDegToRad
 
   ! Dipole parameters obtained from CON_physics
   real :: ThetaTilt, SinThetaTilt, CosThetaTilt
