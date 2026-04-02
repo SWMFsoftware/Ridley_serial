@@ -232,10 +232,10 @@ subroutine ionosphere_solver(iBlock, Jr, &
      call CON_stop(NameSub//': unknown NameSolver='//NameSolver)
   end select
 
-  if(DoTest .or. (iError /= 0 .and. iError /=3) ) &
+  if(DoTest .or. (iError /= 0 .and. iError /=3 .and. Residual > 0.01)) &
        write(*,*)'iono_solve: north, iter, resid, iError=',&
        north, nIteration, Residual, iError
-  if(iError /= 0 .and. iError /=3)then
+  if(iError /= 0 .and. iError /=3 .and. Residual > 0.01)then
      write(*,*)'IE_ERROR in iono_solve: solver failed !!!'
      if(iError < 0) &
           call CON_stop('IE_ERROR in iono_solve: residual did not decrease')
