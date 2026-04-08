@@ -249,7 +249,7 @@ module ModMagnit
     AvgEMono_II = EfluxMono_II / (NfluxDiffe_II * cKEV)
   end subroutine monoenergetic_flux
   !============================================================================
-   subroutine broadband_flux(Poynting_II, EfluxBbnd_II, AvgEBbnd_II)
+  subroutine broadband_flux(Poynting_II, EfluxBbnd_II, AvgEBbnd_II)
 
     use ModConst, ONLY: cKEV
 
@@ -273,7 +273,7 @@ module ModMagnit
 
   end subroutine broadband_flux
   !============================================================================
-   subroutine smooth_polar_cap(var_II, OCFL_II, NameHemiIn, ImBoundary_II)
+  subroutine smooth_polar_cap(var_II, OCFL_II, NameHemiIn, ImBoundary_II)
 
     use ModIonosphere, ONLY: IONO_nTheta, IONO_nPsi, PCapSmoothingSize
 
