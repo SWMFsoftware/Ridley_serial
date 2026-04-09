@@ -30,8 +30,8 @@ module IE_ModMain
   character(len=10):: NameSolver='bicgstab' ! Name of krylov solver
   logical :: UsePreconditioner = .true.     ! Use preconditioner
   logical :: UseInitialGuess   = .true.     ! Use previous solution as initial guess
-  real    :: Tolerance         = 1.e-2      ! Solution accuracy: abs norm of residual
-  integer :: MaxIteration      = 200        ! Maximum number of Krylov iterations
+  real    :: Tolerance         = 1.e-4      ! Solution accuracy: abs norm of residual
+  integer :: MaxIteration      = 250        ! Maximum number of Krylov iterations
 
   ! Logical which tells if there is any new information to use
   logical :: IsNewInput = .false.
