@@ -296,16 +296,16 @@ contains
             ! Currently not implemented, intended to be optional use
             ! of full spectrum precipitation/output in ionosphere
             call read_var('DoUseIMSpectrum', DoUseIMSpectrum)
+
+         ! Physics & solver related params
          case("#IPECONDUCTANCE")
             call read_var('UseIpeConductance', UseIpeConductance)
             if(UseIpeConductance)then
                call read_var('LatFullIpe', LatFullIpe)
                LatFullIpe = max(0.0, min(90.0, LatFullIpe))
                call read_var('LatFullRim', LatFullRim)
-               LatFullRim = max(LatFullIpe, min(90.0, LatFullRim))
+               LatFullRim = max(LatFullIpe + 1.0, min(90.0, LatFullRim))
             end if
-
-         ! Physics & solver related params
          case("#IM")
             call read_var('TypeImCouple',TypeImCouple)
             call lower_case(TypeImCouple)

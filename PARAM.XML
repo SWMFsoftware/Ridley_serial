@@ -158,29 +158,6 @@ Diffuse Ions in GW
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!! Physical parameters !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-<command name="IPECONDUCTANCE">
-  <parameter name="UseIpeConductance" type="logical" default="F"/>
-  <if expr="$UseIpeConductance">
-    <parameter name="LatFullIpe" type="real" min="0" max="90" default="50"/>
-    <parameter name="LatFullRim" type="real" min="$LatFullIpe" max="90"
-	       default="60"/>
-  </if>
-#IPECONDUCTANCE
-T           UseIpeConductance  ! rest read if true
-50.0        LatFullIpe
-60.0        LatFullRim
-
-If UseIpeConductance is true, the IPE conductances are used.
-The latitude (in absolute value) limits for IPE conductances
-are given by LatFullIpe and LatFullRim:
-the IPE conductance are used from the lower boundary of RIM to
-LatFullIpe, a linear combination of the conductances between
-LatFullIpe and LatFullRim, and RIM conductances from LatFullRim to 90
-degrees.
-
-By default UseIpeConductance is false.
-</command>
-
 <command name="SOLAREUV">
   <parameter name="DoUseEuvCond" type="logical" default="T"/>
   <if expr="$DoUseEuvCond">
@@ -407,6 +384,36 @@ the potential solver should be given with the LatBoundary paramter.
 
 The default value is DoCoupleUaCurrent=.false, i.e. the UA currents
 are not included.
+</command>
+
+<command name="IPECONDUCTANCE">
+  <parameter name="UseIpeConductance" type="logical" default="T"/>
+  <if expr="$UseIpeConductance">
+    <parameter name="LatFullIpe" type="real" min="0" max="90" default="90"/>
+    <parameter name="LatFullRim" type="real" min="$LatFullIpe+1" max="91"
+	       default="91"/>
+  </if>
+
+#IPECONDUCTANCE
+T			UseIpeConductance (rest read if UseIpeConductance is true)
+90.0			LatFullIpe [deg]
+91.0			LatFullRim [deg] (has to be at least 1 larger than LatFullIpe)
+
+If the IPE model is coupled with the SWMF, it provides Pedersen and Hall
+conductances for the IE model. These are used if UseIpeConductance is true.
+The IPE conductances are applied from the minimum latitude boundary of RIM
+to LatFullIpe.
+The RIM conductances are applied from LatFullRim to the pole. The two
+conductances are linearly merged between LatFullIpe and LatFullRim.
+If LatFullIpe is 90 degrees, the IPE conductances are used everywhere.
+If LatFullRim is 0 degrees, the RIM conductances are used everywhere, which
+is the same as setting UseIpeConductance to false. If LatFullIpe is 50.0 and
+LatFullRim is 60.0, then IPE conductances are used below 50 degrees latitude,
+RIM conductances above 60 degrees, and a linear combination between 50 and 60
+degrees. At 52 degrees, for example, the conductances are set as
+Cond = 0.8*CondIPE + 0.2*CondRIM.
+
+Default values are shown by the example.
 </command>
 
 <command name="AMIEFILES">

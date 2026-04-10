@@ -25,7 +25,7 @@ module ModConductance
   ! Use IPE conductances?
   logical:: UseIpeConductance = .false.
   ! Upper latitude limits for IPE conductances
-  real:: LatFullIpe = 90.0, LatFullRim = 100.0
+  real:: LatFullIpe = 90.0, LatFullRim = 91.0
 
   ! Name of auroral model to use, defaults to 'RLM5'
   character(len=8) :: NameAuroraMod = 'RLM5'
@@ -104,6 +104,10 @@ contains
     ! Intermediate values:
     real, dimension(IONO_nTheta,IONO_nPsi)  :: &
          sn, cs, sn2, cs2, cs3, cs4, C
+
+    ! IPE related
+    integer:: iTheta
+    real:: Lat, WeightIpe, WeightRim
 
     ! Debug variables:
     logical :: DoTestMe, DoTest
@@ -254,7 +258,18 @@ contains
              IONO_NORTH_SigmaH = IONO_NORTH_SigmaH_IPE
              IONO_NORTH_SigmaP = IONO_NORTH_SigmaP_IPE
           else
-             write(*,*) NameSub, ' !!! LatFullIpe < 90 is not yet implemented'
+             do iTheta = 1, IONO_nTheta
+                Lat = 90.0 - IONO_NORTH_Theta(iTheta,1)*cRadToDeg
+                WeightRim = max(0.0, min(1.0, &
+                     (Lat - LatFullIpe)/(LatFullRim - LatFullIpe)))
+                WeightIpe = 1 - WeightRim
+                IONO_NORTH_SigmaH(iTheta,:) = &
+                     WeightRim*IONO_NORTH_SigmaH(iTheta,:) + &
+                     WeightIpe*IONO_NORTH_SigmaH_IPE(iTheta,:)
+                IONO_NORTH_SigmaP(iTheta,:) = &
+                     WeightRim*IONO_NORTH_SigmaP(iTheta,:) + &
+                     WeightIpe*IONO_NORTH_SigmaP_IPE(iTheta,:)
+             end do
           end if
           ! write(*,*) NameSub,' IPE NORTH SigmaH max,min=', &
           !     maxval(IONO_NORTH_SigmaH), minval(IONO_NORTH_SigmaH)
@@ -279,11 +294,11 @@ contains
 
     else
        IONO_SOUTH_SigmaH = sqrt(SigmaHalConst**2 + SigmaHalEuv_II**2 + &
-            (2.*StarLightCond)**2 + SigmaHalMono_II**2 + SigmaHalDiffe_II**2 + &
-            SigmaHalDiffi_II**2)
+            (2.*StarLightCond)**2 + SigmaHalMono_II**2 + SigmaHalDiffe_II**2 &
+            + SigmaHalDiffi_II**2)
        IONO_SOUTH_SigmaP = sqrt(SigmaPedConst**2 + SigmaPedEuv_II**2 + &
-            StarLightCond**2 + SigmaPedMono_II**2 + SigmaPedDiffe_II**2 + &
-            SigmaPedDiffi_II**2)
+            StarLightCond**2 + SigmaPedMono_II**2 + SigmaPedDiffe_II**2 &
+            + SigmaPedDiffi_II**2)
        ! Add broadband conductance:
        IONO_SOUTH_SigmaH = IONO_SOUTH_SigmaH + SigmaHalBbnd_II
        IONO_SOUTH_SigmaP = IONO_SOUTH_SigmaP + SigmaPedBbnd_II
@@ -300,7 +315,18 @@ contains
              IONO_SOUTH_SigmaH = IONO_SOUTH_SigmaH_IPE
              IONO_SOUTH_SigmaP = IONO_SOUTH_SigmaP_IPE
           else
-             write(*,*) NameSub, ' !!! LatFullIpe < 90 is not yet implemented'
+             do iTheta = 1, IONO_nTheta
+                Lat = IONO_SOUTH_Theta(iTheta,1)*cRadToDeg - 90.0
+                WeightRim = max(0.0, min(1.0, &
+                     (Lat - LatFullIpe)/(LatFullRim - LatFullIpe)))
+                WeightIpe = 1 - WeightRim
+                IONO_SOUTH_SigmaH(iTheta,:) = &
+                     WeightRim*IONO_SOUTH_SigmaH(iTheta,:) + &
+                     WeightIpe*IONO_SOUTH_SigmaH_IPE(iTheta,:)
+                IONO_SOUTH_SigmaP(iTheta,:) = &
+                     WeightRim*IONO_SOUTH_SigmaP(iTheta,:) + &
+                     WeightIpe*IONO_SOUTH_SigmaP_IPE(iTheta,:)
+             end do
           end if
           ! write(*,*) NameSub,' !!! IPE SOUTH SigmaH max,min=', &
           !     maxval(IONO_SOUTH_SigmaH), minval(IONO_SOUTH_SigmaH)
