@@ -107,8 +107,7 @@ contains
            imodel_legacy, DoUseAurora, NameAuroraMod, DoUseDiffI, DoUseDiffE, &
            DoUseMono, DoUseBbnd, UsePrecipSmoothing, KernelType, KernelSize, &
            KernelSpread, eCondRel, eCondLimit, eLimitScale, &
-           UseIpeConductance, LatFullIpe, LatFullRim, DoPolarCapSmoothing, &
-           PCapSmoothingSize
+           LatFullIpe, LatFullRim, DoPolarCapSmoothing, PCapSmoothingSize
       use ModMagnit, ONLY: ConeEfluxDifp, ConeNfluxDifp, ConeEfluxDife, &
               ConeNfluxDife, ConeEfluxMono, ConeNfluxMono, ConeEfluxBbnd, &
               ConeNfluxBbnd
@@ -299,13 +298,10 @@ contains
 
          ! Physics & solver related params
          case("#IPECONDUCTANCE")
-            call read_var('UseIpeConductance', UseIpeConductance)
-            if(UseIpeConductance)then
-               call read_var('LatFullIpe', LatFullIpe)
-               LatFullIpe = max(0.0, min(90.0, LatFullIpe))
-               call read_var('LatFullRim', LatFullRim)
-               LatFullRim = max(LatFullIpe + 1.0, min(90.0, LatFullRim))
-            end if
+            call read_var('LatFullIpe', LatFullIpe)
+            LatFullIpe = max(0.0, min(90.0, LatFullIpe))
+            call read_var('LatFullRim', LatFullRim)
+            LatFullRim = max(LatFullIpe + 1.0, min(90.0, LatFullRim))
          case("#IM")
             call read_var('TypeImCouple',TypeImCouple)
             call lower_case(TypeImCouple)

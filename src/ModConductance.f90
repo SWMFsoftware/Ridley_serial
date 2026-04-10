@@ -22,8 +22,6 @@ module ModConductance
        DoUseDiffE=.true., DoUseMono=.true., DoUseBbnd=.true., &
        UsePrecipSmoothing=.true., IsImCoupled=.false.
 
-  ! Use IPE conductances?
-  logical:: UseIpeConductance = .false.
   ! Upper latitude limits for IPE conductances
   real:: LatFullIpe = 90.0, LatFullRim = 91.0
 
@@ -237,23 +235,18 @@ contains
     ! Sum conductance into the correct hemisphere.
     if(NameHemiIn == 'north')then
        IONO_NORTH_SigmaH = sqrt(SigmaHalConst**2 + SigmaHalEuv_II**2 + &
-            (2.*StarLightCond)**2 + SigmaHalMono_II**2 + SigmaHalDiffe_II**2 + &
-            SigmaHalDiffi_II**2)
+            (2*StarLightCond)**2 + SigmaHalMono_II**2 + SigmaHalDiffe_II**2 &
+            + SigmaHalDiffi_II**2)
        IONO_NORTH_SigmaP = sqrt(SigmaPedConst**2 + SigmaPedEuv_II**2 + &
-            StarLightCond**2 + SigmaPedMono_II**2 + SigmaPedDiffe_II**2 + &
-            SigmaPedDiffi_II**2)
+            StarLightCond**2 + SigmaPedMono_II**2 + SigmaPedDiffe_II**2 &
+            + SigmaPedDiffi_II**2)
        ! Add broadband conductance:
        IONO_NORTH_SigmaH = IONO_NORTH_SigmaH + SigmaHalBbnd_II
        IONO_NORTH_SigmaP = IONO_NORTH_SigmaP + SigmaPedBbnd_II
 
        ! Combine with IPE conductance
-       if(allocated(IONO_NORTH_SigmaH_IPE)) UseIpeConductance = .true.
-       if(UseIpeConductance .and. LatFullIpe > 0.0)then
-          if(.not.allocated(IONO_NORTH_SigmaH_IPE))then
-             write(*,*) NameSub, &
-                  ' !!! IONO_NORTH_SigmaH_IPE is not allocated on iProcIE=', &
-                  iProc
-          elseif(LatFullIpe >= 90.0)then
+       if(allocated(IONO_NORTH_SigmaH_IPE) .and. LatFullIpe > 0.0)then
+          if(LatFullIpe >= 90.0)then
              ! Set all the conductances
              IONO_NORTH_SigmaH = IONO_NORTH_SigmaH_IPE
              IONO_NORTH_SigmaP = IONO_NORTH_SigmaP_IPE
@@ -304,17 +297,13 @@ contains
        IONO_SOUTH_SigmaP = IONO_SOUTH_SigmaP + SigmaPedBbnd_II
 
        ! Combine with IPE conductance
-       if(allocated(IONO_SOUTH_SigmaH_IPE)) UseIpeConductance = .true.
-       if(UseIpeConductance .and. LatFullIpe > 0.0)then
-          if(.not.allocated(IONO_SOUTH_SigmaH_IPE))then
-             write(*,*) NameSub, &
-                  ' !!! IONO_SOUTH_SigmaH_IPE is not allocated on iProcIE=', &
-                  iProc
-          elseif(LatFullIpe >= 90.0)then
+       if(allocated(IONO_SOUTH_SigmaH_IPE) .and. LatFullIpe > 0.0)then
+          if(LatFullIpe >= 90.0)then
              ! Set all the conductances
              IONO_SOUTH_SigmaH = IONO_SOUTH_SigmaH_IPE
              IONO_SOUTH_SigmaP = IONO_SOUTH_SigmaP_IPE
           else
+             ! Transition between IPE and RIM conductances
              do iTheta = 1, IONO_nTheta
                 Lat = IONO_SOUTH_Theta(iTheta,1)*cRadToDeg - 90.0
                 WeightRim = max(0.0, min(1.0, &

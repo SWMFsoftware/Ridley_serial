@@ -387,22 +387,17 @@ are not included.
 </command>
 
 <command name="IPECONDUCTANCE">
-  <parameter name="UseIpeConductance" type="logical" default="T"/>
-  <if expr="$UseIpeConductance">
-    <parameter name="LatFullIpe" type="real" min="0" max="90" default="90"/>
-    <parameter name="LatFullRim" type="real" min="$LatFullIpe+1" max="91"
+  <parameter name="LatFullIpe" type="real" min="0" max="90" default="90"/>
+  <parameter name="LatFullRim" type="real" min="$LatFullIpe+1" max="91"
 	       default="91"/>
-  </if>
 
 #IPECONDUCTANCE
-T			UseIpeConductance (rest read if UseIpeConductance is true)
 90.0			LatFullIpe [deg]
-91.0			LatFullRim [deg] (has to be at least 1 larger than LatFullIpe)
+91.0			LatFullRim [deg] (at least 1 larger than LatFullIpe)
 
 If the IPE model is coupled with the SWMF, it provides Pedersen and Hall
-conductances for the IE model. These are used if UseIpeConductance is true.
-The IPE conductances are applied from the minimum latitude boundary of RIM
-to LatFullIpe.
+conductances for the IE model. The IPE conductances are applied from the
+minimum latitude boundary of RIM to LatFullIpe.
 The RIM conductances are applied from LatFullRim to the pole. The two
 conductances are linearly merged between LatFullIpe and LatFullRim.
 If LatFullIpe is 90 degrees, the IPE conductances are used everywhere.
