@@ -20,6 +20,16 @@ subroutine IE_gather
   IONO_Eflux      = -Huge(1.0)
   IONO_SigmaP     = -Huge(1.0)
   IONO_SigmaH     = -Huge(1.0)
+  if(DoCoupleUA) then
+      IONO_DIFFI_Ave_E= -Huge(1.0)
+      IONO_DIFFE_Ave_E= -Huge(1.0)
+      IONO_MONO_Ave_E = -Huge(1.0)
+      IONO_BBND_Ave_E = -Huge(1.0)
+      IONO_DIFFI_EFlux= -Huge(1.0)
+      IONO_DIFFE_EFlux= -Huge(1.0)
+      IONO_MONO_EFlux = -Huge(1.0)
+      IONO_BBND_EFlux = -Huge(1.0)
+  endif
 
   if (iProc == 0) then
      IONO_phi(1:IONO_nTheta,:)        = IONO_NORTH_Phi
@@ -30,6 +40,16 @@ subroutine IE_gather
      IONO_Eflux(1:IONO_nTheta,:)      = IONO_NORTH_EFlux
      IONO_SigmaP(1:IONO_nTheta,:)     = IONO_NORTH_SigmaP
      IONO_SigmaH(1:IONO_nTheta,:)     = IONO_NORTH_SigmaH
+     if(DoCoupleUA) then
+         IONO_DIFFI_Ave_E(1:IONO_nTheta,:)= IONO_NORTH_DIFFI_Ave_E
+         IONO_DIFFE_Ave_E(1:IONO_nTheta,:)= IONO_NORTH_DIFFE_Ave_E
+         IONO_MONO_Ave_E(1:IONO_nTheta,:) = IONO_NORTH_MONO_Ave_E
+         IONO_BBND_Ave_E(1:IONO_nTheta,:) = IONO_NORTH_BBND_Ave_E
+         IONO_DIFFI_EFlux(1:IONO_nTheta,:)= IONO_NORTH_DIFFI_EFlux
+         IONO_DIFFE_EFlux(1:IONO_nTheta,:)= IONO_NORTH_DIFFE_EFlux
+         IONO_MONO_EFlux(1:IONO_nTheta,:) = IONO_NORTH_MONO_EFlux
+         IONO_BBND_EFlux(1:IONO_nTheta,:) = IONO_NORTH_BBND_EFlux
+     endif
   endif
 
   if (iProc == nProc-1) then
@@ -41,6 +61,16 @@ subroutine IE_gather
      IONO_Eflux(IONO_nTheta:2*IONO_nTheta-1,:)      = IONO_SOUTH_EFlux
      IONO_SigmaP(IONO_nTheta:2*IONO_nTheta-1,:)     = IONO_SOUTH_SigmaP
      IONO_SigmaH(IONO_nTheta:2*IONO_nTheta-1,:)     = IONO_SOUTH_SigmaH
+     if(DoCoupleUA) then
+         IONO_DIFFI_Ave_E(IONO_nTheta:2*IONO_nTheta-1,:)= IONO_SOUTH_DIFFI_Ave_E
+         IONO_DIFFE_Ave_E(IONO_nTheta:2*IONO_nTheta-1,:)= IONO_SOUTH_DIFFE_Ave_E
+         IONO_MONO_Ave_E(IONO_nTheta:2*IONO_nTheta-1,:) = IONO_SOUTH_MONO_Ave_E
+         IONO_BBND_Ave_E(IONO_nTheta:2*IONO_nTheta-1,:) = IONO_SOUTH_BBND_Ave_E
+         IONO_DIFFI_EFlux(IONO_nTheta:2*IONO_nTheta-1,:)= IONO_SOUTH_DIFFI_EFlux
+         IONO_DIFFE_EFlux(IONO_nTheta:2*IONO_nTheta-1,:)= IONO_SOUTH_DIFFE_EFlux
+         IONO_MONO_EFlux(IONO_nTheta:2*IONO_nTheta-1,:) = IONO_SOUTH_MONO_EFlux
+         IONO_BBND_EFlux(IONO_nTheta:2*IONO_nTheta-1,:) = IONO_SOUTH_BBND_EFlux
+     endif 
   endif
 
   if (nProc > 1) then
@@ -53,6 +83,24 @@ subroutine IE_gather
      call MPI_reduce_real_array(IONO_Eflux,      n, MPI_MAX, 0, iComm, iError)
      call MPI_reduce_real_array(IONO_SigmaP,     n, MPI_MAX, 0, iComm, iError)
      call MPI_reduce_real_array(IONO_SigmaH,     n, MPI_MAX, 0, iComm, iError)
+     if(DoCoupleUA) then
+       call MPI_reduce_real_array(IONO_DIFFI_Ave_E,n, MPI_MAX, 0, iComm, iError)
+       call MPI_reduce_real_array(IONO_DIFFE_Ave_E,n, MPI_MAX, 0, iComm, iError)
+       call MPI_reduce_real_array(IONO_MONO_Ave_E, n, MPI_MAX, 0, iComm, iError)
+       call MPI_reduce_real_array(IONO_BBND_Ave_E, n, MPI_MAX, 0, iComm, iError)
+       call MPI_reduce_real_array(IONO_DIFFI_EFlux,n, MPI_MAX, 0, iComm, iError)
+       call MPI_reduce_real_array(IONO_DIFFE_EFlux,n, MPI_MAX, 0, iComm, iError)
+       call MPI_reduce_real_array(IONO_MONO_EFlux, n, MPI_MAX, 0, iComm, iError)
+       call MPI_reduce_real_array(IONO_BBND_EFlux, n, MPI_MAX, 0, iComm, iError)
+       ! Spectrum fluxes are combined in IMP and as such do not need to be 
+       ! combined above. 
+       if(DoUseIMSpectrum) then
+          call MPI_reduce_real_array(IONO_HYDR_NFlux, n, MPI_MAX, 0, iComm, &
+                                    iError)
+          call MPI_reduce_real_array(IONO_ELEC_NFlux, n, MPI_MAX, 0, iComm, &
+                                    iError)
+        end if
+     endif
 
   endif
 
