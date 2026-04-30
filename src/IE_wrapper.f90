@@ -137,6 +137,9 @@ contains
       !------------------------------------------------------------------------
       select case(TypeAction)
       case('CHECK')
+        ! Check Parameters
+         if(iProc==0)write(*,*) NameSub,': CHECK iSession =',i_session_read()
+
          IsUninitialized=.false.
 
          ! Ensures no use of smoothing for non-physical (empirical) conductance
@@ -144,13 +147,33 @@ contains
          if(NameAuroraMod /= 'MAGNIT' .and. NameAuroraMod /= 'IMP') then
              UsePrecipSmoothing = .false.
          end if
+
          ! Turns on IM precipitation flag when IMP is being used
+         ! Allocate here since general ionosphere allocation happens before
+         ! Param is read, and these don't need to be allocated if IM is not
+         ! being coupled/IMP is not being used.
          if(NameAuroraMod == 'IMP') then
              DoUseIMPrecip = .true.
-             write(*,*) 'WARNING, IMP Auroral Model is unfinished'
+             if(.not. allocated(IONO_north_im_aveeElec)) &
+             allocate(IONO_north_im_aveeElec(IONO_nTheta,IONO_nPsi), &
+                      IONO_south_im_aveeElec(IONO_nTheta,IONO_nPsi), &
+                      IONO_north_im_efluxElec(IONO_nTheta,IONO_nPsi), &
+                      IONO_south_im_efluxElec(IONO_nTheta,IONO_nPsi), &
+                      IONO_north_im_aveeHydr(IONO_nTheta,IONO_nPsi), &
+                      IONO_south_im_aveeHydr(IONO_nTheta,IONO_nPsi), &
+                      IONO_north_im_efluxHydr(IONO_nTheta,IONO_nPsi), &
+                      IONO_south_im_efluxHydr(IONO_nTheta,IONO_nPsi), &
+                      iono_north_im_boundary(IONO_nTheta,IONO_nPsi), &
+                      iono_south_im_boundary(IONO_nTheta,IONO_nPsi))
          end if
-         ! We should check and correct parameters here
-         if(iProc==0)write(*,*) NameSub,': CHECK iSession =',i_session_read()
+
+         ! Terminate to clarify that Spectrum can only be used with IMP
+         if (NameAuroraMod /= 'IMP' .and. &
+            (DoUseIMSpectrum .or. ForceIMSpectrum)) then
+            call CON_stop(NameSub//" DoUseIMSpectrum and ForceIMSpectrum can"//&
+            "only be used with the IMP auroral model. Use #AURORA and set"//&
+            "NameAuroraMod to IMP to use spectral auroral flux.")
+         end if
 
          RETURN
       case('READ')
