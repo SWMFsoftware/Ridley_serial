@@ -130,7 +130,7 @@ module ModMagnit
     ! Scale Pe using ratioPe
     if(.not. DoUseGMPe) then
       do j=1, Iono_nPsi
-        do i = I, Iono_nTheta
+        do i = 1, Iono_nTheta
             if(OCFL_II(i,j) > 0 .and. OCFL_II(i, IONO_nPsi-j+1) > 0) then
                 MagPe_II(i, j) = ratioPe * MagP_II(i, IONO_nPsi-j+1)
                 MagNe_II(i, j) = MagNp_II(i, IONO_nPsi-j+1)
@@ -157,7 +157,7 @@ module ModMagnit
     ! Recalc to make consistent with ConeFactors (and get units of keV)
     AvgEDiffi_II = EfluxDiffi_II / (NfluxDiffi_II * cKEV)
 
-! Calculate diffuse precipitation: electrons.
+    ! Calculate diffuse precipitation: electrons.
     ElectronTemp_II  = MagPe_II / MagNe_II  ! T = P/nk in Joules
 
     NfluxDiffe_II = ConeNfluxDife * MagNe_II * ElectronTemp_II**0.5 / &
@@ -182,18 +182,20 @@ module ModMagnit
     call monoenergetic_flux(FAC_II, OCFL_II, NfluxDiffe_II, ElectronTemp_II, &
             AvgEDiffe_II, LatIn_II, EfluxMono_II, AvgEMono_II)
 
-        call broadband_flux(Poynting_II, EfluxBbnd_II, AvgEBbnd_II)
+    call broadband_flux(Poynting_II, EfluxBbnd_II, AvgEBbnd_II)
 
   end subroutine magnit_gen_fluxes
   !============================================================================
   subroutine monoenergetic_flux(FAC_II, OCFL_II, NfluxDiffe_II, &
-          ElectronTemp_II, AvgEDiffe_II, LatIn_II, EfluxMono_II, AvgEMono_II)
+          ElectronTemp_II, AvgEDiffe_II, LatIn_II, EfluxMono_II, AvgEMono_II, &
+          PotOut_II)
 
     use ModConst, ONLY: cKEV
     use ModPlanetConst, ONLY: rPlanet_I, IonoHeightPlanet_I, Earth_
 
     real, intent(out), dimension(IONO_nTheta, IONO_nPsi) :: EfluxMono_II, &
                                                             AvgEMono_II
+    real, intent(out), dimension(IONO_nTheta, IONO_nPsi), optional :: PotOut_II
 
     ! Import Hemispheric Latitudes for Magnetic Field Calculations
     real, intent(in), dimension(IONO_nTheta, IONO_nPsi) :: FAC_II, LatIn_II, &
@@ -228,11 +230,11 @@ module ModMagnit
       Potential_II = ElectronTemp_II / cElectronCharge * (1 - MirrorRatio_II) &
               * LOG((MirrorRatio_II - PrecipRatio_II) / (MirrorRatio_II - 1))
     elsewhere(1 <= PrecipRatio_II .and. OCFL_II < 0)
-      Potential_II = ElectronTemp_II * (PrecipRatio_II - 1)
+      Potential_II = ElectronTemp_II / cElectronCharge * (PrecipRatio_II - 1)
     elsewhere
       NfluxMono_II = NfluxDiffe_II
     end where
-
+    if(present(PotOut_II)) PotOut_II = Potential_II
     ! Split up large calculation into a few steps
     ! Calculate large potential exponent
     VExponent_II = EXP(-cElectronCharge * Potential_II / ((ElectronTemp_II) * &
@@ -247,6 +249,7 @@ module ModMagnit
 
     ! Calculate Avg E in keV
     AvgEMono_II = EfluxMono_II / (NfluxDiffe_II * cKEV)
+
   end subroutine monoenergetic_flux
   !============================================================================
   subroutine broadband_flux(Poynting_II, EfluxBbnd_II, AvgEBbnd_II)
@@ -293,7 +296,7 @@ module ModMagnit
         do j = 1, Iono_nPsi
             if (NameHemiIn == 'north') then
                 open_min = 1
-                boundaryIMN: do i = 1, Iono_nPsi
+                boundaryIMN: do i = 1, Iono_nTheta
                     if (OCFL_II(i,j) < 0) open_min = i
                     if (ImBoundary_II(i,j) > 0) then
                         closed_max = i
@@ -309,8 +312,8 @@ module ModMagnit
                                 + var_II(closed_max,j) * real(i - open_min)/diff
                 end do
             else
-                open_min = IONO_nPsi
-                boundaryIMS: do i = IONO_nPsi, 1, -1
+                open_min = Iono_nTheta
+                boundaryIMS: do i = Iono_nTheta, 1, -1
                     if (OCFL_II(i,j) < 0) open_min = i
                     if (ImBoundary_II(i,j) > 0) then
                         closed_max = i
@@ -327,35 +330,35 @@ module ModMagnit
                 end do
             end if
         end do
-    ! If IM boundary is not present, use size in degrees (defaults to 2 degrees)
+    ! If IM boundary is not present, use size in degrees (defaults to 5 degrees)
     else
         diff = CEILING(PCapSmoothingSize * (IONO_nTheta-1) / 90)
         do j = 1, Iono_nPsi
             if (NameHemiIn == 'north') then
-                open_min = 1
+                closed_max = 1
                 boundaryGMN: do i = 1, Iono_nTheta
                     if (OCFL_II(i,j) < 0) closed_max = i
                     if (OCFL_II(i,j) > 0) EXIT boundaryGMN
                 end do boundaryGMN
                 ! closed_max = closed_max + diff/2
-                closed_max = closed_max + 1
-                open_min = closed_max - diff
+                closed_max = max(closed_max + 1, 1)
+                open_min = max(closed_max - diff, 1)
                 ! Linearly reconstruct gap
                 do i = open_min, closed_max
                     var_II(i,j) = var_II(open_min,j) * real(closed_max-i)/diff &
                                 + var_II(closed_max,j) * real(i-open_min)/diff
                 end do
             else
-                open_min = IONO_nPsi
-                boundaryGMS: do i = IONO_nTheta, 1, -1
+                closed_max = Iono_nTheta
+                boundaryGMS: do i = Iono_nTheta, 1, -1
                     if (OCFL_II(i,j) < 0) closed_max = i
                     if (OCFL_II(i,j) > 0) EXIT boundaryGMS
                 end do boundaryGMS
                 ! closed_max = closed_max - diff/2
-                closed_max = closed_max - 1
-                open_min = closed_max + diff
+                closed_max = min(closed_max - 1, IONO_nTheta)
+                open_min = min(closed_max + diff, IONO_nTheta)
                 ! Linearly reconstruct gap
-                do i = open_min, closed_max, - 1
+                do i = open_min, closed_max, -1
                     var_II(i,j) = var_II(open_min,j) * real(i-closed_max)/diff &
                                 + var_II(closed_max,j) * real(open_min-i)/diff
                 end do
