@@ -175,19 +175,28 @@ contains
            case ('IMP') ! New IM Precip Model
               if (IsImCoupled) call imp_gen_fluxes(NameHemiIn, &
                        AvgEDiffe_II, AvgEDiffi_II, AvgEMono_II, AvgEBbnd_II, &
-                       EfluxDiffe_II, EfluxDiffi_II, EfluxMono_II, EfluxBbnd_II, theta)
+                       EfluxDiffe_II, EfluxDiffi_II, EfluxMono_II, &
+                       EfluxBbnd_II, theta)
            end select
 
            if(DoTest) then
               if (NameHemiIn == 'north') then
-                 write(*,*)'Ion Energy Flux', MAXVAL(EfluxDiffi_II),MINVAL(EfluxDiffi_II)
-                 write(*,*)'Ion Average Energy', MAXVAL(AvgEDiffi_II),MINVAL(AvgEDiffi_II)
-                 write(*,*)'Electron Energy Flux', MAXVAL(EfluxDiffe_II),MINVAL(EfluxDiffe_II)
-                 write(*,*)'Electron Average Energy', MAXVAL(AvgEDiffe_II),MINVAL(AvgEDiffe_II)
-                 write(*,*)'Discrete Energy Flux', MAXVAL(EfluxMono_II),MINVAL(EfluxMono_II)
-                 write(*,*)'Discrete Average Energy', MAXVAL(AvgEMono_II),MINVAL(AvgEMono_II)
-                 write(*,*)'Broadband Energy Flux', MAXVAL(EfluxBbnd_II),MINVAL(EfluxBbnd_II)
-                 write(*,*)'Broadband Average Energy', MAXVAL(AvgEBbnd_II),MINVAL(AvgEBbnd_II)
+                 write(*,*)'Ion Energy Flux', &
+                     MAXVAL(EfluxDiffi_II),MINVAL(EfluxDiffi_II)
+                 write(*,*)'Ion Average Energy', &
+                     MAXVAL(AvgEDiffi_II),MINVAL(AvgEDiffi_II)
+                 write(*,*)'Electron Energy Flux', &
+                     MAXVAL(EfluxDiffe_II),MINVAL(EfluxDiffe_II)
+                 write(*,*)'Electron Average Energy', &
+                     MAXVAL(AvgEDiffe_II),MINVAL(AvgEDiffe_II)
+                 write(*,*)'Discrete Energy Flux', &
+                     MAXVAL(EfluxMono_II),MINVAL(EfluxMono_II)
+                 write(*,*)'Discrete Average Energy', &
+                     MAXVAL(AvgEMono_II),MINVAL(AvgEMono_II)
+                 write(*,*)'Broadband Energy Flux', &
+                     MAXVAL(EfluxBbnd_II),MINVAL(EfluxBbnd_II)
+                 write(*,*)'Broadband Average Energy', &
+                     MAXVAL(AvgEBbnd_II),MINVAL(AvgEBbnd_II)
                  end if
               end if
 
