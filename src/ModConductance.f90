@@ -44,8 +44,7 @@ module ModConductance
        eLimitScale=10. ! Sets scaling factor for above eCondLimit
 
   ! Floor values for GM density and pressure, SI units:
-  real, parameter :: GmRhoFloor = 1E-21, GmPFloor = 1E-13, GMPeFloor = 1E-13, &
-                     ImEfluxFloor = 1E-3, ImAveEFloor = 1E-6
+  real, parameter :: GmRhoFloor = 1E-21, GmPFloor = 1E-13, GMPeFloor = 1E-13
 
   ! Arrays to hold components of conductance - 1 array
   ! for each source of conductance.  Long term storage for output files.
