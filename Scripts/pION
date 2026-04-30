@@ -6,6 +6,7 @@ my $Help = ($h or $help or $H or $HELP);
 
 my $Keep = ($k or $keep or $K or $KEEP);
 my $Gzip = ($g or $gzip or $z);
+my $Pigz = ($p or $pigz);
 
 use strict;
 
@@ -29,10 +30,14 @@ foreach $file1 (sort @files){
     unlink($file1, $file2) unless $Keep;
 }
 
-if($Gzip){
+if($Gzip or $Pigz){
     @files = glob('*.idl');
     foreach $fileout (sort @files){
-	$err = `gzip -f $fileout`;
+	if($Pigz){
+	    $err = `pigz -f $fileout`;
+	}else{
+	    $err = `gzip -f $fileout`;
+	}
 	die "Error occured: $err\n" if $err;
     }
 }
