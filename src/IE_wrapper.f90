@@ -169,10 +169,10 @@ contains
 
          ! Terminate to clarify that Spectrum can only be used with IMP
          if (NameAuroraMod /= 'IMP' .and. &
-            (DoUseIMSpectrum .or. ForceIMSpectrum)) then
-            call CON_stop(NameSub//" DoUseIMSpectrum and ForceIMSpectrum can"//&
-            "only be used with the IMP auroral model. Use #AURORA and set"//&
-            "NameAuroraMod to IMP to use spectral auroral flux.")
+            (DoUseIMSpectrum .or. DoForceIMSpectrum)) then
+            call CON_stop(NameSub//" DoUseIMSpectrum and DoForceIMSpectrum"//&
+            " can only be used with the IMP auroral model. Use #AURORA and"//&
+            " set NameAuroraMod to IMP to use spectral auroral flux.")
          end if
 
          RETURN
@@ -1271,7 +1271,7 @@ contains
 
     if(DoUseIMPrecip) then
         DoUseIMSpectrum = DoUseIMSpectrum .and. use_ua
-        if(ForceIMSpectrum) DoUseIMSpectrum = .true.
+        if(DoForceIMSpectrum) DoUseIMSpectrum = .true.
         if(DoUseIMSpectrum) then
             ! Update to 8 once southern hemisphere exists
             nVarImIe = 5 + 2 * nEngIM
