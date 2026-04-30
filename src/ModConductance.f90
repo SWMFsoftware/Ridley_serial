@@ -20,7 +20,8 @@ module ModConductance
   ! Logicals to control what conductance sources are used.
   logical :: DoUseEuvCond=.true., DoUseAurora=.true., DoUseDiffI=.true., &
        DoUseDiffE=.true., DoUseMono=.true., DoUseBbnd=.true., &
-       UsePrecipSmoothing=.true., IsImCoupled=.false.
+       UsePrecipSmoothing=.true., IsImCoupled=.false., IsUaCoupled=.false., &
+       DoCoupleUaConductance=.true.
 
   ! Upper latitude limits for IPE conductances
   real:: LatFullIpe = 90.0, LatFullRim = 91.0
@@ -234,41 +235,49 @@ contains
 
     ! Sum conductance into the correct hemisphere.
     if(NameHemiIn == 'north')then
-       IONO_NORTH_SigmaH = sqrt(SigmaHalConst**2 + SigmaHalEuv_II**2 + &
-            (2*StarLightCond)**2 + SigmaHalMono_II**2 + SigmaHalDiffe_II**2 &
-            + SigmaHalDiffi_II**2)
-       IONO_NORTH_SigmaP = sqrt(SigmaPedConst**2 + SigmaPedEuv_II**2 + &
-            StarLightCond**2 + SigmaPedMono_II**2 + SigmaPedDiffe_II**2 &
-            + SigmaPedDiffi_II**2)
-       ! Add broadband conductance:
-       IONO_NORTH_SigmaH = IONO_NORTH_SigmaH + SigmaHalBbnd_II
-       IONO_NORTH_SigmaP = IONO_NORTH_SigmaP + SigmaPedBbnd_II
+       if (IsUaCoupled .and. DoCoupleUaConductance) then
+          IONO_NORTH_SigmaH = IONO_NORTH_UA_SigmaH
+          IONO_NORTH_SigmaP = IONO_NORTH_UA_SigmaP
+          if(DoTest) &
+               write(*,*) "UA Conductance is being used in the northern "//&
+                    "hemisphere"
+       else
+          IONO_NORTH_SigmaH = sqrt(SigmaHalConst**2 + SigmaHalEuv_II**2 + &
+                (2*StarLightCond)**2 + SigmaHalMono_II**2 + SigmaHalDiffe_II**2 &
+                + SigmaHalDiffi_II**2)
+          IONO_NORTH_SigmaP = sqrt(SigmaPedConst**2 + SigmaPedEuv_II**2 + &
+                StarLightCond**2 + SigmaPedMono_II**2 + SigmaPedDiffe_II**2 &
+                + SigmaPedDiffi_II**2)
+          ! Add broadband conductance:
+          IONO_NORTH_SigmaH = IONO_NORTH_SigmaH + SigmaHalBbnd_II
+          IONO_NORTH_SigmaP = IONO_NORTH_SigmaP + SigmaPedBbnd_II
 
-       ! Combine with IPE conductance
-       if(allocated(IONO_NORTH_SigmaH_IPE) .and. LatFullIpe > 0.0)then
-          if(LatFullIpe >= 90.0)then
-             ! Set all the conductances
-             IONO_NORTH_SigmaH = IONO_NORTH_SigmaH_IPE
-             IONO_NORTH_SigmaP = IONO_NORTH_SigmaP_IPE
-          else
-             do iTheta = 1, IONO_nTheta
-                Lat = 90.0 - IONO_NORTH_Theta(iTheta,1)*cRadToDeg
-                WeightRim = max(0.0, min(1.0, &
-                     (Lat - LatFullIpe)/(LatFullRim - LatFullIpe)))
-                WeightIpe = 1 - WeightRim
-                IONO_NORTH_SigmaH(iTheta,:) = &
-                     WeightRim*IONO_NORTH_SigmaH(iTheta,:) + &
-                     WeightIpe*IONO_NORTH_SigmaH_IPE(iTheta,:)
-                IONO_NORTH_SigmaP(iTheta,:) = &
-                     WeightRim*IONO_NORTH_SigmaP(iTheta,:) + &
-                     WeightIpe*IONO_NORTH_SigmaP_IPE(iTheta,:)
-             end do
-          end if
-          ! write(*,*) NameSub,' IPE NORTH SigmaH max,min=', &
-          !     maxval(IONO_NORTH_SigmaH), minval(IONO_NORTH_SigmaH)
-          ! write(*,*) NameSub,' IPE NORTH SigmaP max,min=', &
-          !    maxval(IONO_NORTH_SigmaP), minval(IONO_NORTH_SigmaP)
-       endif
+          ! Combine with IPE conductance
+          if(allocated(IONO_NORTH_SigmaH_IPE) .and. LatFullIpe > 0.0)then
+            if(LatFullIpe >= 90.0)then
+                ! Set all the conductances
+                IONO_NORTH_SigmaH = IONO_NORTH_SigmaH_IPE
+                IONO_NORTH_SigmaP = IONO_NORTH_SigmaP_IPE
+            else
+                do iTheta = 1, IONO_nTheta
+                  Lat = 90.0 - IONO_NORTH_Theta(iTheta,1)*cRadToDeg
+                  WeightRim = max(0.0, min(1.0, &
+                        (Lat - LatFullIpe)/(LatFullRim - LatFullIpe)))
+                  WeightIpe = 1 - WeightRim
+                  IONO_NORTH_SigmaH(iTheta,:) = &
+                        WeightRim*IONO_NORTH_SigmaH(iTheta,:) + &
+                        WeightIpe*IONO_NORTH_SigmaH_IPE(iTheta,:)
+                  IONO_NORTH_SigmaP(iTheta,:) = &
+                        WeightRim*IONO_NORTH_SigmaP(iTheta,:) + &
+                        WeightIpe*IONO_NORTH_SigmaP_IPE(iTheta,:)
+                end do
+            end if
+            ! write(*,*) NameSub,' IPE NORTH SigmaH max,min=', &
+            !     maxval(IONO_NORTH_SigmaH), minval(IONO_NORTH_SigmaH)
+            ! write(*,*) NameSub,' IPE NORTH SigmaP max,min=', &
+            !    maxval(IONO_NORTH_SigmaP), minval(IONO_NORTH_SigmaP)
+          endif
+       end if
 
        ! Store Average energy and energy flux:
        IONO_NORTH_EFlux = EfluxMono_II
@@ -286,42 +295,50 @@ contains
        SigmaP = IONO_NORTH_SigmaP
 
     else
-       IONO_SOUTH_SigmaH = sqrt(SigmaHalConst**2 + SigmaHalEuv_II**2 + &
-            (2.*StarLightCond)**2 + SigmaHalMono_II**2 + SigmaHalDiffe_II**2 &
-            + SigmaHalDiffi_II**2)
-       IONO_SOUTH_SigmaP = sqrt(SigmaPedConst**2 + SigmaPedEuv_II**2 + &
-            StarLightCond**2 + SigmaPedMono_II**2 + SigmaPedDiffe_II**2 &
-            + SigmaPedDiffi_II**2)
-       ! Add broadband conductance:
-       IONO_SOUTH_SigmaH = IONO_SOUTH_SigmaH + SigmaHalBbnd_II
-       IONO_SOUTH_SigmaP = IONO_SOUTH_SigmaP + SigmaPedBbnd_II
+       if (IsUaCoupled) then
+          IONO_SOUTH_SigmaH = IONO_SOUTH_UA_SigmaH
+          IONO_SOUTH_SigmaP = IONO_SOUTH_UA_SigmaP
+          if(DoTest) &
+               write(*,*) "UA Conductance is being used in the southern "//&
+                    "hemisphere"
+       else
+          IONO_SOUTH_SigmaH = sqrt(SigmaHalConst**2 + SigmaHalEuv_II**2 + &
+                (2*StarLightCond)**2 + SigmaHalMono_II**2 + SigmaHalDiffe_II**2 &
+                + SigmaHalDiffi_II**2)
+          IONO_SOUTH_SigmaP = sqrt(SigmaPedConst**2 + SigmaPedEuv_II**2 + &
+                StarLightCond**2 + SigmaPedMono_II**2 + SigmaPedDiffe_II**2 &
+                + SigmaPedDiffi_II**2)
+          ! Add broadband conductance:
+          IONO_SOUTH_SigmaH = IONO_SOUTH_SigmaH + SigmaHalBbnd_II
+          IONO_SOUTH_SigmaP = IONO_SOUTH_SigmaP + SigmaPedBbnd_II
 
-       ! Combine with IPE conductance
-       if(allocated(IONO_SOUTH_SigmaH_IPE) .and. LatFullIpe > 0.0)then
-          if(LatFullIpe >= 90.0)then
-             ! Set all the conductances
-             IONO_SOUTH_SigmaH = IONO_SOUTH_SigmaH_IPE
-             IONO_SOUTH_SigmaP = IONO_SOUTH_SigmaP_IPE
-          else
-             ! Transition between IPE and RIM conductances
-             do iTheta = 1, IONO_nTheta
-                Lat = IONO_SOUTH_Theta(iTheta,1)*cRadToDeg - 90.0
-                WeightRim = max(0.0, min(1.0, &
-                     (Lat - LatFullIpe)/(LatFullRim - LatFullIpe)))
-                WeightIpe = 1 - WeightRim
-                IONO_SOUTH_SigmaH(iTheta,:) = &
-                     WeightRim*IONO_SOUTH_SigmaH(iTheta,:) + &
-                     WeightIpe*IONO_SOUTH_SigmaH_IPE(iTheta,:)
-                IONO_SOUTH_SigmaP(iTheta,:) = &
-                     WeightRim*IONO_SOUTH_SigmaP(iTheta,:) + &
-                     WeightIpe*IONO_SOUTH_SigmaP_IPE(iTheta,:)
-             end do
-          end if
-          ! write(*,*) NameSub,' !!! IPE SOUTH SigmaH max,min=', &
-          !     maxval(IONO_SOUTH_SigmaH), minval(IONO_SOUTH_SigmaH)
-          ! write(*,*) NameSub,' !!! IPE SOUTH SigmaP max,min=', &
-          !     maxval(IONO_SOUTH_SigmaP), minval(IONO_SOUTH_SigmaP)
-       endif
+          ! Combine with IPE conductance
+          if(allocated(IONO_SOUTH_SigmaH_IPE) .and. LatFullIpe > 0.0)then
+              if(LatFullIpe >= 90.0)then
+                ! Set all the conductances
+                IONO_SOUTH_SigmaH = IONO_SOUTH_SigmaH_IPE
+                IONO_SOUTH_SigmaP = IONO_SOUTH_SigmaP_IPE
+              else
+                ! Transition between IPE and RIM conductances
+                do iTheta = 1, IONO_nTheta
+                    Lat = IONO_SOUTH_Theta(iTheta,1)*cRadToDeg - 90.0
+                    WeightRim = max(0.0, min(1.0, &
+                        (Lat - LatFullIpe)/(LatFullRim - LatFullIpe)))
+                    WeightIpe = 1 - WeightRim
+                    IONO_SOUTH_SigmaH(iTheta,:) = &
+                        WeightRim*IONO_SOUTH_SigmaH(iTheta,:) + &
+                        WeightIpe*IONO_SOUTH_SigmaH_IPE(iTheta,:)
+                    IONO_SOUTH_SigmaP(iTheta,:) = &
+                        WeightRim*IONO_SOUTH_SigmaP(iTheta,:) + &
+                        WeightIpe*IONO_SOUTH_SigmaP_IPE(iTheta,:)
+                end do
+              end if
+              ! write(*,*) NameSub,' !!! IPE SOUTH SigmaH max,min=', &
+              !     maxval(IONO_SOUTH_SigmaH), minval(IONO_SOUTH_SigmaH)
+              ! write(*,*) NameSub,' !!! IPE SOUTH SigmaP max,min=', &
+              !     maxval(IONO_SOUTH_SigmaP), minval(IONO_SOUTH_SigmaP)
+          endif
+       end if
 
        ! Store Average energy and energy flux:
        IONO_SOUTH_EFlux = EfluxMono_II

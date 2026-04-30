@@ -647,13 +647,18 @@ contains
 
   end subroutine IE_get_for_rb
   !============================================================================
-  subroutine IE_get_info_for_ua(nVar, NameVar_V)
+  subroutine IE_get_info_for_ua(nVar, nEngInput, NameVar_V, EngInput)
     ! Get number and names of variables for UA to IE coupling.
     ! IE reports what variables it needs from UA.
     ! UA will use this info to create and fill buffers appropriately.
+   use ModIonosphere, ONLY: DoCoupleUA, nEngUA, EngUA, Iono_nTheta, Iono_nPsi, &
+                            IONO_HYDR_NFlux, IONO_ELEC_NFlux, DoUseIMSpectrum
+
 
     integer, intent(out) :: nVar
+    integer, intent(in) :: nEngInput
     character(len=*), intent(out), optional :: NameVar_V(:)
+    real, intent(in), optional :: EngInput(:)
 
     logical :: DoTest, DoTestMe
     character(len=*), parameter:: NameSub = 'IE_get_info_for_ua'
@@ -663,8 +668,25 @@ contains
     ! Right now, only request Hall & Pedersen conductance.
     ! In the future, neutral wind FAC coupling or other values can/will
     ! be shared from UA.
-    nVar = 4
-    if(present(NameVar_V)) NameVar_V(1:4) = ['lon','lat','hal','ped']
+    DoCoupleUA = .true.
+
+    nVar = 5
+    if(present(NameVar_V)) NameVar_V(1:5) = ['lon','lat','hal','ped','fac']
+
+    nEngUA = nEngInput
+
+    if(present(EngInput)) then
+      if (allocated(EngUA)) deallocate(EngUA)
+      allocate(EngUA(nEngUA))
+      EngUA = EngInput
+
+      if(.not. allocated(IONO_HYDR_NFlux) .and. DoUseIMSpectrum) then
+         allocate(IONO_HYDR_NFlux(2*IONO_nTheta-1,IONO_nPsi,nEngUA), &
+                  IONO_ELEC_NFlux(2*IONO_nTheta-1,IONO_nPsi,nEngUA))
+         IONO_HYDR_NFlux = 0
+         IONO_ELEC_NFlux = 0
+      end if
+    end if
 
     if(DoTestMe)then
        write(*,*) NameSub//': nVar=', nVar
@@ -675,15 +697,21 @@ contains
   !============================================================================
 
   subroutine IE_get_for_ua(Buffer_IIV, iSize, jSize, nVarIn, NameVar_V, &
-       iBlock,tSimulation)
+                           tSimulation, nVarSpecIn, Buffer_IIIV,&
+                           NameVarSpec_V)
 
     use ModProcIE
     use ModIonosphere
+    use ModConductance, ONLY: NameAuroraMod, polar_convolution, UsePrecipSmoothing
 
-    integer,          intent(in)  :: iSize, jSize, nVarIn, iBlock
+
+    integer,          intent(in)  :: iSize, jSize, nVarIn
     real,             intent(out) :: Buffer_IIV(iSize,jSize,nVarIn)
     character (len=*),intent(in)  :: NameVar_V(nVarIn)
     real,             intent(in)  :: tSimulation
+    integer, intent(in) :: nVarSpecIn
+    real, intent(out), optional   :: Buffer_IIIV(iSize,jSize,nEngUA,nVarSpecIn)
+    character (len=*), intent(in), optional :: NameVarSpec_V(nVarSpecIn)
 
     character(len=5) :: NameHem
     integer :: iVar
@@ -697,7 +725,6 @@ contains
 
     if(DoTestMe)then
        write(*,*)NameSub//': Gathering data for UA at t=', tSimulation
-       write(*,*)NameSub//': Current hemisphere block = ', iBlock
        write(*,*)NameSub//': Variable list = '
        do iVar=1, nVarIn
           write(*,'(10x,i2.2,5x,a)')iVar, NameVar_V(iVar)
@@ -706,20 +733,10 @@ contains
             iSize, jSize
     end if
 
-    if(iSize /= IONO_nTheta .or. jSize /= IONO_nPsi)then
+    if(iSize /= IONO_nTheta * 2 - 1 .or. jSize /= IONO_nPsi)then
        write(*,*)NameSub//' incorrect buffer size=',iSize,jSize,&
             ' IONO_nTheta,IONO_nPsi=',IONO_nTheta, IONO_nPsi
        call CON_stop(NameSub//' SWMF_ERROR')
-    end if
-
-    ! Set hemisphere to transfer:
-    if(iBlock==1) then
-       NameHem = 'North'
-    else if (iBlock==2) then
-       NameHem = 'South'
-    else
-       write(*,*) NameSub//': invalid iBlock = ', iBlock
-       call CON_stop(NameSub//': Error coupling with UA')
     end if
 
     ! Make sure that the most recent result is provided
@@ -727,44 +744,71 @@ contains
     call IE_run(tSimulationTmp,tSimulation)
 
     Buffer_IIV = 0.0
-    select case(NameHem)
 
-    case('North')
+    if (iProc /= 0) return
+    do iVar=1, nVarIn
+       select case(NameVar_V(iVar))
 
-       if(iProc /= 0) RETURN
+       case('pot')
+          Buffer_IIV(:,:,iVar) = IONO_Phi
+       case('def')
+          if (UsePrecipSmoothing) &
+               call polar_convolution(IONO_DIFFE_EFlux, iSize, jSize)
+          Buffer_IIV(:,:,iVar) = IONO_DIFFE_EFlux
+       case('dae')
+          if (UsePrecipSmoothing) &
+               call polar_convolution(IONO_DIFFE_Ave_E, iSize, jSize)
+          Buffer_IIV(:,:,iVar) = IONO_DIFFE_Ave_E
+       case('mef')
+          if (UsePrecipSmoothing) &
+               call polar_convolution(IONO_MONO_EFlux, iSize, jSize)
+          Buffer_IIV(:,:,iVar) = IONO_MONO_EFlux
+       case('mae')
+          if (UsePrecipSmoothing) &
+               call polar_convolution(IONO_MONO_Ave_E, iSize, jSize)
+          Buffer_IIV(:,:,iVar) = IONO_MONO_Ave_E
+       case('wef')
+          if (UsePrecipSmoothing) &
+               call polar_convolution(IONO_BBND_EFlux, iSize, jSize)
+          Buffer_IIV(:,:,iVar) = IONO_BBND_EFlux
+       case('wae')
+          if (UsePrecipSmoothing) &
+               call polar_convolution(IONO_BBND_Ave_E, iSize, jSize)
+          Buffer_IIV(:,:,iVar) = IONO_BBND_Ave_E
+       case('ief')
+          if (UsePrecipSmoothing) &
+               call polar_convolution(IONO_DIFFI_EFlux, iSize, jSize)
+          Buffer_IIV(:,:,iVar) = IONO_DIFFI_EFlux
+       case('iae')
+          if (UsePrecipSmoothing) &
+               call polar_convolution(IONO_DIFFI_Ave_E, iSize, jSize)
+          Buffer_IIV(:,:,iVar) = IONO_DIFFI_Ave_E
+       case default
+          call CON_stop(NameSub//' invalid NameVar='//NameVar_V(iVar))
+       end select
+    end do
 
-       do iVar=1, nVarIn
-          select case(NameVar_V(iVar))
+   if(present(Buffer_IIIV)) then
 
-          case('pot')
-             Buffer_IIV(:,:,iVar) = IONO_NORTH_Phi
-          case('ave')
-             Buffer_IIV(:,:,iVar) = IONO_NORTH_Ave_E
-          case('tot')
-             Buffer_IIV(:,:,iVar) = IONO_NORTH_EFlux
-          case default
-             call CON_stop(NameSub//' invalid NameVar='//NameVar_V(iVar))
-          end select
-       end do
+      if (NameAuroraMod /= 'IMP' .or. .not. DoUseIMSpectrum) call CON_stop(&
+            NameSub//"GITM spectrum coupling can only be used with the IMP "//&
+            "auroral model. Use #AURORA and set NameAuroraMod to IMP to use "//&
+            "spectral auroral flux.")
 
-    case('South')
+      Buffer_IIIV = 0.0
 
-       if(iProc /= nProc - 1) RETURN
-
-       do iVar=1, nVarIn
-          select case(NameVar_V(iVar))
-
-          case('pot')
-             Buffer_IIV(:,:,iVar) = IONO_SOUTH_Phi
-          case('ave')
-             Buffer_IIV(:,:,iVar) = IONO_SOUTH_Ave_E
-          case('tot')
-             Buffer_IIV(:,:,iVar) = IONO_SOUTH_EFlux
-          case default
-             call CON_stop(NameSub//' invalid NameVar='//NameVar_V(iVar))
-          end select
-       end do
-    end select
+      if (iProc /= 0) return
+      do iVar=1, nVarSpecIn
+         select case(NameVarSpec_V(iVar))
+         case('hyd')
+            Buffer_IIIV(:,:,:,iVar) = IONO_HYDR_NFlux
+         case('ele')
+            Buffer_IIIV(:,:,:,iVar) = IONO_ELEC_NFlux
+         case default
+            call CON_stop(NameSub//' invalid NameVarSpec='//NameVarSpec_V(iVar))
+         end select
+      end do
+    end if
 
   end subroutine IE_get_for_ua
   !============================================================================
@@ -916,8 +960,8 @@ contains
   !============================================================================
   subroutine IE_put_from_ua(Buffer_IIBV, nMLTs, nLats, nVarIn, NameVarUaIn_V)
 
-    use IE_ModMain, ONLY: IsNewInput, DoCoupleUaCurrent
-    use ModConductance, ONLY: StarLightCond
+    use IE_ModMain, ONLY: IsNewInput
+    use ModConductance, ONLY: StarLightCond, IsUaCoupled
     use ModIonosphere
     use ModConst
     use ModUtilities, ONLY: check_allocate
@@ -967,6 +1011,11 @@ contains
     ! Set intelligent defaults as needed:
     IONO_NORTH_TGCM_JR = 0.0
     IONO_SOUTH_TGCM_JR = 0.0
+    if(.not. allocated(IONO_NORTH_UA_SigmaH)) &
+         allocate(IONO_NORTH_UA_SigmaH(IONO_nTheta,IONO_nPsi), &
+         IONO_SOUTH_UA_SigmaH(IONO_nTheta,IONO_nPsi), &
+         IONO_NORTH_UA_SigmaP(IONO_nTheta,IONO_nPsi), &
+         IONO_SOUTH_UA_SigmaP(IONO_nTheta,IONO_nPsi))
 
     ! Check if arrays are allocated & allocate as necessary
     if (.not.allocated(UA_Lats)) then
@@ -1112,15 +1161,15 @@ contains
           select case (NameVarUaIn_V(iVar))
           case('hal') ! Hall conductance
              if(iBlock==1)then
-                IONO_NORTH_SigmaH = max(TmpVar_II, 2*StarLightCond)
+                IONO_NORTH_UA_SigmaH = max(TmpVar_II, 2*StarLightCond)
              else
-                IONO_SOUTH_SigmaH = max(TmpVar_II, 2*StarLightCond)
+                IONO_SOUTH_UA_SigmaH = max(TmpVar_II, 2*StarLightCond)
              end if
           case('ped') ! Pedersen conductance
              if(iBlock==1)then
-                IONO_NORTH_SigmaP = max(TmpVar_II, StarLightCond)
+                IONO_NORTH_UA_SigmaP = max(TmpVar_II, StarLightCond)
              else
-                IONO_SOUTH_SigmaP = max(TmpVar_II, StarLightCond)
+                IONO_SOUTH_UA_SigmaP = max(TmpVar_II, StarLightCond)
              end if
           case('fac') ! Neutral wind FACs
              if(iBlock==1)then
@@ -1134,6 +1183,8 @@ contains
           end select
        end do
     end do VAR
+
+    IsUaCoupled = .true.
 
   end subroutine IE_put_from_ua
   !============================================================================
