@@ -102,12 +102,14 @@ contains
       use ModReadParam
       use ModIE_Interface
       use ModFiles
+      use IE_ModMain, ONLY: DoCoupleUaCurrent
       use ModConductance, ONLY: DoUseEuvCond, f107_flux, &
            PolarCapPedCond, StarLightCond, SigmaHalConst, SigmaPedConst, &
            imodel_legacy, DoUseAurora, NameAuroraMod, DoUseDiffI, DoUseDiffE, &
            DoUseMono, DoUseBbnd, UsePrecipSmoothing, KernelType, KernelSize, &
            KernelSpread, eCondRel, eCondLimit, eLimitScale, &
-           LatFullIpe, LatFullRim, DoPolarCapSmoothing, PCapSmoothingSize
+           LatFullIpe, LatFullRim, DoPolarCapSmoothing, PCapSmoothingSize, &
+           DoCoupleUaConductance
       use ModMagnit, ONLY: ConeEfluxDifp, ConeNfluxDifp, ConeEfluxDife, &
               ConeNfluxDife, ConeEfluxMono, ConeNfluxMono, ConeEfluxBbnd, &
               ConeNfluxBbnd
@@ -287,16 +289,15 @@ contains
              end if
          case("#POLARCAPSMOOTHING")
             call read_var('DoPolarCapSmoothing', DoPolarCapSmoothing)
-            call read_var('PCapSmoothingSize', PCapSmoothingSize)
+            if (DoPolarCapSmoothing) then
+               call read_var('PCapSmoothingSize', PCapSmoothingSize)
+            end if
          case("#ROBINSONLIMIT")
             call read_var('eCondLimit', eCondLimit)
             call read_var('eLimitScale', eLimitScale)
          case("#IMSPECTRUM")
-            ! Currently not implemented, intended to be optional use
-            ! of full spectrum precipitation/output in ionosphere
             call read_var('DoUseIMSpectrum', DoUseIMSpectrum)
-
-         ! Physics & solver related params
+            call read_var('DoForceIMSpectrum', DoForceIMSpectrum)
          case("#IPECONDUCTANCE")
             call read_var('LatFullIpe', LatFullIpe)
             LatFullIpe = max(0.0, min(90.0, LatFullIpe))
@@ -310,11 +311,8 @@ contains
             call read_var('LatBoundary',LatBoundary)
             LatBoundary = LatBoundary * cDegToRad
          case("#UA")
+            call read_var('DoCoupleUaConductance',DoCoupleUaConductance)
             call read_var('DoCoupleUaCurrent',DoCoupleUaCurrent)
-            if(DoCoupleUaCurrent)then
-               call read_var('LatBoundary',LatBoundary)
-               LatBoundary = LatBoundary * cDegToRad
-            endif
          case("#SPS")
             call read_var('UseSPS',UseSPS)
             IE_NameOfEFieldModel = "SPS"

@@ -367,23 +367,22 @@ between the IE processors.
 </command>
 
 <command name="UA">
+  <parameter name="DoCoupleUaConductance" type="logical" default="F"/>
   <parameter name="DoCoupleUaCurrent" type="logical" default="F"/>
-  <parameter name="LatBoundary" type="real" min="0" max="60"
-	     default="45" if="$DoCoupleUaCurrent" />
 
 #UA
-T		DoCoupleUaCurrent
-45.0		LatBoundary [deg] (only read if DoCoupleUaCurrent is true)
+T   DoCoupleUaConductance
+F		DoCoupleUaCurrent
 
-The DoCoupleUaCurrent parameter determines if the field aligned current
-calculated by the UA component should be used. Usually the currents are
-dominated by the field aligned currents provided by the GM component.
-The coupling with the UA currents is still experimental.
-If DoCoupleUaCurrent is set to true, the lower latitude boundary for
-the potential solver should be given with the LatBoundary paramter.
+This command controls what values from the coupled UA model are used. If 
+DoCoupleUaConductance is true, Pedersen and Hall conductances are calculated
+by the UA component, and coupled/used by the IE solver. If DoCoupleUaCurrent
+is true, UA's neutral wind field aligned currents are added linearly to the 
+GM field aligned currents before the IE solver is called. The coupling with 
+the UA currents is still experimental.
 
-The default value is DoCoupleUaCurrent=.false, i.e. the UA currents
-are not included.
+The default values are shown.
+
 </command>
 
 <command name="IPECONDUCTANCE">
@@ -697,7 +696,7 @@ The default values are shown above.
 
 #POLARCAPSMOOTHING
 T         DoPolarCapSmoothing
-2.0       PCapSmoothingSize
+5.0       PCapSmoothingSize
 
 If DoPolarCapSmoothing is true, this command sets the size of region 
 interpolated between the polar cap and closed field lines in 1 dimension. Value 
@@ -727,12 +726,17 @@ eLimitScale defaults to 10.0 keV (i.e., an excess in energy of 10keV would decay
 
 <command name="IMSPECTRUM">
   <parameter name="DoUseIMSpectrum" type="logical" default="F"/>
+  <parameter name="DoForceIMSpectrum" type="logical" default="F"/>
 
-  #IMSPECTRUM
-  F            DoUseIMSpectrum
+#IMSPECTRUM
+F           DoUseIMSpectrum
+F           DoForceIMSpectrum
 
-  Currently not implemented. Will be used to optionally couple full IM
-    energy spectra to IE for IMP aurora model when not coupled with UA.
+IMP has the ability to receive the entire diffuse auroral energy spectrum from
+CIMI. If DoUseIMSpectrum is true, IE gets the spectrum from CIMI, and will
+process it, then pass it to UA. If UA is not being used, DoUseIMSpectrum does
+nothing. DoForceIMSpectrum can be used to use the IM spectrum even if UA 
+is not being used. The default values are shown. 
 
 </command>
 
