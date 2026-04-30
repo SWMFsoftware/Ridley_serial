@@ -303,7 +303,7 @@ contains
              call read_var('ConeNfluxMono', ConeNfluxMono)
              call read_var('ConeEfluxBbnd', ConeEfluxBbnd)
              call read_var('ConeNfluxBbnd', ConeNfluxBbnd)
-         case("#MAGNITPRECIPSMOOTHING")
+         case("#PRECIPSMOOTHING", "#MAGNITPRECIPSMOOTHING")
              call read_var('UsePrecipSmoothing', UsePrecipSmoothing)
              if (UsePrecipSmoothing) then
                  call read_var('KernelType', KernelType)

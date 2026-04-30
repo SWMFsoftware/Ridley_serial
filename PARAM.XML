@@ -656,7 +656,7 @@ the SWPC run configuration, see Mukhopadhyay 2022.
 
 </command>
 
-<command name="MAGNITPRECIPSMOOTHING">
+<command name="PRECIPSMOOTHING" alias="MAGNITPRECIPSMOOTHING">
   <parameter name="UsePrecipSmoothing" type="logical" default="T"/>
   <if expr="$UsePrecipSmoothing">
     <parameter name="KernelType"  type="string" length="4" input="select">
@@ -667,7 +667,7 @@ the SWPC run configuration, see Mukhopadhyay 2022.
     <parameter name="KernelSpread" type="real" min="0" default="1.0"/>
   </if>
 
-#MAGNITPRECIPSMOOTHING
+#PRECIPSMOOTHING
 T         UsePrecipSmoothing
 gaus      KernelType
 3         KernelSize
