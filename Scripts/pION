@@ -7,6 +7,7 @@ my $Help = ($h or $help or $H or $HELP);
 my $Keep = ($k or $keep or $K or $KEEP);
 my $Gzip = ($g or $gzip or $z);
 my $Pigz = ($p or $pigz);
+my $nThread = ($n or 4)
 
 use strict;
 
@@ -34,7 +35,7 @@ if($Gzip or $Pigz){
     @files = glob('*.idl');
     foreach $fileout (sort @files){
 	if($Pigz){
-	    $err = `pigz -f $fileout`;
+	    $err = `pigz -f $fileout -n=$nThread`;
 	}else{
 	    $err = `gzip -f $fileout`;
 	}
