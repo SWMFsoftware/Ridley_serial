@@ -70,7 +70,7 @@ subroutine IE_gather
          IONO_DIFFE_EFlux(IONO_nTheta:2*IONO_nTheta-1,:)= IONO_SOUTH_DIFFE_EFlux
          IONO_MONO_EFlux(IONO_nTheta:2*IONO_nTheta-1,:) = IONO_SOUTH_MONO_EFlux
          IONO_BBND_EFlux(IONO_nTheta:2*IONO_nTheta-1,:) = IONO_SOUTH_BBND_EFlux
-     endif 
+     endif
   endif
 
   if (nProc > 1) then
@@ -92,8 +92,8 @@ subroutine IE_gather
        call MPI_reduce_real_array(IONO_DIFFE_EFlux,n, MPI_MAX, 0, iComm, iError)
        call MPI_reduce_real_array(IONO_MONO_EFlux, n, MPI_MAX, 0, iComm, iError)
        call MPI_reduce_real_array(IONO_BBND_EFlux, n, MPI_MAX, 0, iComm, iError)
-       ! Spectrum fluxes are combined in IMP and as such do not need to be 
-       ! combined above. 
+       ! Spectrum fluxes are combined in IMP and as such do not need to be
+       ! combined above.
        if(DoUseIMSpectrum) then
           call MPI_reduce_real_array(IONO_HYDR_NFlux, n, MPI_MAX, 0, iComm, &
                                     iError)

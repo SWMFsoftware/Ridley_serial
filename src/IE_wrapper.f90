@@ -654,7 +654,6 @@ contains
    use ModIonosphere, ONLY: DoCoupleUA, nEngUA, EngUA, Iono_nTheta, Iono_nPsi, &
                             IONO_HYDR_NFlux, IONO_ELEC_NFlux, DoUseIMSpectrum
 
-
     integer, intent(out) :: nVar
     integer, intent(in) :: nEngInput
     character(len=*), intent(out), optional :: NameVar_V(:)
@@ -704,7 +703,6 @@ contains
     use ModIonosphere
     use ModConductance, ONLY: NameAuroraMod, polar_convolution, UsePrecipSmoothing
 
-
     integer,          intent(in)  :: iSize, jSize, nVarIn
     real,             intent(out) :: Buffer_IIV(iSize,jSize,nVarIn)
     character (len=*),intent(in)  :: NameVar_V(nVarIn)
@@ -745,7 +743,7 @@ contains
 
     Buffer_IIV = 0.0
 
-    if (iProc /= 0) return
+    if (iProc /= 0) RETURN
     do iVar=1, nVarIn
        select case(NameVar_V(iVar))
 
@@ -797,7 +795,7 @@ contains
 
       Buffer_IIIV = 0.0
 
-      if (iProc /= 0) return
+      if (iProc /= 0) RETURN
       do iVar=1, nVarSpecIn
          select case(NameVarSpec_V(iVar))
          case('hyd')
