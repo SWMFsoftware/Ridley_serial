@@ -256,8 +256,6 @@ module ModMagnit
     end where
     if(present(PotOut_II)) PotOut_II = Potential_II
 
-
-
     ! Calculate Avg E in keV
     AvgEMono_II = EfluxMono_II / (NfluxDiffe_II * cKEV)
 
