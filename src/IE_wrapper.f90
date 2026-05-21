@@ -1228,11 +1228,12 @@ contains
                iono_north_im_efluxElec(iLat,iLon) = buff_v(3)
                iono_north_im_aveeElec(iLat,iLon)  = buff_v(4)
                iono_north_im_boundary(iLat,iLon)  = buff_v(5)
+               iono_north_im_jr(iLat,iLon)        = buff_v(6)
                if(DoUseIMSpectrum) then
                   iono_north_im_nHydrPrec(iLat,iLon,:) = &
-                        buff_v(6:5+nEngIM)
+                        buff_v(7:6+nEngIM)
                   iono_north_im_nElecPrec(iLat,iLon,:) = &
-                        buff_v(6+nEngIM:5+2*nEngIM)
+                        buff_v(7+nEngIM:6+2*nEngIM)
                endif
            else
            ! Old coupling
@@ -1272,7 +1273,7 @@ contains
         if(DoForceIMSpectrum) DoUseIMSpectrum = .true.
         if(DoUseIMSpectrum) then
             ! Update to 8 once southern hemisphere exists
-            nVarImIe = 5 + 2 * nEngIM
+            nVarImIe = 6 + 2 * nEngIM
             if(.not. allocated(IONO_north_im_nElecPrec)) &
                allocate(IONO_north_im_nElecPrec(IONO_nTheta,IONO_nPsi,nEngIM), &
                         IONO_south_im_nElecPrec(IONO_nTheta,IONO_nPsi,nEngIM), &
@@ -1287,7 +1288,7 @@ contains
             endif
         else
          ! elseif (do use iba)
-            nVarImIe = 5
+            nVarImIe = 6
         end if
     else
         ! Use Old Implementation
@@ -1413,11 +1414,13 @@ contains
     !--------------------------------------------------------------------------
     integer iError, i
    !---------------------------------------------------------------------------
-if(DoUseIMPrecip) then
+   if(DoUseIMPrecip) then
       iono_north_im_efluxHydr(:,iono_npsi) = iono_north_im_efluxHydr(:,1)
       iono_north_im_aveeHydr(:,iono_npsi)  = iono_north_im_efluxHydr(:,1)
       iono_north_im_efluxElec(:,iono_npsi) = iono_north_im_efluxHydr(:,1)
       iono_north_im_aveeElec(:,iono_npsi)  = iono_north_im_efluxHydr(:,1)
+      iono_north_im_jr(:,iono_npsi)        = iono_north_im_jr(:,1)
+      iono_north_im_boundary(:,iono_npsi)  = iono_north_im_boundary(:,1)
 
       where(iono_north_im_efluxHydr < ImEfluxFloor) &
             iono_north_im_efluxHydr = ImEfluxFloor
@@ -1440,6 +1443,8 @@ if(DoUseIMPrecip) then
                MPI_Real, 0, iComm, iError)
          call MPI_Bcast(iono_north_im_boundary, iono_nTheta*iono_nPsi, &
                MPI_Real, 0, iComm, iError)
+         call MPI_Bcast(iono_north_im_jr, iono_nTheta*iono_nPsi, &
+               MPI_Real, 0, iComm, iError)
       endif
 
       do i = 1, IONO_nTheta
@@ -1453,7 +1458,8 @@ if(DoUseIMPrecip) then
                iono_north_im_aveeElec(Iono_nTheta-i+1,:)
          iono_south_im_boundary(i,:) = &
                iono_north_im_boundary(Iono_nTheta-i+1,:)
-
+         iono_south_im_jr(i,:) = &
+               iono_north_im_jr(Iono_nTheta-i+1,:)
       enddo
       if(DoUseIMSpectrum) then
          iono_north_im_nHydrPrec(:,iono_npsi,:) = &
