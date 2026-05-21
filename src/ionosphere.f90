@@ -618,7 +618,7 @@ subroutine ionosphere_write_output(iFile, iBlock)
         case(xyz_vars)
            write(iUnit, '(I5,a)') 21, ' nvars'
         case(pre_vars)
-           write(iUnit, '(I5,a)') 19, ' nvars'
+           write(iUnit, '(I5,a)') 20, ' nvars'
         end select
         write(iUnit, '(I5,a)') IONO_nTheta, ' nTheta'
         write(iUnit, '(I5,a)')   IONO_nPsi, ' nPhi'
@@ -747,6 +747,7 @@ subroutine ionosphere_write_output(iFile, iBlock)
            write(iUnit, '(I5,a)') 17, ' Jx [microA/m2]'
            write(iUnit, '(I5,a)') 18, ' Jy [microA/m2]'
            write(iUnit, '(I5,a)') 19, ' Jz [microA/m2]'
+           write(iUnit, '(I5,a)') 20, ' Im-Jr [microA/m2]'
         end select
 
         write(iUnit, *) ' '
@@ -986,7 +987,7 @@ subroutine ionosphere_write_output(iFile, iBlock)
                    IONO_NORTH_BBND_Ave_E(i, j), &
                    1.0e06*IONO_NORTH_JR(i,j),1.0e-03*IONO_NORTH_PHI(i,j), &
                    1.0e06*IONO_NORTH_Jx(i,j),1.0e06*IONO_NORTH_Jy(i,j), &
-                   1.0e06*IONO_NORTH_Jz(i,j)
+                   1.0e06*IONO_NORTH_Jz(i,j), 1.0e06*IONO_NORTH_Im_Jr(i,j)
            end do
         end do
      endif
@@ -1127,7 +1128,7 @@ subroutine ionosphere_write_output(iFile, iBlock)
                    IONO_SOUTH_BBND_Ave_E(i, j), &
                    1.0e06*IONO_SOUTH_JR(i,j),1.0e-03*IONO_SOUTH_PHI(i,j), &
                    1.0e06*IONO_SOUTH_Jx(i,j),1.0e06*IONO_SOUTH_Jy(i,j), &
-                   1.0e06*IONO_SOUTH_Jz(i,j)
+                   1.0e06*IONO_SOUTH_Jz(i,j),1.0e06*IONO_SOUTH_Im_Jr(i,j)
            end do
         end do
      endif
