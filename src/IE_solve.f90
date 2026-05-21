@@ -50,10 +50,9 @@ subroutine IE_solve
                 sum(abs(IONO_NORTH_JR))
         end if
 
-        ! Add the IM currents before the conductances are calculated
-        ! CANDIDATE FOR REMOVAL: good GM resolution and 2-way GM-IM
-        ! coupling makes this unnecessary.
-        IONO_NORTH_JR = IONO_NORTH_JR + FractionImJr*iono_north_im_jr
+        ! Add in IM currents below GM inner boundary
+        where(IONO_NORTH_JR == 0) IONO_NORTH_JR = IONO_NORTH_JR &
+                                  + FractionImJr*iono_north_im_jr
 
         ! Next two calls replaced with:
         call generate_conductance('north')
@@ -121,8 +120,9 @@ subroutine IE_solve
                 sum(abs(IONO_SOUTH_JR))
         end if
 
-        ! Add the IM currents before the conductances are calculated
-        IONO_SOUTH_JR = IONO_SOUTH_JR + FractionImJr*iono_south_im_jr
+        ! Add in IM currents below GM inner boundary
+        where(IONO_SOUTH_JR == 0) IONO_SOUTH_JR = IONO_SOUTH_JR &
+                                  + FractionImJr*iono_south_im_jr
 
         ! Obtain conductance:
         call generate_conductance('south')
