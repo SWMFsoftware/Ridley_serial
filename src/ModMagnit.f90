@@ -229,23 +229,34 @@ module ModMagnit
       ! Put it all together into potential
       Potential_II = ElectronTemp_II / cElectronCharge * (1 - MirrorRatio_II) &
               * LOG((MirrorRatio_II - PrecipRatio_II) / (MirrorRatio_II - 1))
-    elsewhere(1 <= PrecipRatio_II .and. OCFL_II < 0)
-      Potential_II = ElectronTemp_II / cElectronCharge * (PrecipRatio_II - 1)
-    elsewhere
-      NfluxMono_II = NfluxDiffe_II
-    end where
-    if(present(PotOut_II)) PotOut_II = Potential_II
-    ! Split up large calculation into a few steps
-    ! Calculate large potential exponent
-    VExponent_II = EXP(-cElectronCharge * Potential_II / ((ElectronTemp_II) * &
+
+      ! Split up large calculation into a few steps
+      ! Calculate large potential exponent
+      VExponent_II = EXP(-cElectronCharge * Potential_II / ((ElectronTemp_II) * &
             (MirrorRatio_II - 1)))
-    ! Calculate product term
-    PotentialTerm_II = ((1 - VExponent_II) * ConeEfluxMono / &
+      ! Calculate product term
+      PotentialTerm_II = ((1 - VExponent_II) * ConeEfluxMono / &
             (1 + ((1 - 1/MirrorRatio_II) * VExponent_II)) * cElectronCharge * &
             Potential_II) + AvgEDiffe_II * cKEV
 
-    ! Plug into equation for EFlux
-    EfluxMono_II = NfluxMono_II * PotentialTerm_II
+      ! Plug into equation for EFlux
+      EfluxMono_II = NfluxMono_II * PotentialTerm_II
+
+    elsewhere(1 <= PrecipRatio_II .and. OCFL_II < 0)
+      Potential_II = ElectronTemp_II / cElectronCharge * (PrecipRatio_II - 1)
+
+      ! In polar cap use linear Knight relationship
+      ! open field lines = no mirroring/trapped particles
+      EfluxMono_II = NfluxDiffe_II * AvgEDiffe_II * cKEV / 2 &
+              * (PrecipRatio_II ** 2 + 1)
+    elsewhere
+      NfluxMono_II = NfluxDiffe_II
+      ! Reconstruct Diffuse flux where there is no potential
+      EfluxMono_II = NfluxDiffe_II * AvgEDiffe_II * cKEV
+    end where
+    if(present(PotOut_II)) PotOut_II = Potential_II
+
+
 
     ! Calculate Avg E in keV
     AvgEMono_II = EfluxMono_II / (NfluxDiffe_II * cKEV)
