@@ -34,7 +34,8 @@ contains
          iono_north_im_efluxHydr, iono_south_im_eFluxHydr, &
          DoUseIMSpectrum, iono_north_im_nElecPrec, iono_south_im_nElecPrec, &
          IONO_North_p, IONO_North_rho, IONO_South_p, IONO_South_rho, &
-         DoUseGmPe, IONO_North_Pe, IONO_South_Pe
+         DoUseGmPe, IONO_North_Pe, IONO_South_Pe, IONO_north_im_jr, &
+         IONO_south_im_jr
     use ModConst, ONLY: cKEV, cProtonMass, cElectronMass, cPi
 
     real, intent(out), dimension(IONO_nTheta, IONO_nPsi) :: &
@@ -47,18 +48,18 @@ contains
          FAC_II, OCFL_II, NfluxDiffe_II, ElectronTemp_II, Potential_II, &
          Poynting_II, ImBoundary_II, MagP_II, MagNp_II, MagPe_II, MagNe_II, &
          NfluxDiffi_II, MhdElectronTemp_II, MhdNfluxDiffe_II, MhdAvgEDiffe_II, &
-         MhdEfluxMono_II, MhdAvgEMono_II
+         MhdEfluxMono_II, MhdAvgEMono_II, ImFac_II
 
     character(len=*), intent(in) :: NameHemiIn
 
     character(len=*), parameter:: NameSub = 'imp_gen_fluxes'
     !--------------------------------------------------------------------------
-   if (trim(NameHemiIn) == 'south') then
+   if (NameHemiIn == 'south') then
       AvgEDiffe_II = iono_south_im_aveeElec ! CIMI gives in keV
       EfluxDiffe_II = iono_south_im_efluxElec / 1000.0 ! mW/m^2 to W/m^2
       AvgEDiffi_II = iono_south_im_aveeHydr
       EfluxDiffi_II = iono_south_im_efluxHydr / 1000.0
-    else if (trim(NameHemiIn) == 'north') then
+    else if (NameHemiIn == 'north') then
       AvgEDiffe_II = iono_north_im_aveeElec
       EfluxDiffe_II = iono_north_im_efluxElec / 1000.0
       AvgEDiffi_II = iono_north_im_aveeHydr
@@ -78,6 +79,7 @@ contains
       Poynting_II = -IONO_NORTH_Poynting
       if (DoUseGMPe) MagPe_II = iono_north_pe
       ImBoundary_II = IONO_north_im_boundary
+      ImFac_II = IONO_NORTH_Im_Jr
     else if (NameHemiIn == 'south')then
       MagP_II = iono_south_p
       MagNp_II = iono_south_rho / cProtonMass
@@ -86,6 +88,7 @@ contains
       Poynting_II = -IONO_SOUTH_Poynting
       if (DoUseGMPe) MagPe_II = iono_south_pe
       ImBoundary_II = IONO_south_im_boundary
+      ImFac_II = IONO_SOUTH_Im_Jr
     end if
 
     if(.not. DoUseGMPe) then
@@ -96,27 +99,20 @@ contains
     end if
 
     where(ImBoundary_II > 1) ImBoundary_II = 1
-   ! Calculate diffuse precipitation: protons.
-    AvgEDiffi_II  = MagP_II / MagNp_II  ! Temp = P/nk in Joules
-    NfluxDiffi_II = ConeNfluxDifp * MagNp_II * AvgEDiffi_II**0.5 / &
-                    sqrt(2 * cPi * cProtonMass)  ! units of #/m2/s
-    ! units of W/m2
-    EfluxDiffi_II = 2 * NfluxDiffi_II * AvgEDiffi_II * &
-            ConeEfluxDifp/ConeNfluxDifp
-    ! Recalc to make consistent with ConeFactors (and get units of keV)
-    AvgEDiffi_II = EfluxDiffi_II / (NfluxDiffi_II * cKEV)
 
     MhdElectronTemp_II  = MagPe_II / MagNe_II  ! T = P/nk in Joules
     MhdNfluxDiffe_II = ConeNfluxDife * MagNe_II * MhdElectronTemp_II**0.5 / &
                   sqrt(2 * cPi * cElectronMass)  ! units of #/m2/s
     ! units of W/m2
-    MhdAvgEDiffe_II = MhdElectronTemp_II * cKEV * ConeEfluxDife/ConeNfluxDife
+    MhdAvgEDiffe_II = MhdElectronTemp_II / cKEV * ConeEfluxDife/ConeNfluxDife
 
+    ! Calculate mononenergetic precipitation in polar cap using MHD state vars
     call monoenergetic_flux(FAC_II, OCFL_II, MhdNfluxDiffe_II, MhdElectronTemp_II, &
             MhdAvgEDiffe_II, LatIn_II, MhdEfluxMono_II, MhdAvgEMono_II, &
             PotOut_II=Potential_II)
 
-    where(ImBoundary_II < 1 .and. Potential_II > 0)
+    ! Replace cimi results with MHD where cimi is not used and potential exists
+    where(Potential_II > 0 .and. MhdEfluxMono_II > EfluxDiffe_II)
        EfluxMono_II = MhdEfluxMono_II
        AvgEMono_II  = MhdAvgEMono_II
     elsewhere
