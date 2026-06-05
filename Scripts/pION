@@ -35,7 +35,7 @@ if($Gzip or $Pigz){
     @files = glob('*.idl');
     foreach $fileout (sort @files){
 	if($Pigz){
-	    $err = `pigz -f $fileout -n=$nThread`;
+	    $err = `pigz -f $fileout -p $nThread`;
 	}else{
 	    $err = `gzip -f $fileout`;
 	}

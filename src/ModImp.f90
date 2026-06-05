@@ -15,6 +15,8 @@ module ModImp
 
   real, parameter :: ImEfluxFloor = 1E-3, ImAveEFloor = 1E-6
 
+  logical :: DoUseMultipleReflections = .true.
+
 contains
   !============================================================================
   subroutine imp_gen_fluxes(NameHemiIn, AvgEDiffe_II, AvgEDiffi_II, &
@@ -48,7 +50,7 @@ contains
          FAC_II, OCFL_II, NfluxDiffe_II, ElectronTemp_II, Potential_II, &
          Poynting_II, ImBoundary_II, MagP_II, MagNp_II, MagPe_II, MagNe_II, &
          NfluxDiffi_II, MhdElectronTemp_II, MhdNfluxDiffe_II, MhdAvgEDiffe_II, &
-         MhdEfluxMono_II, MhdAvgEMono_II, ImFac_II
+         MhdEfluxMono_II, MhdAvgEMono_II, ImFac_II, Kc_II
 
     character(len=*), intent(in) :: NameHemiIn
 
@@ -67,6 +69,14 @@ contains
     else
        call CON_stop(NameSub//' : unrecognized hemisphere - '//&
                 NameHemiIn)
+    end if
+
+    if(DoUseMultipleReflections) then
+       where(AvgEDiffe_II >= 0.5 .and. AvgEDiffe_II <= 30.0)
+          Kc_II = 3.36 - exp(0.597 - 0.37 * AvgEDiffe_II + 0.00794 * AvgEDiffe_II ** 2)
+          EfluxDiffe_II = Kc_II * EfluxDiffe_II
+          AvgEDiffe_II = 0.073 + 0.933 * AvgEDiffe_II - 0.0092 * AvgEDiffe_II ** 2
+       end where
     end if
 
     where(Poynting_II < 0) Poynting_II = 0
@@ -105,14 +115,14 @@ contains
                   sqrt(2 * cPi * cElectronMass)  ! units of #/m2/s
     ! units of W/m2
     MhdAvgEDiffe_II = MhdElectronTemp_II / cKEV * ConeEfluxDife/ConeNfluxDife
-
+    MhdElectronTemp_II = MhdElectronTemp_II * ConeEfluxDife/ConeNfluxDife
     ! Calculate mononenergetic precipitation in polar cap using MHD state vars
     call monoenergetic_flux(FAC_II, OCFL_II, MhdNfluxDiffe_II, MhdElectronTemp_II, &
             MhdAvgEDiffe_II, LatIn_II, MhdEfluxMono_II, MhdAvgEMono_II, &
             PotOut_II=Potential_II)
 
-    ! Replace cimi results with MHD where cimi is not used and potential exists
-    where(Potential_II > 0 .and. MhdEfluxMono_II > EfluxDiffe_II)
+    ! Replace cimi results with MHD where discrete precip > diffuse and potential exists
+    where(Potential_II > 0)! .and. MhdEfluxMono_II > EfluxDiffe_II)
        EfluxMono_II = MhdEfluxMono_II
        AvgEMono_II  = MhdAvgEMono_II
     elsewhere

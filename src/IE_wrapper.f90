@@ -118,6 +118,7 @@ contains
            NameHalFile, NamePedFile, LatNoConductanceSI
       use ModUtilities, ONLY: fix_dir_name, check_dir, lower_case
       use ModIonosphere, ONLY: DoUseIMPrecip
+      use ModImp, ONLY: DoUseMultipleReflections 
 
       ! The name of the command
       character (len=100) :: NameCommand
@@ -315,6 +316,8 @@ contains
             if (DoPolarCapSmoothing) then
                call read_var('PCapSmoothingSize', PCapSmoothingSize)
             end if
+         case("#MULTIPLEREFLECTIONS")
+            call read_var('DoUseMultipleReflections', DoUseMultipleReflections)
          case("#ROBINSONLIMIT")
             call read_var('eCondLimit', eCondLimit)
             call read_var('eLimitScale', eLimitScale)

@@ -703,6 +703,18 @@ interpolated between the polar cap and closed field lines in 1 dimension. Value
 is given as a float value of degrees in latitude. Default values are shown. 
 </command>
 
+<command name="MULTIPLEREFLECTIONS">
+  <parameter name="DoUseMultipleReflections" type="logical" default="T"/>
+
+#MULTIPLEREFLECTIONS
+T         DoUseMultipleReflections
+
+Setting DoUseMultipleReflections to true uses the multiple reflections adjustment
+to diffuse precipitation given by Khazanov 19. This is only used within the
+IMP auroral precipitation/conductance model.
+
+</command>
+
 
 <command name="ROBINSONLIMIT">
 	<parameter name="eCondLimit" type="real" min="0" default="10000"/>

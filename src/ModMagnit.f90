@@ -242,7 +242,7 @@ module ModMagnit
       ! Plug into equation for EFlux
       EfluxMono_II = NfluxMono_II * PotentialTerm_II
 
-    elsewhere(1 <= PrecipRatio_II .and. OCFL_II < 0)
+    elsewhere(1 <= PrecipRatio_II .and. OCFL_II <= 0)
       Potential_II = ElectronTemp_II / cElectronCharge * (PrecipRatio_II - 1)
 
       ! In polar cap use linear Knight relationship
@@ -253,6 +253,7 @@ module ModMagnit
       NfluxMono_II = NfluxDiffe_II
       ! Reconstruct Diffuse flux where there is no potential
       EfluxMono_II = NfluxDiffe_II * AvgEDiffe_II * cKEV
+      Potential_II = 0
     end where
     if(present(PotOut_II)) PotOut_II = Potential_II
 
