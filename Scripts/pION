@@ -6,7 +6,6 @@ my $Help = ($h or $help or $H or $HELP);
 
 my $Keep = ($k or $keep or $K or $KEEP);
 my $Gzip = ($g or $gzip or $z);
-my $Pigz = ($p or $pigz);
 my $nThread = ($n or 4);
 
 use strict;
@@ -20,7 +19,50 @@ my $file2;   # _b2 file
 my $fileout; # concatenated file
 my $err;     # error message from cat
 
-foreach $file1 (sort @files){
+
+my @SortedFiles = sort @files;
+my $nFiles = $#SortedFiles+1;
+if($nThread > 1){
+    foreach my $iThread (1..$nThread){
+        # parent process does nothing
+	next if fork();
+        for (my $iFile = $iThread-1; $iFile<$nFiles; $iFile+=$nThread){
+            $file1 = $SortedFiles[$iFile];
+            &process_file($file1);
+        }
+        exit;
+    }
+    foreach (1..$nThread){wait};
+}else{
+    foreach $file1 (@SortedFiles){&process_file($file1)}
+}
+
+if($Gzip){
+    @files = sort glob('*.idl');
+    $nFiles = $#files+1;
+    if($nThread > 1){
+	foreach my $iThread (1..$nThread){
+	    # parent process does nothing
+	    next if fork();
+	    for (my $iFile = $iThread-1; $iFile<$nFiles; $iFile+=$nThread){
+		$fileout = $files[$iFile];
+		$err = `gzip -f $fileout`;
+		die "Error occured: $err\n" if $err;
+	    }
+	    exit;
+	}
+	foreach (1..$nThread){wait};
+    }else{
+	foreach $fileout (@files){
+	    $err = `gzip -f $fileout`;
+	    die "Error occured: $err\n" if $err;
+	}
+    }
+}
+
+exit 0;
+
+sub process_file{
     $file2 = $file1;
     $file2 =~ s/b1/b2/;
     $fileout = $file1;
@@ -31,22 +73,7 @@ foreach $file1 (sort @files){
     unlink($file1, $file2) unless $Keep;
 }
 
-if($Gzip or $Pigz){
-    @files = glob('*.idl');
-    foreach $fileout (sort @files){
-	if($Pigz){
-	    $err = `pigz -f $fileout -p $nThread`;
-	}else{
-	    $err = `gzip -f $fileout`;
-	}
-	die "Error occured: $err\n" if $err;
-    }
-}
-
-exit 0;
-
 ##############################################################################
-
 sub print_help{
 
     print "
@@ -54,14 +81,13 @@ Purpose:
    Concatanate north and south blocks into a single idl file.
 
 Usage:
-   pION [-h] [-k] [-g] [-p] [-n] [DIR]
+   pION [-h] [-k] [-g] [-n] [DIR]
 
    -h -help    - print this help message
    -k -keep    - keep original files
                  Default is to delete the two hemisphere files.
    -g -gzip    - gzip the output files
-   -p -pigz    - pigz the output files
-   -n 	       - Number of processors used for pigz (default of 4)
+   -n 	       - Number of processors used (default of 4)
                  Default is to leave the output files uncompressed
    DIR         - name of the directory to process
                  Default is DIR = 'ionosphere'
