@@ -122,7 +122,7 @@ contains
             PotOut_II=Potential_II)
 
     ! Replace cimi results with MHD where discrete precip > diffuse and potential exists
-    where(Potential_II > 0)! .and. MhdEfluxMono_II > EfluxDiffe_II)
+    where(Potential_II > 0 .and. MhdEfluxMono_II > EfluxDiffe_II)
        EfluxMono_II = MhdEfluxMono_II
        AvgEMono_II  = MhdAvgEMono_II
     elsewhere

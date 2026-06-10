@@ -112,7 +112,7 @@ contains
            DoCoupleUaConductance
       use ModMagnit, ONLY: ConeEfluxDifp, ConeNfluxDifp, ConeEfluxDife, &
               ConeNfluxDife, ConeEfluxMono, ConeNfluxMono, ConeEfluxBbnd, &
-              ConeNfluxBbnd
+              ConeNfluxBbnd, PrecipRatioLimit
       use ModIeRlm, ONLY: UseOval, UseNewOval, DoOvalShift, &
            UseSubOvalCond, DoFitCircle, FactorHallCMEE, FactorPedCMEE, &
            NameHalFile, NamePedFile, LatNoConductanceSI
@@ -304,6 +304,8 @@ contains
              call read_var('ConeNfluxMono', ConeNfluxMono)
              call read_var('ConeEfluxBbnd', ConeEfluxBbnd)
              call read_var('ConeNfluxBbnd', ConeNfluxBbnd)
+          case("#PRECIPRATIOLIMIT")
+             call read_var('PrecipRatioLimit', PrecipRatioLimit)
          case("#PRECIPSMOOTHING", "#MAGNITPRECIPSMOOTHING")
              call read_var('UsePrecipSmoothing', UsePrecipSmoothing)
              if (UsePrecipSmoothing) then

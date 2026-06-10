@@ -33,6 +33,8 @@ module ModMagnit
   ! Lower limit for GM poynting flux
   real :: GmPoyntFloor = 1E-6
 
+  real :: PrecipRatioLimit = 100
+
   contains
   !============================================================================
 
@@ -222,6 +224,10 @@ module ModMagnit
     where(PrecipRatio_II >= MirrorRatio_II .and. OCFL_II > 0)
         NfluxMono_II = NfluxDiffe_II * MirrorRatio_II
         PrecipRatio_II = MirrorRatio_II
+     end where
+
+    where(PrecipRatio_II > PrecipRatioLimit)
+       PrecipRatio_II = PrecipRatioLimit
     end where
 
     ! Potential calculations only valid where 1 <= NumCoefficient <= MirrorRatio
