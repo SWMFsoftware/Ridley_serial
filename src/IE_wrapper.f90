@@ -118,7 +118,7 @@ contains
            NameHalFile, NamePedFile, LatNoConductanceSI
       use ModUtilities, ONLY: fix_dir_name, check_dir, lower_case
       use ModIonosphere, ONLY: DoUseIMPrecip
-      use ModImp, ONLY: DoUseMultipleReflections 
+      use ModImp, ONLY: DoUseMultipleReflections
 
       ! The name of the command
       character (len=100) :: NameCommand
