@@ -799,7 +799,7 @@ Select which solver to use. Default is bicgstab since it is faster.
 #KRYLOV
 T			UsePreconditioner
 T			UseInitialGuess
-0.01			Tolerance
+0.0001			Tolerance
 100			MaxIteration
 
 This command controls the parameters for the Krylov solver used to
