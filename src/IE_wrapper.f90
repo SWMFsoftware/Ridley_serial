@@ -718,7 +718,7 @@ contains
 
     character(len=5) :: NameHem
     integer :: iVar
-    real    :: tSimulationTmp
+    real    :: tSimulationTmp, currentVar_II(IONO_nTheta, IONO_nPsi)
 
     ! Debug variables:
     logical :: DoTest, DoTestMe
@@ -753,42 +753,32 @@ contains
        select case(NameVar_V(iVar))
 
        case('pot')
-          Buffer_IIV(:,:,iVar) = IONO_Phi
+          currentVar_II = IONO_Phi
        case('def')
-          if (UsePrecipSmoothing) &
-               call polar_convolution(IONO_DIFFE_EFlux, iSize, jSize)
-          Buffer_IIV(:,:,iVar) = IONO_DIFFE_EFlux
+          currentVar_II = IONO_DIFFE_EFlux
        case('dae')
-          if (UsePrecipSmoothing) &
-               call polar_convolution(IONO_DIFFE_Ave_E, iSize, jSize)
-          Buffer_IIV(:,:,iVar) = IONO_DIFFE_Ave_E
+          currentVar_II = IONO_DIFFE_Ave_E
        case('mef')
-          if (UsePrecipSmoothing) &
-               call polar_convolution(IONO_MONO_EFlux, iSize, jSize)
-          Buffer_IIV(:,:,iVar) = IONO_MONO_EFlux
+          ! MONO_EFlux holds "total electron flux", which includes the diffuse
+          ! flux. To get solely the monoenergetic part, subtract off diffuse.
+          currentVar_II = IONO_MONO_EFlux - IONO_DIFFI_EFlux
        case('mae')
-          if (UsePrecipSmoothing) &
-               call polar_convolution(IONO_MONO_Ave_E, iSize, jSize)
-          Buffer_IIV(:,:,iVar) = IONO_MONO_Ave_E
+          currentVar_II = IONO_MONO_Ave_E
        case('wef')
-          if (UsePrecipSmoothing) &
-               call polar_convolution(IONO_BBND_EFlux, iSize, jSize)
           Buffer_IIV(:,:,iVar) = IONO_BBND_EFlux
        case('wae')
-          if (UsePrecipSmoothing) &
-               call polar_convolution(IONO_BBND_Ave_E, iSize, jSize)
           Buffer_IIV(:,:,iVar) = IONO_BBND_Ave_E
        case('ief')
-          if (UsePrecipSmoothing) &
-               call polar_convolution(IONO_DIFFI_EFlux, iSize, jSize)
           Buffer_IIV(:,:,iVar) = IONO_DIFFI_EFlux
        case('iae')
-          if (UsePrecipSmoothing) &
-               call polar_convolution(IONO_DIFFI_Ave_E, iSize, jSize)
           Buffer_IIV(:,:,iVar) = IONO_DIFFI_Ave_E
        case default
           call CON_stop(NameSub//' invalid NameVar='//NameVar_V(iVar))
        end select
+
+       if (UsePrecipSmoothing .and. NameVar_V(iVar) /= 'pot') &
+               call polar_convolution(currentVar_II, iSize, jSize)
+       Buffer_IIV(:,:,iVar) = currentVar_II
     end do
 
    if(present(Buffer_IIIV)) then
