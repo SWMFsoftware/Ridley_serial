@@ -33,7 +33,7 @@ module ModMagnit
   ! Lower limit for GM poynting flux
   real :: GmPoyntFloor = 1E-6
 
-  real :: PrecipRatioLimit = 100
+  real :: PrecipRatioLimit = 10000000
 
   contains
   !============================================================================
@@ -264,7 +264,7 @@ module ModMagnit
     if(present(PotOut_II)) PotOut_II = Potential_II
 
     ! Calculate Avg E in keV
-    AvgEMono_II = EfluxMono_II / (NfluxDiffe_II * cKEV)
+    AvgEMono_II = EfluxMono_II / (NfluxMono_II * cKEV)
 
   end subroutine monoenergetic_flux
   !============================================================================
