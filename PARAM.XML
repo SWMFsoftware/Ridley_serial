@@ -657,10 +657,10 @@ the SWPC run configuration, see Mukhopadhyay 2022.
 </command>
 
 <command name="PRECIPRATIOLIMIT">
-  <parameter name="PrecipRatioLimit" type="real" min="0" default="100"/>
+  <parameter name="PrecipRatioLimit" type="real" min="0" default="10000000"/>
 
 #PRECIPRATIOLIMIT
-100.          PrecipRatioLimit
+10000000.          PrecipRatioLimit
 
 Limits the maximum precipitation ratio (J/nflux), and therefore the maximum
 field-aligned potential calculated in the Knight relationship. Default
