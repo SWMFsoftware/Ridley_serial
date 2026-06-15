@@ -765,13 +765,13 @@ contains
        case('mae')
           currentVar_II = IONO_MONO_Ave_E
        case('wef')
-          Buffer_IIV(:,:,iVar) = IONO_BBND_EFlux
+          currentVar_II = IONO_BBND_EFlux
        case('wae')
-          Buffer_IIV(:,:,iVar) = IONO_BBND_Ave_E
+          currentVar_II = IONO_BBND_Ave_E
        case('ief')
-          Buffer_IIV(:,:,iVar) = IONO_DIFFI_EFlux
+          currentVar_II = IONO_DIFFI_EFlux
        case('iae')
-          Buffer_IIV(:,:,iVar) = IONO_DIFFI_Ave_E
+          currentVar_II = IONO_DIFFI_Ave_E
        case default
           call CON_stop(NameSub//' invalid NameVar='//NameVar_V(iVar))
        end select
