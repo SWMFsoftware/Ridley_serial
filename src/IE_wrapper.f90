@@ -761,7 +761,7 @@ contains
        case('mef')
           ! MONO_EFlux holds "total electron flux", which includes the diffuse
           ! flux. To get solely the monoenergetic part, subtract off diffuse.
-          currentVar_II = IONO_MONO_EFlux - IONO_DIFFI_EFlux
+          currentVar_II = IONO_MONO_EFlux - IONO_DIFFE_EFlux
        case('mae')
           currentVar_II = IONO_MONO_Ave_E
        case('wef')
