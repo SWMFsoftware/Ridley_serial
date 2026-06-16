@@ -718,7 +718,7 @@ contains
 
     character(len=5) :: NameHem
     integer :: iVar
-    real    :: tSimulationTmp, currentVar_II(IONO_nTheta, IONO_nPsi)
+    real    :: tSimulationTmp, currentVar_II(IONO_nTheta * 2 - 1, IONO_nPsi)
 
     ! Debug variables:
     logical :: DoTest, DoTestMe
@@ -779,6 +779,11 @@ contains
        if (UsePrecipSmoothing .and. NameVar_V(iVar) /= 'pot') &
                call polar_convolution(currentVar_II, iSize, jSize)
        Buffer_IIV(:,:,iVar) = currentVar_II
+
+       if(DoTest) then
+          write(*,*) NameVar_V(ivar), ': ', MINVAL(currentVar_II), &
+               MAXVAL(currentVar_II)
+       end if
     end do
 
    if(present(Buffer_IIIV)) then
