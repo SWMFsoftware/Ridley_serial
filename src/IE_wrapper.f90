@@ -755,9 +755,17 @@ contains
        case('pot')
           currentVar_II = IONO_Phi
        case('def')
-          currentVar_II = IONO_DIFFE_EFlux
+          if ((NameAuroraMod == 'MAGNIT') .or. (NameAuroraMod == 'IMP')) then
+             currentVar_II = IONO_DIFFE_EFlux
+          else
+             currentVar_II = IONO_MONO_EFlux
+          endif
        case('dae')
-          currentVar_II = IONO_DIFFE_Ave_E
+          if ((NameAuroraMod == 'MAGNIT') .or. (NameAuroraMod == 'IMP')) then
+             currentVar_II = IONO_DIFFE_Ave_E
+          else
+             currentVar_II = IONO_MONO_Ave_E
+          endif
        case('mef')
           ! MONO_EFlux holds "total electron flux", which includes the diffuse
           ! flux. To get solely the monoenergetic part, subtract off diffuse.
