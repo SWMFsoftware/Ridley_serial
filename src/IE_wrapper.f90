@@ -1439,6 +1439,9 @@ contains
       where(iono_north_im_aveeElec < ImAveEFloor)	&
             iono_north_im_aveeElec = ImAveEFloor
 
+      ! Fix artifacts at equator
+      iono_north_im_efluxHydr(Iono_nTheta-2:Iono_nTheta, :) = ImEfluxFloor
+
       if (nProc > 1) then
          iError = 0
          call MPI_Bcast(iono_north_im_efluxHydr, iono_nTheta*iono_nPsi, &
