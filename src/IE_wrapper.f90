@@ -118,7 +118,7 @@ contains
            NameHalFile, NamePedFile, LatNoConductanceSI
       use ModUtilities, ONLY: fix_dir_name, check_dir, lower_case
       use ModIonosphere, ONLY: DoUseIMPrecip
-      use ModImp, ONLY: DoUseMultipleReflections
+      use ModImp, ONLY: DoUseMultipleReflections, UseSouthTracing
 
       ! The name of the command
       character (len=100) :: NameCommand
@@ -335,6 +335,8 @@ contains
             call read_var('TypeImCouple',TypeImCouple)
             call lower_case(TypeImCouple)
             call read_var('FractionImJr',FractionImJr)
+         case("#IMSOUTHTRACING")
+            call read_var('UseSouthTracing', UseSouthTracing)
          case("#BOUNDARY")
             call read_var('LatBoundary',LatBoundary)
             LatBoundary = LatBoundary * cDegToRad
@@ -1417,10 +1419,14 @@ contains
     use ModIonosphere
     use ModMpi
     use ModConductance, ONLY: IsImCoupled
-    use ModImp, ONLY: ImEfluxFloor, ImAveEFloor
+    use ModImp, ONLY: ImEfluxFloor, ImAveEFloor, UseSouthTracing
+    use ModConst, ONLY: cDegToRad, cPi, cTwoPi
+    use ModInterpolate, ONLY: bilinear
 
-    !--------------------------------------------------------------------------
-    integer iError, i
+    integer iError, i, iS, jS
+    real :: lat, lon, dThetaIono, dPhiIono
+
+    character(len=*), parameter:: NameSub = 'IE_put_from_im_complete'
    !---------------------------------------------------------------------------
    if(DoUseIMPrecip) then
       iono_north_im_efluxHydr(:,iono_npsi) = iono_north_im_efluxHydr(:,1)
@@ -1458,20 +1464,55 @@ contains
                MPI_Real, 0, iComm, iError)
       endif
 
-      do i = 1, IONO_nTheta
-         iono_south_im_efluxHydr(i,:) = &
-               iono_north_im_efluxHydr(Iono_nTheta-i+1,:)
-         iono_south_im_aveeHydr(i,:) = &
-               iono_north_im_aveeHydr(Iono_nTheta-i+1,:)
-         iono_south_im_efluxElec(i,:) = &
-               iono_north_im_efluxElec(Iono_nTheta-i+1,:)
-         iono_south_im_aveeElec(i,:) = &
-               iono_north_im_aveeElec(Iono_nTheta-i+1,:)
-         iono_south_im_boundary(i,:) = &
-               iono_north_im_boundary(Iono_nTheta-i+1,:)
-         iono_south_im_jr(i,:) = &
-               iono_north_im_jr(Iono_nTheta-i+1,:)
-      enddo
+      dThetaIono = cPi / 2 / (IONO_nTheta - 1)
+      dPhiIono   = cTwoPi  / (IONO_nPsi - 1)
+
+      do iS = 1, IONO_nTheta; do jS = 1, IONO_nPsi
+        if ((IONO_SOUTH_dLat(iS,jS) /= 0.0 .or. &
+            IONO_SOUTH_dLon(iS,jS) /= 0.0) .and. UseSouthTracing) then
+            lat = cPi - IONO_SOUTH_Theta(iS, jS) &
+                    - IONO_SOUTH_dLat(iS,jS) * cDegToRad
+            lon = IONO_SOUTH_Psi(iS, jS) + IONO_SOUTH_dLon(iS,jS) * cDegToRad
+            if (lon < 0.0) lon = lon + cTwoPi
+            if (lon > cTwoPi) lon = lon - cTwoPi
+            ! Interpolate from north to south
+            iono_south_im_efluxHydr(iS,jS) = bilinear(iono_north_im_efluxHydr,&
+                    1, IONO_nTheta, 1, IONO_nPsi, &
+                    [ lat/dThetaIono+1, lon/dPhiIono+1 ])
+            iono_south_im_aveeHydr(iS,jS) = bilinear(iono_north_im_aveeHydr, &
+                    1, IONO_nTheta, 1, IONO_nPsi, &
+                    [ lat/dThetaIono+1, lon/dPhiIono+1 ])
+            iono_south_im_efluxElec(iS,jS) = bilinear(iono_north_im_efluxElec,&
+                    1, IONO_nTheta, 1, IONO_nPsi, &
+                    [ lat/dThetaIono+1, lon/dPhiIono+1 ])
+            iono_south_im_aveeElec(iS,jS) = bilinear(iono_north_im_aveeElec, &
+                    1, IONO_nTheta, 1, IONO_nPsi, &
+                    [ lat/dThetaIono+1, lon/dPhiIono+1 ])
+            iono_south_im_boundary(iS,jS) = bilinear(iono_north_im_boundary, &
+                    1, IONO_nTheta, 1, IONO_nPsi, &
+                    [ lat/dThetaIono+1, lon/dPhiIono+1 ])
+            iono_south_im_jr(iS,jS) = bilinear(iono_north_im_jr, &
+                    1, IONO_nTheta, 1, IONO_nPsi, &
+                    [ lat/dThetaIono+1, lon/dPhiIono+1 ])
+        else
+            ! Just copy if not along a closed traced field line
+            iono_south_im_efluxHydr(iS,jS) = &
+               iono_north_im_efluxHydr(Iono_nTheta-iS+1,jS)
+            iono_south_im_aveeHydr(iS,jS) = &
+                iono_north_im_aveeHydr(Iono_nTheta-iS+1,jS)
+            iono_south_im_efluxElec(iS,jS) = &
+                iono_north_im_efluxElec(Iono_nTheta-iS+1,jS)
+            iono_south_im_aveeElec(iS,jS) = &
+                iono_north_im_aveeElec(Iono_nTheta-iS+1,jS)
+            iono_south_im_boundary(iS,jS) = &
+                iono_north_im_boundary(Iono_nTheta-iS+1,jS)
+            iono_south_im_jr(iS,jS) = &
+                iono_north_im_jr(Iono_nTheta-iS+1,jS)
+        end if
+      end do; end do
+
+      ! Everything below should also be updated to use the tracing once it
+      ! is being used, possibly even reformat to do all within same loop.
       if(DoUseIMSpectrum) then
          iono_north_im_nHydrPrec(:,iono_npsi,:) = &
                iono_north_im_nHydrPrec(:,1,:)

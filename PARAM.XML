@@ -366,6 +366,23 @@ which is backward compatible, and it requires no communication
 between the IE processors.
 </command>
 
+<command name="IMSOUTHTRACING">
+  <parameter name="UseSouthTracing" type="logical" default="T"/>
+
+#IMSOUTHTRACING
+T       UseSouthTracing
+
+If UseSouthTracing is true, when coupling from IM to IE, the mapping will
+attempt to use conjugate points given from GM traces. At any points along open
+field lines, or if GM #TRACEIE is not used, the mapping will simply mirror
+Northern hemisphere points to the Southern hemisphere. IF UseSouthTracing is
+false, the mapping will always mirror Northern hemisphere points to the
+Southern hemisphere. It is recommended to use UseSouthTracing=false when
+running with extremely low GM resolution, i.e. nightly tests/local testing.
+
+Defaults are shown.
+</command>
+
 <command name="UA">
   <parameter name="DoCoupleUaConductance" type="logical" default="F"/>
   <parameter name="DoCoupleUaCurrent" type="logical" default="F"/>

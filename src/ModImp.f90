@@ -15,7 +15,7 @@ module ModImp
 
   real, parameter :: ImEfluxFloor = 1E-3, ImAveEFloor = 1E-6
 
-  logical :: DoUseMultipleReflections = .true.
+  logical :: DoUseMultipleReflections = .true., UseSouthTracing = .true.
 
 contains
   !============================================================================
