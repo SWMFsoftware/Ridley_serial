@@ -50,12 +50,12 @@ subroutine IE_solve
                 sum(abs(IONO_NORTH_JR))
         end if
 
+        ! Next two calls replaced with:
+        call generate_conductance('north')
+
         ! Add in IM currents below GM inner boundary
         where(IONO_NORTH_JR == 0) IONO_NORTH_JR = IONO_NORTH_JR &
                                   + FractionImJr*iono_north_im_jr
-
-        ! Next two calls replaced with:
-        call generate_conductance('north')
 
         ! Add in ionospheric currents after the conductances
         ! are calculated
@@ -120,12 +120,12 @@ subroutine IE_solve
                 sum(abs(IONO_SOUTH_JR))
         end if
 
+        ! Obtain conductance:
+        call generate_conductance('south')
+
         ! Add in IM currents below GM inner boundary
         where(IONO_SOUTH_JR == 0) IONO_SOUTH_JR = IONO_SOUTH_JR &
                                   + FractionImJr*iono_south_im_jr
-
-        ! Obtain conductance:
-        call generate_conductance('south')
 
         ! Add in ionospheric currents after the conductances
         ! are calculated
