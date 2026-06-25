@@ -1423,6 +1423,7 @@ contains
     use ModConst, ONLY: cDegToRad, cPi, cTwoPi
     use ModInterpolate, ONLY: bilinear
 
+    !--------------------------------------------------------------------------
     integer iError, i, iS, jS
     real :: lat, lon, dThetaIono, dPhiIono
 
