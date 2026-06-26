@@ -29,6 +29,7 @@ module IE_wrapper
   public:: IE_get_for_im
   public:: IE_put_from_im
   public:: IE_put_from_im_complete
+  public:: IE_put_from_im_mpi
 
   ! Coupling with PS
   public:: IE_get_for_ps
@@ -1561,7 +1562,112 @@ contains
 
   end subroutine IE_put_from_im_complete
   !============================================================================
+  subroutine IE_put_from_im_mpi(Buffer_IIV, iSize, jSize, nVarIn, NameVarImIn_V)
 
+    ! Put from equatorial inner magnetosphere models (RAM-SCB, HEIDI)
+
+    use IE_ModMain, ONLY: IsNewInput
+    use ModIonosphere
+    use ModProcIE
+    use ModConductance, ONLY: IsImCoupled
+    use ModConst, ONLY: cPi, cTwoPi, cDegToRad
+    use ModImp, ONLY: ImEfluxFloor, ImAveEFloor, UseSouthTracing
+    use ModInterpolate, ONLY: bilinear
+
+
+
+    integer, intent(in) :: iSize, jSize, nVarIn
+    real, dimension(iSize,jSize,nVarIn), intent(in) :: Buffer_IIV
+    character(len=3) :: NameVarImIn_V(nVarIn)
+
+    integer :: iVar, i, iS, jS
+    real :: lat, lon, dThetaIono, dPhiIono
+
+
+    character(len=*), parameter :: NameSub = 'IE_put_from_im_mpi'
+    !--------------------------------------------------------------------------
+
+    do iVar=1, nVarIn
+       select case (NameVarImIn_V(iVar))
+       case('eef') ! electron energy flux
+          iono_north_im_efluxElec = Buffer_IIV(:,:,iVar)
+       case('eae') ! electron average energy
+          iono_north_im_aveeElec  = Buffer_IIV(:,:,iVar)
+       case('hef') ! hydrogen energy flux
+          iono_north_im_efluxHydr = Buffer_IIV(:,:,iVar)
+       case('hae') ! hydrogen average energy
+          iono_north_im_aveeHydr  = Buffer_IIV(:,:,iVar)
+       case('fac') ! field-aligned current
+          iono_north_im_jr        = Buffer_IIV(:,:,iVar)
+       case('bnd') ! boundary condition
+          iono_north_im_boundary  = Buffer_IIV(:,:,iVar)
+       case default
+          call CON_stop(NameSub//' Unrecognized coupling variable: ', &
+               NameVarImIn_V(iVar))
+       end select
+    end do
+
+    where(iono_north_im_efluxHydr < ImEfluxFloor) &
+            iono_north_im_efluxHydr = ImEfluxFloor
+    where(iono_north_im_aveeHydr < ImAveEFloor) &
+            iono_north_im_aveeHydr = ImAveEFloor
+    where(iono_north_im_efluxElec < ImEfluxFloor) &
+            iono_north_im_efluxElec = ImEfluxFloor
+    where(iono_north_im_aveeElec < ImAveEFloor)	&
+            iono_north_im_aveeElec = ImAveEFloor
+
+    dThetaIono = cPi / 2 / (IONO_nTheta - 1)
+    dPhiIono   = cTwoPi  / (IONO_nPsi - 1)
+
+    do iS = 1, IONO_nTheta; do jS = 1, IONO_nPsi
+       if ((IONO_SOUTH_dLat(iS,jS) /= 0.0 .or. &
+          IONO_SOUTH_dLon(iS,jS) /= 0.0) .and. UseSouthTracing) then
+          lat = cPi - IONO_SOUTH_Theta(iS, jS) &
+                   - IONO_SOUTH_dLat(iS,jS) * cDegToRad
+          lon = IONO_SOUTH_Psi(iS, jS) + IONO_SOUTH_dLon(iS,jS) * cDegToRad
+          if (lon < 0.0) lon = lon + cTwoPi
+          if (lon > cTwoPi) lon = lon - cTwoPi
+          ! Interpolate from north to south
+          iono_south_im_efluxHydr(iS,jS) = bilinear(iono_north_im_efluxHydr,&
+                   1, IONO_nTheta, 1, IONO_nPsi, &
+                   [ lat/dThetaIono+1, lon/dPhiIono+1 ])
+          iono_south_im_aveeHydr(iS,jS) = bilinear(iono_north_im_aveeHydr, &
+                   1, IONO_nTheta, 1, IONO_nPsi, &
+                   [ lat/dThetaIono+1, lon/dPhiIono+1 ])
+          iono_south_im_efluxElec(iS,jS) = bilinear(iono_north_im_efluxElec,&
+                   1, IONO_nTheta, 1, IONO_nPsi, &
+                   [ lat/dThetaIono+1, lon/dPhiIono+1 ])
+          iono_south_im_aveeElec(iS,jS) = bilinear(iono_north_im_aveeElec, &
+                   1, IONO_nTheta, 1, IONO_nPsi, &
+                   [ lat/dThetaIono+1, lon/dPhiIono+1 ])
+          iono_south_im_boundary(iS,jS) = bilinear(iono_north_im_boundary, &
+                   1, IONO_nTheta, 1, IONO_nPsi, &
+                   [ lat/dThetaIono+1, lon/dPhiIono+1 ])
+          iono_south_im_jr(iS,jS) = bilinear(iono_north_im_jr, &
+                   1, IONO_nTheta, 1, IONO_nPsi, &
+                   [ lat/dThetaIono+1, lon/dPhiIono+1 ])
+       else
+          ! Just copy if not along a closed traced field line
+          iono_south_im_efluxHydr(iS,jS) = &
+             iono_north_im_efluxHydr(Iono_nTheta-iS+1,jS)
+          iono_south_im_aveeHydr(iS,jS) = &
+                iono_north_im_aveeHydr(Iono_nTheta-iS+1,jS)
+          iono_south_im_efluxElec(iS,jS) = &
+                iono_north_im_efluxElec(Iono_nTheta-iS+1,jS)
+          iono_south_im_aveeElec(iS,jS) = &
+                iono_north_im_aveeElec(Iono_nTheta-iS+1,jS)
+          iono_south_im_boundary(iS,jS) = &
+                iono_north_im_boundary(Iono_nTheta-iS+1,jS)
+          iono_south_im_jr(iS,jS) = &
+                iono_north_im_jr(Iono_nTheta-iS+1,jS)
+       end if
+    end do; end do
+
+    IsImCoupled = .true.
+
+
+  end subroutine IE_put_from_im_mpi
+  !============================================================================
   subroutine IE_init_session(iSession, tSimulation)
 
     ! Initialize the Ionosphere Electrostatic (IE) module for session iSession
