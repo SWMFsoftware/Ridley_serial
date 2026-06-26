@@ -1574,8 +1574,6 @@ contains
     use ModImp, ONLY: ImEfluxFloor, ImAveEFloor, UseSouthTracing
     use ModInterpolate, ONLY: bilinear
 
-
-
     integer, intent(in) :: iSize, jSize, nVarIn
     real, dimension(iSize,jSize,nVarIn), intent(in) :: Buffer_IIV
     character(len=3) :: NameVarImIn_V(nVarIn)
@@ -1583,8 +1581,7 @@ contains
     integer :: iVar, i, iS, jS
     real :: lat, lon, dThetaIono, dPhiIono
 
-
-    character(len=*), parameter :: NameSub = 'IE_put_from_im_mpi'
+    character(len=*), parameter:: NameSub = 'IE_put_from_im_mpi'
     !--------------------------------------------------------------------------
 
     do iVar=1, nVarIn
@@ -1664,7 +1661,6 @@ contains
     end do; end do
 
     IsImCoupled = .true.
-
 
   end subroutine IE_put_from_im_mpi
   !============================================================================
