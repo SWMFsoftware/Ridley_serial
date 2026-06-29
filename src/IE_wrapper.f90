@@ -1420,13 +1420,10 @@ contains
     use ModIonosphere
     use ModMpi
     use ModConductance, ONLY: IsImCoupled
-    use ModImp, ONLY: ImEfluxFloor, ImAveEFloor, UseSouthTracing
-    use ModConst, ONLY: cDegToRad, cPi, cTwoPi
-    use ModInterpolate, ONLY: bilinear
+    use ModImp, ONLY: ImEfluxFloor, ImAveEFloor
 
     !--------------------------------------------------------------------------
-    integer iError, i, iS, jS
-    real :: lat, lon, dThetaIono, dPhiIono
+    integer iError, i
 
     character(len=*), parameter:: NameSub = 'IE_put_from_im_complete'
    !---------------------------------------------------------------------------
@@ -1466,52 +1463,13 @@ contains
                MPI_Real, 0, iComm, iError)
       endif
 
-      dThetaIono = cPi / 2 / (IONO_nTheta - 1)
-      dPhiIono   = cTwoPi  / (IONO_nPsi - 1)
-
-      do iS = 1, IONO_nTheta; do jS = 1, IONO_nPsi
-        if ((IONO_SOUTH_dLat(iS,jS) /= 0.0 .or. &
-            IONO_SOUTH_dLon(iS,jS) /= 0.0) .and. UseSouthTracing) then
-            lat = cPi - IONO_SOUTH_Theta(iS, jS) &
-                    - IONO_SOUTH_dLat(iS,jS) * cDegToRad
-            lon = IONO_SOUTH_Psi(iS, jS) + IONO_SOUTH_dLon(iS,jS) * cDegToRad
-            if (lon < 0.0) lon = lon + cTwoPi
-            if (lon > cTwoPi) lon = lon - cTwoPi
-            ! Interpolate from north to south
-            iono_south_im_efluxHydr(iS,jS) = bilinear(iono_north_im_efluxHydr,&
-                    1, IONO_nTheta, 1, IONO_nPsi, &
-                    [ lat/dThetaIono+1, lon/dPhiIono+1 ])
-            iono_south_im_aveeHydr(iS,jS) = bilinear(iono_north_im_aveeHydr, &
-                    1, IONO_nTheta, 1, IONO_nPsi, &
-                    [ lat/dThetaIono+1, lon/dPhiIono+1 ])
-            iono_south_im_efluxElec(iS,jS) = bilinear(iono_north_im_efluxElec,&
-                    1, IONO_nTheta, 1, IONO_nPsi, &
-                    [ lat/dThetaIono+1, lon/dPhiIono+1 ])
-            iono_south_im_aveeElec(iS,jS) = bilinear(iono_north_im_aveeElec, &
-                    1, IONO_nTheta, 1, IONO_nPsi, &
-                    [ lat/dThetaIono+1, lon/dPhiIono+1 ])
-            iono_south_im_boundary(iS,jS) = bilinear(iono_north_im_boundary, &
-                    1, IONO_nTheta, 1, IONO_nPsi, &
-                    [ lat/dThetaIono+1, lon/dPhiIono+1 ])
-            iono_south_im_jr(iS,jS) = bilinear(iono_north_im_jr, &
-                    1, IONO_nTheta, 1, IONO_nPsi, &
-                    [ lat/dThetaIono+1, lon/dPhiIono+1 ])
-        else
-            ! Just copy if not along a closed traced field line
-            iono_south_im_efluxHydr(iS,jS) = &
-               iono_north_im_efluxHydr(Iono_nTheta-iS+1,jS)
-            iono_south_im_aveeHydr(iS,jS) = &
-                iono_north_im_aveeHydr(Iono_nTheta-iS+1,jS)
-            iono_south_im_efluxElec(iS,jS) = &
-                iono_north_im_efluxElec(Iono_nTheta-iS+1,jS)
-            iono_south_im_aveeElec(iS,jS) = &
-                iono_north_im_aveeElec(Iono_nTheta-iS+1,jS)
-            iono_south_im_boundary(iS,jS) = &
-                iono_north_im_boundary(Iono_nTheta-iS+1,jS)
-            iono_south_im_jr(iS,jS) = &
-                iono_north_im_jr(Iono_nTheta-iS+1,jS)
-        end if
-      end do; end do
+      ! Map north to south for every variable
+      call map_north_to_south(iono_north_im_efluxHydr, iono_south_im_efluxHydr)
+      call map_north_to_south(iono_north_im_aveeHydr, iono_south_im_aveeHydr)
+      call map_north_to_south(iono_north_im_efluxElec, iono_south_im_efluxElec)
+      call map_north_to_south(iono_north_im_aveeElec, iono_south_im_aveeElec)
+      call map_north_to_south(iono_north_im_boundary, iono_south_im_boundary)
+      call map_north_to_south(iono_north_im_jr, iono_south_im_jr)
 
       ! Everything below should also be updated to use the tracing once it
       ! is being used, possibly even reformat to do all within same loop.
@@ -1613,52 +1571,13 @@ contains
     where(iono_north_im_aveeElec < ImAveEFloor)	&
             iono_north_im_aveeElec = ImAveEFloor
 
-    dThetaIono = cPi / 2 / (IONO_nTheta - 1)
-    dPhiIono   = cTwoPi  / (IONO_nPsi - 1)
-
-    do iS = 1, IONO_nTheta; do jS = 1, IONO_nPsi
-       if ((IONO_SOUTH_dLat(iS,jS) /= 0.0 .or. &
-          IONO_SOUTH_dLon(iS,jS) /= 0.0) .and. UseSouthTracing) then
-          lat = cPi - IONO_SOUTH_Theta(iS, jS) &
-                   - IONO_SOUTH_dLat(iS,jS) * cDegToRad
-          lon = IONO_SOUTH_Psi(iS, jS) + IONO_SOUTH_dLon(iS,jS) * cDegToRad
-          if (lon < 0.0) lon = lon + cTwoPi
-          if (lon > cTwoPi) lon = lon - cTwoPi
-          ! Interpolate from north to south
-          iono_south_im_efluxHydr(iS,jS) = bilinear(iono_north_im_efluxHydr,&
-                   1, IONO_nTheta, 1, IONO_nPsi, &
-                   [ lat/dThetaIono+1, lon/dPhiIono+1 ])
-          iono_south_im_aveeHydr(iS,jS) = bilinear(iono_north_im_aveeHydr, &
-                   1, IONO_nTheta, 1, IONO_nPsi, &
-                   [ lat/dThetaIono+1, lon/dPhiIono+1 ])
-          iono_south_im_efluxElec(iS,jS) = bilinear(iono_north_im_efluxElec,&
-                   1, IONO_nTheta, 1, IONO_nPsi, &
-                   [ lat/dThetaIono+1, lon/dPhiIono+1 ])
-          iono_south_im_aveeElec(iS,jS) = bilinear(iono_north_im_aveeElec, &
-                   1, IONO_nTheta, 1, IONO_nPsi, &
-                   [ lat/dThetaIono+1, lon/dPhiIono+1 ])
-          iono_south_im_boundary(iS,jS) = bilinear(iono_north_im_boundary, &
-                   1, IONO_nTheta, 1, IONO_nPsi, &
-                   [ lat/dThetaIono+1, lon/dPhiIono+1 ])
-          iono_south_im_jr(iS,jS) = bilinear(iono_north_im_jr, &
-                   1, IONO_nTheta, 1, IONO_nPsi, &
-                   [ lat/dThetaIono+1, lon/dPhiIono+1 ])
-       else
-          ! Just copy if not along a closed traced field line
-          iono_south_im_efluxHydr(iS,jS) = &
-             iono_north_im_efluxHydr(Iono_nTheta-iS+1,jS)
-          iono_south_im_aveeHydr(iS,jS) = &
-                iono_north_im_aveeHydr(Iono_nTheta-iS+1,jS)
-          iono_south_im_efluxElec(iS,jS) = &
-                iono_north_im_efluxElec(Iono_nTheta-iS+1,jS)
-          iono_south_im_aveeElec(iS,jS) = &
-                iono_north_im_aveeElec(Iono_nTheta-iS+1,jS)
-          iono_south_im_boundary(iS,jS) = &
-                iono_north_im_boundary(Iono_nTheta-iS+1,jS)
-          iono_south_im_jr(iS,jS) = &
-                iono_north_im_jr(Iono_nTheta-iS+1,jS)
-       end if
-    end do; end do
+    ! Map north to south for every variable
+    call map_north_to_south(iono_north_im_efluxHydr, iono_south_im_efluxHydr)
+    call map_north_to_south(iono_north_im_aveeHydr, iono_south_im_aveeHydr)
+    call map_north_to_south(iono_north_im_efluxElec, iono_south_im_efluxElec)
+    call map_north_to_south(iono_north_im_aveeElec, iono_south_im_aveeElec)
+    call map_north_to_south(iono_north_im_boundary, iono_south_im_boundary)
+    call map_north_to_south(iono_north_im_jr, iono_south_im_jr)
 
     IsImCoupled = .true.
 
@@ -1978,5 +1897,46 @@ contains
 
   end subroutine IE_get_for_ps
   !============================================================================
+  subroutine map_north_to_south(north_var_II, south_var_II)
+
+   use ModIonosphere, ONLY: IONO_nPsi, IONO_nTheta, &
+        IONO_SOUTH_dLat, IONO_SOUTH_dLon, &
+        IONO_SOUTH_Theta, IONO_SOUTH_Psi
+   use ModConst, ONLY: cPi, cTwoPi, cDegToRad
+   use ModImp, ONLY: UseSouthTracing
+   use ModInterpolate, ONLY: bilinear
+
+   real, dimension(IONO_nTheta, IONO_nPsi), intent(in)  :: north_var_II
+   real, dimension(IONO_nTheta, IONO_nPsi), intent(out) :: south_var_II
+
+   integer :: iS, jS
+   real :: lat, lon, dThetaIono, dPhiIono
+
+   !---------------------------------------------------------------------------
+
+   dThetaIono = cPi / 2 / (IONO_nTheta - 1)
+   dPhiIono   = cTwoPi  / (IONO_nPsi - 1)
+
+   do iS = 1, IONO_nTheta; do jS = 1, IONO_nPsi
+       ! If along a closed field line, trace along it to south
+       if ((IONO_SOUTH_dLat(iS,jS) /= 0.0 .or. &
+          IONO_SOUTH_dLon(iS,jS) /= 0.0) .and. UseSouthTracing) then
+          ! Reconstruct the latitude and longitude from dLat/dLon
+          lat = cPi - IONO_SOUTH_Theta(iS, jS) &
+                   - IONO_SOUTH_dLat(iS,jS) * cDegToRad
+          lon = IONO_SOUTH_Psi(iS, jS) + IONO_SOUTH_dLon(iS,jS) * cDegToRad
+          if (lon < 0.0) lon = lon + cTwoPi
+          if (lon > cTwoPi) lon = lon - cTwoPi
+            ! Interpolate from north to south
+          south_var_II(iS,jS) = bilinear(north_var_II,&
+                   1, IONO_nTheta, 1, IONO_nPsi, &
+                   [ lat/dThetaIono+1, lon/dPhiIono+1 ])
+       else
+         south_var_II(iS,jS) = north_var_II(IONO_nTheta-iS+1,jS)
+      end if
+   end do; end do
+
+   end subroutine map_north_to_south
+   !============================================================================ 
 end module IE_wrapper
 !==============================================================================
