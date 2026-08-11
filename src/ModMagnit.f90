@@ -221,7 +221,7 @@ module ModMagnit
             (rPlanet_I(Earth_) + IonoHeightPlanet_I(Earth_))))**3 * &
             sqrt(1 + 3*cos(LatIn_II)**2)
 
-    where(PrecipRatio_II >= MirrorRatio_II .and. OCFL_II > 0)
+    where(PrecipRatio_II >= MirrorRatio_II)
         NfluxMono_II = NfluxDiffe_II * MirrorRatio_II
         PrecipRatio_II = MirrorRatio_II
      end where
