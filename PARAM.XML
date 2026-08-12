@@ -724,7 +724,7 @@ The default values are shown above.
   <parameter name="PCapSmoothingSize" type="real" min="0" default="2.0"/>
 
 #POLARCAPSMOOTHING
-T         DoPolarCapSmoothing
+F         DoPolarCapSmoothing
 5.0       PCapSmoothingSize
 
 If DoPolarCapSmoothing is true, this command sets the size of region 

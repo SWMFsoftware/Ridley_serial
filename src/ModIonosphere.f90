@@ -49,7 +49,7 @@ module ModIonosphere
   logical :: DoCoupleUA = .false.
 
   ! Size without IM in degrees
-  logical :: DoPolarCapSmoothing = .true.
+  logical :: DoPolarCapSmoothing = .false.
   real :: PCapSmoothingSize = 5.0
 
   ! Ionosphere Solution on the whole grid
