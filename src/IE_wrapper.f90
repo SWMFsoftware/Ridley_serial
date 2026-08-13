@@ -854,7 +854,7 @@ contains
     where (Buffer_IIV(:,:,3) < GmRhoFloor) Buffer_IIV(:,:,3)=GmRhoFloor
     where (Buffer_IIV(:,:,4) < GmPFloor  ) Buffer_IIV(:,:,4)=GmPFloor
     if(.not. UseMagnitPolarRain) then
-      where (Buffer_IIV(:,:,2) < 0) 
+      where (Buffer_IIV(:,:,2) < 0)
          Buffer_IIV(:,:,3)=GmRhoFloor
          Buffer_IIV(:,:,4)=GmPFloor
       end where
@@ -868,7 +868,7 @@ contains
       end if
       iVar = iVar + 1
     end if
-   
+
     ! if (DoUseGMPpar) then ...
     ! if (DoUseGMPepar) then ...
 
