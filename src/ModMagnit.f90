@@ -9,6 +9,7 @@ module ModMagnit
   use ModUtilities, ONLY: CON_stop, CON_set_do_test
   use ModIonosphere, ONLY: IONO_nTheta, IONO_nPsi, DoUseGMPe, DoUseGMPpar, &
           DoUseGMPepar
+  use ModNumConst, ONLY: cTiny
 
   implicit none
   save
@@ -34,6 +35,9 @@ module ModMagnit
   real :: GmPoyntFloor = 1E-6
 
   real :: PrecipRatioLimit = 10000000
+
+  ! Logical to control whether to use polar rain in the magnit model
+  logical :: UseMagnitPolarRain=.false., UseMultipleReflections=.false.
 
   contains
   !============================================================================
@@ -93,7 +97,7 @@ module ModMagnit
     real, dimension(IONO_nTheta, IONO_nPsi) :: &
         MagP_II, MagNp_II, MagPe_II, MagNe_II, NfluxDiffe_II, NfluxDiffi_II, &
         NfluxBbnd_II, OCFL_II, FAC_II=0, Poynting_II=0, &
-            ElectronTemp_II=0, OCFL_flip_II=0
+            ElectronTemp_II=0, OCFL_flip_II=0, Kc_II
 
     integer :: i,j
 
@@ -170,6 +174,16 @@ module ModMagnit
     ! Recalc to make consistent with ConeFactors (and get units of keV)
     AvgEDiffe_II = EfluxDiffe_II / (NfluxDiffe_II * cKEV)
 
+    if(UseMultipleReflections) then
+       where(AvgEDiffe_II >= 0.5 .and. AvgEDiffe_II <= 30.0)
+          Kc_II = 3.36 - exp(0.597 - 0.37 * AvgEDiffe_II + 0.00794 * &
+            AvgEDiffe_II ** 2)
+          EfluxDiffe_II = Kc_II * EfluxDiffe_II
+          AvgEDiffe_II = 0.073 + 0.933 * AvgEDiffe_II - 0.0092 * &
+            AvgEDiffe_II ** 2
+       end where
+    end if
+
     ! Smooth area between closed and open field lines
     if(DoPolarCapSmoothing) then
         call smooth_polar_cap(ElectronTemp_II, OCFL_II, NameHemiIn)
@@ -183,6 +197,18 @@ module ModMagnit
     ! Calculate monoenergetic electron precipitation
     call monoenergetic_flux(FAC_II, OCFL_II, NfluxDiffe_II, ElectronTemp_II, &
             AvgEDiffe_II, LatIn_II, EfluxMono_II, AvgEMono_II)
+
+    where (EfluxMono_II < EfluxDiffe_II + cTiny)
+        EfluxMono_II = EfluxDiffe_II
+        AvgEMono_II = AvgEDiffe_II
+    end where
+
+    where (EfluxMono_II == EfluxDiffe_II .and. OCFL_II < 0)
+        EfluxMono_II = MINVAL(EfluxDiffe_II)
+        AvgEMono_II = MINVAL(AvgEDiffe_II)
+        EfluxDiffe_II = MINVAL(EfluxDiffe_II)
+        AvgEDiffe_II = MINVAL(AvgEDiffe_II)
+    end where
 
     call broadband_flux(Poynting_II, EfluxBbnd_II, AvgEBbnd_II)
 

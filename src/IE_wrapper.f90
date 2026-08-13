@@ -113,13 +113,14 @@ contains
            DoCoupleUaConductance
       use ModMagnit, ONLY: ConeEfluxDifp, ConeNfluxDifp, ConeEfluxDife, &
               ConeNfluxDife, ConeEfluxMono, ConeNfluxMono, ConeEfluxBbnd, &
-              ConeNfluxBbnd, PrecipRatioLimit
+              ConeNfluxBbnd, PrecipRatioLimit, UseMagnitPolarRain, &
+              UseMultipleReflections
       use ModIeRlm, ONLY: UseOval, UseNewOval, DoOvalShift, &
            UseSubOvalCond, DoFitCircle, FactorHallCMEE, FactorPedCMEE, &
            NameHalFile, NamePedFile, LatNoConductanceSI
       use ModUtilities, ONLY: fix_dir_name, check_dir, lower_case
       use ModIonosphere, ONLY: DoUseIMPrecip
-      use ModImp, ONLY: DoUseMultipleReflections, UseSouthTracing
+      use ModImp, ONLY: UseSouthTracing
 
       ! The name of the command
       character (len=100) :: NameCommand
@@ -167,6 +168,7 @@ contains
                       IONO_south_im_efluxHydr(IONO_nTheta,IONO_nPsi), &
                       iono_north_im_boundary(IONO_nTheta,IONO_nPsi), &
                       iono_south_im_boundary(IONO_nTheta,IONO_nPsi))
+            UseMagnitPolarRain = .true.
          end if
 
          ! Terminate to clarify that Spectrum can only be used with IMP
@@ -319,8 +321,10 @@ contains
             if (DoPolarCapSmoothing) then
                call read_var('PCapSmoothingSize', PCapSmoothingSize)
             end if
+         case("#MAGNITPOLARRAIN")
+            call read_var('UseMagnitPolarRain', UseMagnitPolarRain)
          case("#MULTIPLEREFLECTIONS")
-            call read_var('DoUseMultipleReflections', DoUseMultipleReflections)
+            call read_var('UseMultipleReflections', UseMultipleReflections)
          case("#ROBINSONLIMIT")
             call read_var('eCondLimit', eCondLimit)
             call read_var('eLimitScale', eLimitScale)
@@ -828,6 +832,7 @@ contains
     use ModProcIE
     use ModIonosphere
     use ModConductance, ONLY: GmRhoFloor, GmPFloor, GMPeFloor
+    use ModMagnit, ONLY: UseMagnitPolarRain
 
     integer,          intent(in) :: iSize, jSize, nVar
     integer                      :: i, j, iVar
@@ -848,11 +853,22 @@ contains
     ! Set minimum acceptable values for density & pressure:
     where (Buffer_IIV(:,:,3) < GmRhoFloor) Buffer_IIV(:,:,3)=GmRhoFloor
     where (Buffer_IIV(:,:,4) < GmPFloor  ) Buffer_IIV(:,:,4)=GmPFloor
+    if(.not. UseMagnitPolarRain) then
+      where (Buffer_IIV(:,:,2) < 0) 
+         Buffer_IIV(:,:,3)=GmRhoFloor
+         Buffer_IIV(:,:,4)=GmPFloor
+      end where
+    end if
     iVar = 8 ! Track variables after standard 7 to fill earliest space in Buffer
     if (DoUseGMPe) then
-        where (Buffer_IIV(:,:,iVar) < GmPeFloor) Buffer_IIV(:,:,iVar)=GmPFloor
-        iVar = iVar + 1
+      where (Buffer_IIV(:,:,iVar) < GmPeFloor) Buffer_IIV(:,:,iVar)=GmPFloor
+      if (.not. UseMagnitPolarRain) then
+        where (Buffer_IIV(:,:,2) < 0) &
+          Buffer_IIV(:,:,iVar)=GmPFloor
+      end if
+      iVar = iVar + 1
     end if
+   
     ! if (DoUseGMPpar) then ...
     ! if (DoUseGMPepar) then ...
 

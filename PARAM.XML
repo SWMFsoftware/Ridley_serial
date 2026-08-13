@@ -72,7 +72,8 @@ output files. Default value is "IE/ionosphere".
 		default="T"/>
 	<option name="Maximum" value="max" />
 	<option name="UA"      value="uam" />
-        <option name="Aurora"  value="aur" />
+  <option name="Aurora"  value="aur" />
+  <option name="Precip"  value="pre" />
       </part>
     </parameter>
     <parameter name="DnSavePlot" type="integer" min="-1" />
@@ -732,15 +733,28 @@ interpolated between the polar cap and closed field lines in 1 dimension. Value
 is given as a float value of degrees in latitude. Default values are shown. 
 </command>
 
+<command name="MAGNITPOLARRAIN">
+  <parameter name="UseMagnitPolarRain" type="logical" default="F"/>
+
+#MAGNITPOLARRAIN
+F         UseMagnitPolarRain
+
+If UseMagnitPolarRain is true, the MAGNIT auroral precipitation model will 
+calculate precipitation in the polar cap region. Note that setting this value
+to true has been tested to increase differences across machine architecture/compilers.
+
+Default values are shown.
+
+</command>
 <command name="MULTIPLEREFLECTIONS">
-  <parameter name="DoUseMultipleReflections" type="logical" default="T"/>
+  <parameter name="UseMultipleReflections" type="logical" default="T"/>
 
 #MULTIPLEREFLECTIONS
-T         DoUseMultipleReflections
+T         UseMultipleReflections
 
-Setting DoUseMultipleReflections to true uses the multiple reflections adjustment
+Setting UseMultipleReflections to true uses the multiple reflections adjustment
 to diffuse precipitation given by Khazanov 19. This is only used within the
-IMP auroral precipitation/conductance model.
+MAGNIT and IMP auroral precipitation/conductance models.
 
 </command>
 

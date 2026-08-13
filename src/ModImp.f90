@@ -15,7 +15,7 @@ module ModImp
 
   real, parameter :: ImEfluxFloor = 1E-3, ImAveEFloor = 1E-6
 
-  logical :: DoUseMultipleReflections = .true., UseSouthTracing = .true.
+  logical :: UseSouthTracing = .true.
 
 contains
   !============================================================================
@@ -25,7 +25,7 @@ contains
 
     use ModMagnit, ONLY: monoenergetic_flux, broadband_flux, smooth_polar_cap,&
          ConeEfluxDifp, ConeNfluxDifp, ConeEfluxDife, ConeNfluxDife, &
-         ratioPe
+         ratioPe, UseMultipleReflections
     use ModIonosphere, ONLY: IONO_NORTH_JR, IONO_SOUTH_JR, &
          IONO_NORTH_invB, IONO_SOUTH_invB, IONO_NORTH_Poynting, &
          IONO_SOUTH_Poynting, IONO_north_im_boundary, &
@@ -71,11 +71,13 @@ contains
                 NameHemiIn)
     end if
 
-    if(DoUseMultipleReflections) then
+    if(UseMultipleReflections) then
        where(AvgEDiffe_II >= 0.5 .and. AvgEDiffe_II <= 30.0)
-          Kc_II = 3.36 - exp(0.597 - 0.37 * AvgEDiffe_II + 0.00794 * AvgEDiffe_II ** 2)
+          Kc_II = 3.36 - exp(0.597 - 0.37 * AvgEDiffe_II + 0.00794 * &
+            AvgEDiffe_II ** 2)
           EfluxDiffe_II = Kc_II * EfluxDiffe_II
-          AvgEDiffe_II = 0.073 + 0.933 * AvgEDiffe_II - 0.0092 * AvgEDiffe_II ** 2
+          AvgEDiffe_II = 0.073 + 0.933 * AvgEDiffe_II - 0.0092 * &
+            AvgEDiffe_II ** 2
        end where
     end if
 
