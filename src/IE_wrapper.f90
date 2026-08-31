@@ -1495,7 +1495,7 @@ contains
       dPsi   = cTwoPi/(IONO_nPsi-1)
       cell_area_II = Radius * Radius * dTheta * dPsi * sin(IONO_NORTH_Theta)
 
-      ! Scale values to ensure that the total flux is the same in both 
+      ! Scale values to ensure that the total flux is the same in both
       ! hemispheres
       integrated_flux_north_II = SUM(iono_north_im_efluxHydr * cell_area_II)
       integrated_flux_south_II = SUM(iono_south_im_efluxHydr * cell_area_II)
