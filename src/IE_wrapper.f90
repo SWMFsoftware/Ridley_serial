@@ -1441,6 +1441,10 @@ contains
     !--------------------------------------------------------------------------
     integer iError, i
 
+    real, dimension(IONO_nTheta, IONO_nPsi) :: cell_area_II, &
+      integrated_flux_north_II, integrated_flux_south_II, nflux_II
+    real :: dTheta, dPsi
+
     character(len=*), parameter:: NameSub = 'IE_put_from_im_complete'
    !---------------------------------------------------------------------------
    if(DoUseIMPrecip) then
@@ -1486,6 +1490,36 @@ contains
       call map_north_to_south(iono_north_im_aveeElec, iono_south_im_aveeElec)
       call map_north_to_south(iono_north_im_boundary, iono_south_im_boundary)
       call map_north_to_south(iono_north_im_jr, iono_south_im_jr)
+
+      dTheta = cHalfPi/(IONO_nTheta-1)
+      dPsi   = cTwoPi/(IONO_nPsi-1)
+      cell_area_II = Radius * Radius * dTheta * dPsi * sin(IONO_NORTH_Theta)
+
+      ! Scale values to ensure that the total flux is the same in both 
+      ! hemispheres
+      integrated_flux_north_II = SUM(iono_north_im_efluxHydr * cell_area_II)
+      integrated_flux_south_II = SUM(iono_south_im_efluxHydr * cell_area_II)
+      iono_south_im_efluxHydr = iono_south_im_efluxHydr * &
+         integrated_flux_north_II / integrated_flux_south_II
+      integrated_flux_north_II = SUM(iono_north_im_efluxHydr / &
+         iono_north_im_aveeHydr * cell_area_II)
+      integrated_flux_south_II = SUM(iono_south_im_efluxHydr / &
+         iono_south_im_aveeHydr * cell_area_II)
+      nflux_II = iono_north_im_efluxHydr / iono_north_im_aveeHydr * &
+         integrated_flux_north_II / integrated_flux_south_II
+      iono_south_im_aveeHydr = iono_south_im_efluxHydr / nflux_II
+
+      integrated_flux_north_II = SUM(iono_north_im_efluxElec * cell_area_II)
+      integrated_flux_south_II = SUM(iono_south_im_efluxElec * cell_area_II)
+      iono_south_im_efluxElec = iono_south_im_efluxElec * &
+         integrated_flux_north_II / integrated_flux_south_II
+      integrated_flux_north_II = SUM(iono_north_im_efluxElec / &
+         iono_north_im_aveeElec * cell_area_II)
+      integrated_flux_south_II = SUM(iono_south_im_efluxElec / &
+         iono_south_im_aveeElec * cell_area_II)
+      nflux_II = iono_north_im_efluxElec / iono_north_im_aveeElec * &
+         integrated_flux_north_II / integrated_flux_south_II
+      iono_south_im_aveeElec = iono_south_im_efluxElec / nflux_II
 
       ! Everything below should also be updated to use the tracing once it
       ! is being used, possibly even reformat to do all within same loop.

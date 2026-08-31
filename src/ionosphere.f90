@@ -1453,8 +1453,7 @@ subroutine calculate_indexes
    use ModNumConst, ONLY: cHalfPi, cTwoPi
    implicit none
 
-   real, dimension(IONO_nTheta, IONO_nPsi) :: cell_area_II, theta_II, psi_II, &
-                                              var_II
+   real, dimension(IONO_nTheta, IONO_nPsi) :: cell_area_II
    real :: dTheta, dPsi
    integer:: iError
   !----------------------------------------------------------------------------
