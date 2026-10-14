@@ -59,7 +59,8 @@ subroutine IE_solve
 
         ! Add in ionospheric currents after the conductances
         ! are calculated
-        IONO_NORTH_JR = IONO_NORTH_JR - Iono_North_Tgcm_Jr
+        if(DoCoupleUaCurrent) &
+          IONO_NORTH_JR = IONO_NORTH_JR - Iono_North_Tgcm_Jr
 
         call ionosphere_solver(iBlock, &
              IONO_NORTH_JR,     &
@@ -129,7 +130,8 @@ subroutine IE_solve
 
         ! Add in ionospheric currents after the conductances
         ! are calculated
-        IONO_SOUTH_JR = IONO_SOUTH_JR - Iono_South_Tgcm_Jr
+        if(DoCoupleUaCurrent) &
+          IONO_SOUTH_JR = IONO_SOUTH_JR - Iono_South_Tgcm_Jr
 
         call ionosphere_solver(iBlock, &
              IONO_SOUTH_JR, &
