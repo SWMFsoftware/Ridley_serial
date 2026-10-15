@@ -764,7 +764,7 @@ subroutine ionosphere_write_output(iFile, iBlock)
            write(iUnit, '(I5,a)')  5, ' i-eflux [W/m2]'
            write(iUnit, '(I5,a)')  6, ' i-avge [keV]'
            write(iUnit, '(I5,a)')  7, ' im-boundary [W/m2]'
-           write(iUnit, '(I5,a)')  8, ' jr [keV]'
+           write(iUnit, '(I5,a)')  8, ' jr [microA/m2]'
         end select
 
         write(iUnit, *) ' '
