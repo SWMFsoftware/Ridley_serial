@@ -241,6 +241,8 @@ contains
                   plot_vars(iFile)='xyz'
                elseif(index(plot_string,'pre')>0)then
                   plot_vars(iFile)='precip'
+               elseif(index(plot_string,'imp')>0)then
+                  plot_vars(iFile)='innermag'
                else
                   call CON_stop(NameSub//&
                        ' variable definition missing in #IE_SAVEPLOT'//&
