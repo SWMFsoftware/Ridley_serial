@@ -364,10 +364,10 @@ contains
     allocate(IONO_SOUTH_Pepar(IONO_nTheta,IONO_nPsi))
     allocate(IONO_NORTH_Poynting(IONO_nTheta,IONO_nPsi))
     allocate(IONO_SOUTH_Poynting(IONO_nTheta,IONO_nPsi))
-    allocate(IONO_NORTH_dLat(IONO_nTheta,IONO_nPsi))
-    allocate(IONO_SOUTH_dLat(IONO_nTheta,IONO_nPsi))
-    allocate(IONO_NORTH_dLon(IONO_nTheta,IONO_nPsi))
-    allocate(IONO_SOUTH_dLon(IONO_nTheta,IONO_nPsi))
+    allocate(IONO_NORTH_dLat(IONO_nTheta,IONO_nPsi)); IONO_NORTH_dLat = 0
+    allocate(IONO_SOUTH_dLat(IONO_nTheta,IONO_nPsi)); IONO_SOUTH_dLat = 0
+    allocate(IONO_NORTH_dLon(IONO_nTheta,IONO_nPsi)); IONO_NORTH_dLon = 0
+    allocate(IONO_SOUTH_dLon(IONO_nTheta,IONO_nPsi)); IONO_SOUTH_dLon = 0
     allocate(C_A(IONO_nTheta,IONO_nPsi))
     allocate(C_B(IONO_nTheta,IONO_nPsi))
     allocate(C_C(IONO_nTheta,IONO_nPsi))

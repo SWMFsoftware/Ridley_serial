@@ -81,8 +81,6 @@ contains
        end where
     end if
 
-    where(Poynting_II < 0) Poynting_II = 0
-
     if(NameHemiIn == 'north')then
       MagP_II = iono_north_p
       MagNp_II = iono_north_rho / cProtonMass
@@ -102,6 +100,8 @@ contains
       ImBoundary_II = IONO_south_im_boundary
       ImFac_II = IONO_SOUTH_Im_Jr
     end if
+
+    where(Poynting_II < 0) Poynting_II = 0
 
     if(.not. DoUseGMPe) then
       MagPe_II = MagP_II * ratioPe

@@ -157,8 +157,8 @@ contains
          ! being coupled/IMP is not being used.
          if(NameAuroraMod == 'IMP') then
              DoUseIMPrecip = .true.
-             if(.not. allocated(IONO_north_im_aveeElec)) &
-             allocate(IONO_north_im_aveeElec(IONO_nTheta,IONO_nPsi), &
+             if(.not. allocated(IONO_north_im_aveeElec)) then
+                allocate(IONO_north_im_aveeElec(IONO_nTheta,IONO_nPsi), &
                       IONO_south_im_aveeElec(IONO_nTheta,IONO_nPsi), &
                       IONO_north_im_efluxElec(IONO_nTheta,IONO_nPsi), &
                       IONO_south_im_efluxElec(IONO_nTheta,IONO_nPsi), &
@@ -168,6 +168,12 @@ contains
                       IONO_south_im_efluxHydr(IONO_nTheta,IONO_nPsi), &
                       iono_north_im_boundary(IONO_nTheta,IONO_nPsi), &
                       iono_south_im_boundary(IONO_nTheta,IONO_nPsi))
+                IONO_north_im_aveeElec  = 0.0; IONO_south_im_aveeElec  = 0.0
+                IONO_north_im_efluxElec = 0.0; IONO_south_im_efluxElec = 0.0
+                IONO_north_im_aveeHydr  = 0.0; IONO_south_im_aveeHydr  = 0.0
+                IONO_north_im_efluxHydr = 0.0; IONO_south_im_efluxHydr = 0.0
+                iono_north_im_boundary  = 0.0; iono_south_im_boundary  = 0.0
+             end if
             UseMagnitPolarRain = .true.
          end if
 
@@ -1303,11 +1309,14 @@ contains
         if(DoUseIMSpectrum) then
             ! Update to 8 once southern hemisphere exists
             nVarImIe = 6 + 2 * nEngIM
-            if(.not. allocated(IONO_north_im_nElecPrec)) &
+            if(.not. allocated(IONO_north_im_nElecPrec)) then
                allocate(IONO_north_im_nElecPrec(IONO_nTheta,IONO_nPsi,nEngIM), &
                         IONO_south_im_nElecPrec(IONO_nTheta,IONO_nPsi,nEngIM), &
                         IONO_north_im_nHydrPrec(IONO_nTheta,IONO_nPsi,nEngIM), &
                         IONO_south_im_nHydrPrec(IONO_nTheta,IONO_nPsi,nEngIM))
+               IONO_north_im_nElecPrec = 0.0; IONO_south_im_nElecPrec = 0.0
+               IONO_north_im_nHydrPrec = 0.0; IONO_south_im_nHydrPrec = 0.0
+            end if
 
             if(present(EngInput)) then
                if(allocated(EngIM)) deallocate(EngIM)
@@ -1452,9 +1461,9 @@ contains
    !---------------------------------------------------------------------------
    if(DoUseIMPrecip) then
       iono_north_im_efluxHydr(:,iono_npsi) = iono_north_im_efluxHydr(:,1)
-      iono_north_im_aveeHydr(:,iono_npsi)  = iono_north_im_efluxHydr(:,1)
-      iono_north_im_efluxElec(:,iono_npsi) = iono_north_im_efluxHydr(:,1)
-      iono_north_im_aveeElec(:,iono_npsi)  = iono_north_im_efluxHydr(:,1)
+      iono_north_im_aveeHydr(:,iono_npsi)  = iono_north_im_aveeHydr(:,1)
+      iono_north_im_efluxElec(:,iono_npsi) = iono_north_im_efluxElec(:,1)
+      iono_north_im_aveeElec(:,iono_npsi)  = iono_north_im_aveeElec(:,1)
       iono_north_im_jr(:,iono_npsi)        = iono_north_im_jr(:,1)
       iono_north_im_boundary(:,iono_npsi)  = iono_north_im_boundary(:,1)
 
