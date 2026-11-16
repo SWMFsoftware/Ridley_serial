@@ -765,8 +765,10 @@ contains
             * (BDipole_II / 54e-6)**(-1.90)
     case('kaep')
         SigmaPOut_II = sqrt(cond_Eflux_II) * (40. * cond_AvgE_II) &
-                / (16. + AveEIn_II**2)
+                / (16. + cond_AvgE_II**2)
         SigmaHOut_II = 0.57 * SigmaPOut_II * cond_AvgE_II**0.53
+    case default
+        call CON_stop(NameSub//': unknown conductance model '//NameModel)
     end select
 
    end subroutine flux_to_sigma

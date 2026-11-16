@@ -305,7 +305,13 @@ contains
                if(UseStrict)call CON_stop('Correct PARAM.in!')
             end if
          case("#MAGNITPRECIP")
-             call read_var('eCondRel', eCondRel)
+             call read_var('DoUseDiffI', DoUseDiffI)
+             call read_var('DoUseDiffE', DoUseDiffE)
+             call read_var('DoUseMono',  DoUseMono)
+             call read_var('DoUseBbnd',  DoUseBbnd)
+             call read_var('eCondRel', eCondRel, IsLowerCase=.true.)
+             if (eCondRel /= 'robi' .and. eCondRel /= 'kaep') &
+                  call CON_stop(NameSub//': unknown eCondRel='//eCondRel)
          case("#LOSSCONEFACTORS")
              call read_var('ConeEfluxDifp', ConeEfluxDifp)
              call read_var('ConeNfluxDifp', ConeNfluxDifp)
