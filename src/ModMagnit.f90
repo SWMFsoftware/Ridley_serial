@@ -175,12 +175,15 @@ module ModMagnit
     AvgEDiffe_II = EfluxDiffe_II / (NfluxDiffe_II * cKEV)
 
     if(UseMultipleReflections) then
-       where(AvgEDiffe_II >= 0.5 .and. AvgEDiffe_II <= 30.0)
-          Kc_II = 3.36 - exp(0.597 - 0.37 * AvgEDiffe_II + 0.00794 * &
-            AvgEDiffe_II ** 2)
+       ! Original only valid 0.5 < avgE < 30 keV, bound the effects to this
+       ! range but continue above 30 keV limit to prevent discontinuity
+       where(AvgEDiffe_II >= 0.5)
+          Kc_II = 3.36 - exp(0.597 - 0.37 * min(AvgEDiffe_II,30.0) + 0.00794 * &
+            min(AvgEDiffe_II,30.0) ** 2)
           EfluxDiffe_II = Kc_II * EfluxDiffe_II
-          AvgEDiffe_II = 0.073 + 0.933 * AvgEDiffe_II - 0.0092 * &
-            AvgEDiffe_II ** 2
+          ! 0.65943 AvgE limit is the ratio at 30 keV
+          AvgEDiffe_II = max(0.073 + 0.933 * AvgEDiffe_II - 0.0092 * &
+            AvgEDiffe_II ** 2, AvgEDiffe_II*0.65943)
        end where
     end if
 
